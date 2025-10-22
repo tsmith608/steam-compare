@@ -59,7 +59,7 @@ export default function Home() {
   return (
     <main className="flex flex-col items-center justify-center w-full max-w-6xl px-6 py-20 text-center relative">
       <h1 className="text-5xl font-light mb-8 tracking-tight text-gray-900 dark:text-gray-100">
-        Compare Games With your Friends
+        Compare Games With Your Friends
       </h1>
 
       {!data && (
@@ -192,7 +192,10 @@ export default function Home() {
                       alt={g.name}
                       className="rounded mb-2"
                     />
-                    <p className="text-sm truncate">{g.name}</p>
+                    <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
+                      {g.name}
+                    </p>
+
                     <p className="text-xs text-gray-400">
                       {Math.round(g.playtime / 60)} hrs
                     </p>
@@ -225,7 +228,9 @@ export default function Home() {
                       alt={g.name}
                       className="rounded mb-2"
                     />
-                    <p className="text-sm truncate">{g.name}</p>
+                    <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
+                      {g.name}
+                    </p>
                     <p className="text-xs text-gray-400">
                       {Math.round(g.playtime / 60)} hrs
                     </p>
