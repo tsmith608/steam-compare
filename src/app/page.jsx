@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import Script from "next/script";
+
 
 export default function Home() {
   const [user1, setUser1] = useState("");
@@ -57,7 +59,7 @@ export default function Home() {
   return (
     <main className="flex flex-col items-center justify-center w-full max-w-6xl px-6 py-20 text-center relative">
       <h1 className="text-5xl font-light mb-8 tracking-tight text-gray-900 dark:text-gray-100">
-        Steam Library Comparator
+        Compare Games With your Friends
       </h1>
 
       {!data && (
@@ -239,8 +241,26 @@ export default function Home() {
           >
             Compare Again
           </button>
+
+          
         </div>
       )}
+
+      <a
+        href="https://ko-fi.com/F1F11N6SO4"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed top-4 left-4 z-50"
+    >
+        <img
+            src="https://storage.ko-fi.com/cdn/kofi3.png?v=6"
+            alt="Buy Me a Coffee at ko-fi.com"
+            className="h-9 w-auto border-0"
+        />
+        </a>
+
+
     </main>
+    
   );
 }
