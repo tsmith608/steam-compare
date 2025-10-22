@@ -58,9 +58,17 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center justify-center w-full max-w-6xl px-6 py-20 text-center relative">
-      <h1 className="text-5xl font-light mb-8 tracking-tight text-gray-900 dark:text-gray-100">
-        Compare Games With Your Friends
+      <header className="text-center mb-12">
+      <h1 className="text-6xl font-extralight tracking-tight text-gray-900 dark:text-gray-100 drop-shadow-sm">
+        We Both Play
       </h1>
+      <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+        Find your next duo game in seconds.
+        <span className="text-blue-500 font-medium"> Less Searching. More Playing.</span>
+      </p>
+      <div className="mt-3 h-[1px] w-24 mx-auto bg-gradient-to-r from-transparent via-blue-500/60 to-transparent"></div>
+      </header>
+
 
       {!data && (
         <>
