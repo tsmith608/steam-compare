@@ -113,7 +113,7 @@ export default function Home() {
                   76561198881424318
                 </div>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  You can also copy the entire profile link directly from Steam and paste
+                  You can also click it to copy the entire profile link directly from Steam and paste
                   it here — we’ll handle it automatically.
                 </p>
                 <div className="flex justify-end mt-4">
