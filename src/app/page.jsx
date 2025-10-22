@@ -155,7 +155,9 @@ export default function Home() {
                       alt={g.name}
                       className="rounded mb-2"
                     />
-                    <p className="text-sm truncate">{g.name}</p>
+                    <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
+                        {g.name}
+                    </p>
                     <p className="text-xs text-gray-400">
                       {Math.round(g.user1_playtime / 60)} hrs | {Math.round(g.user2_playtime / 60)} hrs
                     </p>
