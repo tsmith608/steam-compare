@@ -6,18 +6,18 @@ const API_KEY = process.env.STEAM_API_KEY;
 async function resolveSteamID(input) {
   const cleaned = input.trim();
 
-  // Already a Steam64 ID
+  // 1️⃣ Direct 17-digit SteamID64
   if (/^\d{17}$/.test(cleaned)) return cleaned;
 
-  // Full profile link with numeric ID
-  const idMatch = cleaned.match(/steamcommunity\.com\/profiles\/(\d{17})/);
-  if (idMatch) return idMatch[1];
+  // 2️⃣ Extract from profile URLs
+  const profileMatch = cleaned.match(/steamcommunity\.com\/profiles\/(\d{17})/);
+  if (profileMatch) return profileMatch[1];
 
-  // Vanity link (e.g. steamcommunity.com/id/username)
-  const vanityMatch = cleaned.match(/steamcommunity\.com\/id\/([^\/]+)/);
-  const vanity = vanityMatch ? vanityMatch[1] : cleaned;
+  // 3️⃣ Extract from custom vanity URLs
+  const vanityMatch = cleaned.match(/steamcommunity\.com\/id\/([^\/?#]+)/);
+  const vanity = vanityMatch ? vanityMatch[1] : cleaned.replace(/^https?:\/\/|www\.|steamcommunity\.com\/|id\/|profiles\//g, "").split(/[/?#]/)[0];
 
-  // Try resolving via API
+  // 4️⃣ Resolve vanity name to SteamID64
   const res = await fetch(
     `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${API_KEY}&vanityurl=${vanity}`
   );
