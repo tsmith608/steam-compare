@@ -563,7 +563,13 @@ export default function Home() {
             </h2>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
               Open your Steam client or go to your Steam profile in a browser.
-              Your Steam64 ID is the number in the URL — for example:
+              Click on your profile name and look for a number like this in the URL:
+                <img
+                  src="/steam-id-example.png"
+                  alt="Steam ID example showing URL with ID"
+                  className="w-full"
+                />
+
             </p>
             <div className="bg-gray-100 dark:bg-white/10 text-sm rounded-lg p-3 mb-3 font-mono text-gray-800 dark:text-gray-100">
               76561198881424318
