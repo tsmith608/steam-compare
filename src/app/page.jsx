@@ -162,45 +162,47 @@ function BigFeaturePanels() {
   ];
 
   return (
-    <section className="mt-14 sm:mt-16 px-3 sm:px-4 md:px-0">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-        {items.map((it, i) => (
-          <article key={i} className="text-left px-1 sm:px-2 md:px-1">
-            <h3 className="text-[18px] sm:text-xl font-semibold text-gray-100">{it.title}</h3>
-            <p className="mt-1 text-sm sm:text-base text-gray-400 max-w-prose">{it.subtitle}</p>
+  <section className="mt-14 sm:mt-16 px-3 sm:px-4 md:px-0">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-y-12">
+      {items.map((it, i) => (
+        <article key={i} className="group text-left px-1 sm:px-2 md:px-1">
+          <h3 className="text-[18px] sm:text-xl font-semibold text-gray-100">{it.title}</h3>
+          <p className="mt-1 text-sm sm:text-base text-gray-400 max-w-prose">{it.subtitle}</p>
 
-            <div className="mt-4 sm:mt-5 rounded-[22px] p-[2px] bg-gradient-to-br from-white/10 via-white/5 to-transparent">
-              <div className="rounded-[20px] border border-white/10 bg-white/5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] overflow-hidden">
-                <div className="relative rounded-[18px] m-2 bg-gradient-to-b from-white/[0.08] to-white/[0.02] ring-1 ring-white/10 overflow-hidden">
-                  <div className="relative w-full aspect-[16/10] sm:aspect-[16/9]">
-                    {it.video ? (
-                      <Clip webm={it.video.webm} mp4={it.video.mp4} poster={it.video.poster} label={it.imageAlt} />
-                    ) : it.imageSrc ? (
-                      <img
-                        src={it.imageSrc}
-                        alt={it.imageAlt}
-                        className="absolute inset-0 h-full w-full object-cover rounded-[14px]"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 grid place-items-center rounded-[14px] border border-dashed border-white/15 text-gray-400 text-sm">
-                        Add media here
-                      </div>
-                    )}
-                  </div>
-
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full bg-white/[0.06] blur-2xl"
-                  />
+          <div className="mt-4 sm:mt-5 rounded-[22px] p-[2px] bg-gradient-to-br from-white/10 via-white/5 to-transparent
+                          transition-transform duration-150 group-hover:-translate-y-0.5">
+            <div className="rounded-[20px] border border-white/10 bg-white/5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] overflow-hidden">
+              <div className="relative rounded-[18px] m-2 bg-gradient-to-b from-white/[0.08] to-white/[0.02] ring-1 ring-white/10 overflow-hidden">
+                <div className="relative w-full aspect-[16/10] sm:aspect-[16/9]">
+                  {it.video ? (
+                    <Clip webm={it.video.webm} mp4={it.video.mp4} poster={it.video.poster} label={it.imageAlt} />
+                  ) : it.imageSrc ? (
+                    <img
+                      src={it.imageSrc}
+                      alt={it.imageAlt}
+                      className="absolute inset-0 h-full w-full object-cover rounded-[14px]"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 grid place-items-center rounded-[14px] border border-dashed border-white/15 text-gray-400 text-sm">
+                      Add media here
+                    </div>
+                  )}
                 </div>
+
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full bg-white/[0.06] blur-2xl"
+                />
               </div>
             </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+);
+
 }
 
 
@@ -222,6 +224,26 @@ export default function Home() {
     onlyFriend2: false,
     onlyFriend3: false,
   });
+
+  // NEW: refs + sticky header state
+  const formContainerRef = useRef(null);
+  const formRef = useRef(null);
+  const firstInputRef = useRef(null);
+  const [showSticky, setShowSticky] = useState(false);
+  const [highlightForm, setHighlightForm] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowSticky(window.scrollY > 320 && !data && !loading);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [data, loading]);
+
+  useEffect(() => {
+    if (!highlightForm) return;
+    const t = setTimeout(() => setHighlightForm(false), 800);
+    return () => clearTimeout(t);
+  }, [highlightForm]);
 
   function validateInput(id) {
     if (!id) return true; // allow blanks for optional friends
@@ -351,8 +373,14 @@ export default function Home() {
     </header>
 
     {/* form card */}
-    <div className="w-full max-w-3xl mx-auto mt-10 sm:mt-12 rounded-3xl bg-white/5 backdrop-blur border border-white/10 shadow-xl shadow-black/20 p-6 sm:p-8">
+    <div
+      ref={formContainerRef}
+      className={`w-full max-w-3xl mx-auto mt-10 sm:mt-12 rounded-3xl bg-white/5 backdrop-blur border border-white/10 shadow-xl shadow-black/20 p-6 sm:p-8
+              ${highlightForm ? "ring-2 ring-blue-500/60 animate-[pulse_0.8s_ease-out_1]" : ""}
+              scroll-mt-24 sm:scroll-mt-36`}
+    >
       <form
+        ref={formRef}
         onSubmit={(e) => {
           // quick visibility check
           console.log("[submit] compare clicked");
@@ -369,6 +397,7 @@ export default function Home() {
               </svg>
             </span>
             <input
+              ref={firstInputRef}
               value={user1}
               onChange={(e) => setUser1(e.target.value)}
               placeholder="Your Steam64 ID or Profile URL"
@@ -470,7 +499,6 @@ export default function Home() {
   </>
 )}
 
-
       {/* RESULTS HEADER */}
       {data && !loading && (
         <header className="w-full text-center mt-4 mb-10">
@@ -478,7 +506,7 @@ export default function Home() {
                         text-[42px] sm:text-6xl md:text-7xl
                         bg-gradient-to-r from-white via-white/90 to-white/70
                         bg-clip-text text-transparent drop-shadow-sm">
-            We All Play
+            We Both Play
           </h1>
 
           <p className="mt-3 text-base sm:text-lg text-gray-300">
@@ -816,6 +844,39 @@ export default function Home() {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition"
               >
                 Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* floating header that smooth-scrolls back to the form */}
+      {showSticky && !data && !loading && (
+        <div className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top)]">
+          <div className="mx-auto max-w-6xl px-3 sm:px-6">
+            <div className="mt-3 flex items-center justify-between gap-3
+                            rounded-2xl border border-white/10
+                            bg-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/30
+                            shadow-lg shadow-black/20 px-3 py-2">
+              <div className="flex items-center gap-2 text-sm text-gray-200">
+                <span className="hidden sm:inline">Wanna know what you both play?</span>
+                <span className="sm:hidden">Compare</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  setHighlightForm(true);
+                  setTimeout(() => firstInputRef.current?.focus(), 450);
+                }}
+                className="px-5 py-2 rounded-xl font-medium
+                           bg-gradient-to-r from-blue-500 to-blue-600
+                           hover:from-blue-400 hover:to-blue-500
+                           text-white shadow-lg shadow-blue-500/20
+                           transition-all duration-150 active:translate-y-px"
+              >
+                Compare Now
               </button>
             </div>
           </div>
