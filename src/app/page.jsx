@@ -1,5 +1,209 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+
+/* ---------- Landing-only UI blocks  ---------- */
+
+/** quick “legit” feature blurbs */
+function FeatureHighlights() {
+  const items = [
+    { k: "Fast", v: "Instant results. No sign-in." },
+    { k: "Accurate", v: "Pulls directly from Steam public data." },
+    { k: "Private", v: "We don’t store your IDs or libraries." },
+    { k: "Flexible", v: "Works with IDs, vanity URLs, or full profile links." },
+  ];
+  return (
+    <section className="mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {items.map((it) => (
+          <div key={it.k} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left">
+            <p className="text-sm text-gray-300">
+              <span className="font-semibold text-white">{it.k}</span> — {it.v}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** tiny logos/compat strip */
+function WorksWithStrip() {
+  const items = [
+    { label: "Steam", img: "https://store.akamai.steamstatic.com/public/shared/images/header/logo_steam.svg" },
+    { label: "Windows", img: "https://upload.wikimedia.org/wikipedia/commons/4/48/Windows_logo_-_2012.svg" },
+    { label: "macOS", img: "https://upload.wikimedia.org/wikipedia/commons/3/30/MacOS_logo.svg" },
+  ];
+  return (
+    <section className="mt-6">
+      <div className="flex flex-wrap items-center justify-center gap-6 opacity-80">
+        {items.map((it) => (
+          <div key={it.label} className="flex items-center gap-2">
+            <img src={it.img} alt={it.label} className="h-5 w-auto opacity-80" />
+            <span className="text-xs text-gray-400">{it.label}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** short FAQ */
+function FAQSection() {
+  const faqs = [
+    {
+      q: "Do profiles need to be public?",
+      a: "Yes. Steam must allow public access to game details for us to read libraries.",
+    },
+    {
+      q: "What profile formats do you accept?",
+      a: "17-digit SteamID64, vanity URLs (steamcommunity.com/id/Name), or full profile links.",
+    },
+    {
+      q: "Do you store my data?",
+      a: "No. Requests are processed in real-time and not saved.",
+    },
+  ];
+  return (
+    <section className="mt-10 text-left">
+      <h3 className="text-gray-200 font-medium mb-3">FAQ</h3>
+      <div className="space-y-3">
+        {faqs.map((x, i) => (
+          <details key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <summary className="cursor-pointer text-sm text-gray-200">{x.q}</summary>
+            <p className="mt-2 text-sm text-gray-400">{x.a}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* Autoplaying, in-view looping clip with mobile-safe flags */
+function Clip({ webm, mp4, poster, label }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    // play/pause only when visible
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => (e.isIntersecting ? el.play().catch(()=>{}) : el.pause())),
+      { threshold: 0.25 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <video
+      ref={ref}
+      className="absolute inset-0 h-full w-full object-cover rounded-[14px]"
+      muted
+      playsInline
+      loop
+      preload="metadata"
+      poster={poster}
+      aria-label={label}
+    >
+      {webm && <source src={webm} type="video/webm" />}
+      {mp4 && <source src={mp4} type="video/mp4" />}
+    </video>
+  );
+}
+
+function BigFeaturePanels() {
+  const items = [
+    {
+      title: "Paste profiles",
+      subtitle: "Drop in Steam64 IDs or full profile links. Custom vanity URLs work too.",
+      // add videos; keep image as fallback
+      video: {
+        mp4:  "/panels/paste-profiles.mp4",
+        webm: "/panels/paste-profiles.webm",
+        poster: "/panels/paste-profiles.poster.jpg",
+      },
+      imageSrc: "/panels/paste-profiles.png",
+      imageAlt: "Pasting Steam profiles",
+    },
+    {
+      title: "Compare instantly",
+      subtitle: "Compare playtime with up to three of your friends on titles you all own.",
+      video: {
+        mp4:  "/panels/compare-instantly.mp4", 
+        webm: "/panels/compare-instantly.webm",
+        poster: "/panels/compare-instantly.poster.jpg",
+      },
+      imageSrc: "/panels/compare-instantly.png",
+      imageAlt: "Instant comparison",
+    },
+    {
+      title: "Plan your session",
+      subtitle: "See what games are exclusively owned by each of your friends.",
+      video: {
+        mp4:  "/panels/plan-session.mp4",
+        webm: "/panels/plan-session.webm",
+        poster: "/panels/plan-session.poster.jpg",
+      },
+      imageSrc: "/panels/plan-session.png",
+      imageAlt: "Planning a session",
+    },
+    {
+      title: "Click through to Steam",
+      subtitle: "Every card links to the Steam store page for your convenience.",
+      video: {
+        mp4:  "/panels/open-store.mp4",
+        webm: "/panels/open-store.webm",
+        poster: "/panels/open-store.poster.jpg",
+      },
+      imageSrc: "/panels/open-store.png",
+      imageAlt: "Open Steam store",
+    },
+  ];
+
+  return (
+    <section className="mt-14 sm:mt-16 px-3 sm:px-4 md:px-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+        {items.map((it, i) => (
+          <article key={i} className="text-left px-1 sm:px-2 md:px-1">
+            <h3 className="text-[18px] sm:text-xl font-semibold text-gray-100">{it.title}</h3>
+            <p className="mt-1 text-sm sm:text-base text-gray-400 max-w-prose">{it.subtitle}</p>
+
+            <div className="mt-4 sm:mt-5 rounded-[22px] p-[2px] bg-gradient-to-br from-white/10 via-white/5 to-transparent">
+              <div className="rounded-[20px] border border-white/10 bg-white/5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] overflow-hidden">
+                <div className="relative rounded-[18px] m-2 bg-gradient-to-b from-white/[0.08] to-white/[0.02] ring-1 ring-white/10 overflow-hidden">
+                  <div className="relative w-full aspect-[16/10] sm:aspect-[16/9]">
+                    {it.video ? (
+                      <Clip webm={it.video.webm} mp4={it.video.mp4} poster={it.video.poster} label={it.imageAlt} />
+                    ) : it.imageSrc ? (
+                      <img
+                        src={it.imageSrc}
+                        alt={it.imageAlt}
+                        className="absolute inset-0 h-full w-full object-cover rounded-[14px]"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 grid place-items-center rounded-[14px] border border-dashed border-white/15 text-gray-400 text-sm">
+                        Add media here
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full bg-white/[0.06] blur-2xl"
+                  />
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
 
 export default function Home() {
   const [user1, setUser1] = useState("");
@@ -121,119 +325,152 @@ export default function Home() {
       )}
 
       {/* ---------- HERO (spruced) ---------- */}
+      {/* LANDING (hero + form). Results logic stays untouched */}
       {!data && (
-        <header className="text-center mb-10">
-          <h1 className="text-6xl font-extralight tracking-tight drop-shadow-sm bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent">
-            We All Play
-          </h1>
-          <p className="mt-4 text-lg text-gray-400 max-w-xl mx-auto">
-            Find your next group game in seconds.&nbsp;
-            <span className="text-blue-400 font-medium">Less Searching. More Playing.</span>
-          </p>
-        </header>
-      )}
+  <>
+    {/* background */}
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 -z-10 opacity-70"
+      style={{
+        background:
+          "radial-gradient(1200px 600px at 50% -10%, rgba(59,130,246,0.18), transparent 60%), radial-gradient(800px 400px at 20% 20%, rgba(147,197,253,0.12), transparent 60%), radial-gradient(900px 500px at 80% 10%, rgba(99,102,241,0.12), transparent 60%)",
+      }}
+    />
 
-      {/* ---------- FORM CARD (spruced, logic unchanged) ---------- */}
-      {!data && (
-        <>
-          <div className="w-full max-w-3xl mx-auto rounded-3xl bg-white/5 backdrop-blur border border-white/10 shadow-xl shadow-black/20 p-5 sm:p-6">
-            <form onSubmit={handleCompare}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {/* hero */}
+    <header className="w-full text-center pt-16 sm:pt-24">
+      <h1 className="text-[44px] sm:text-6xl md:text-7xl font-extralight leading-[1.08] tracking-[-0.02em]
+                     bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent drop-shadow-sm">
+        Compare Steam libraries instantly
+      </h1>
+      <p className="mt-4 text-[15px] sm:text-lg text-gray-300 max-w-2xl mx-auto">
+        Find shared games, uncover unique titles, and plan your next co-op adventure in seconds.
+      </p>
+      <div className="mt-6 h-px w-28 mx-auto bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+    </header>
 
-                {/* You */}
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
-                      <path d="M10 14a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M14 10a5 5 0 0 1 0 7L12.5 18.5a5 5 0 1 1-7-7L7 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </span>
-                  <input
-                    value={user1}
-                    onChange={(e) => setUser1(e.target.value)}
-                    placeholder="Your Steam64 ID or Profile URL"
-                    className="w-full pl-9 pr-3 py-3 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                    required
-                  />
-                  <div className="mt-1 text-[11px] text-gray-400">Example: 7656119… or https://steamcommunity.com/id/you</div>
-                </div>
-
-                {/* Friend 1 */}
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
-                      <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M4 19a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                  </span>
-                  <input
-                    value={user2}
-                    onChange={(e) => setUser2(e.target.value)}
-                    placeholder="Friend 1 Steam64 ID or Profile URL"
-                    className="w-full pl-9 pr-3 py-3 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                    required
-                  />
-                  <div className="mt-1 text-[11px] text-gray-400">They must have game details set to Public.</div>
-                </div>
-
-                {/* Friend 2 (optional) */}
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
-                      <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M4 19a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                  </span>
-                  <input
-                    value={user3}
-                    onChange={(e) => setUser3(e.target.value)}
-                    placeholder="Friend 2 (optional)"
-                    className="w-full pl-9 pr-3 py-3 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                  />
-                </div>
-
-                {/* Friend 3 (optional) */}
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
-                      <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M4 19a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                  </span>
-                  <input
-                    value={user4}
-                    onChange={(e) => setUser4(e.target.value)}
-                    placeholder="Friend 3 (optional)"
-                    className="w-full pl-9 pr-3 py-3 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-end gap-3">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-6 py-3 rounded-2xl font-medium bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all duration-150 disabled:opacity-60 active:translate-y-px"
-                >
-                  {loading ? "Loading..." : "Compare"}
-                </button>
-              </div>
-            </form>
-
-            <div className="mt-3 text-center">
-              <button
-                onClick={() => setShowHelp(true)}
-                className="text-sm text-gray-400 hover:text-blue-400 underline underline-offset-4 decoration-white/20"
-                type="button"
-              >
-                How to find your Steam64 ID?
-              </button>
-            </div>
+    {/* form card */}
+    <div className="w-full max-w-3xl mx-auto mt-10 sm:mt-12 rounded-3xl bg-white/5 backdrop-blur border border-white/10 shadow-xl shadow-black/20 p-6 sm:p-8">
+      <form
+        onSubmit={(e) => {
+          // quick visibility check
+          console.log("[submit] compare clicked");
+          handleCompare(e);
+        }}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          {/* You */}
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
+                <path d="M10 14a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M14 10a5 5 0 0 1 0 7L12.5 18.5a5 5 0 1 1-7-7L7 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </span>
+            <input
+              value={user1}
+              onChange={(e) => setUser1(e.target.value)}
+              placeholder="Your Steam64 ID or Profile URL"
+              className="w-full pl-9 pr-3 py-3.5 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+              required
+            />
+            <div className="mt-1.5 text-[11px] text-gray-400">Example: 7656119… or steamcommunity.com/id/you</div>
           </div>
 
-          {error && <p className="text-red-500 mt-4">{error}</p>}
-        </>
-      )}
+          {/* Friend 1 */}
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
+                <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M4 19a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </span>
+            <input
+              value={user2}
+              onChange={(e) => setUser2(e.target.value)}
+              placeholder="Friend 1 Steam64 ID or Profile URL"
+              className="w-full pl-9 pr-3 py-3.5 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+              required
+            />
+            <div className="mt-1.5 text-[11px] text-gray-400">They must have “Game details” set to Public.</div>
+          </div>
+
+          {/* Friend 2 (optional) */}
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
+                <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M4 19a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </span>
+            <input
+              value={user3}
+              onChange={(e) => setUser3(e.target.value)}
+              placeholder="Friend 2 (optional)"
+              className="w-full pl-9 pr-3 py-3.5 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+            />
+          </div>
+
+          {/* Friend 3 (optional) */}
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
+                <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M4 19a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </span>
+            <input
+              value={user4}
+              onChange={(e) => setUser4(e.target.value)}
+              placeholder="Friend 3 (optional)"
+              className="w-full pl-9 pr-3 py-3.5 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+            />
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-6 flex items-center justify-end">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full sm:w-auto px-7 sm:px-8 py-3.5 rounded-2xl font-medium
+                       bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500
+                       text-white shadow-xl shadow-blue-500/20 transition-all duration-150
+                       disabled:opacity-60 active:translate-y-px"
+          >
+            {loading ? "Loading..." : "Compare Now"}
+          </button>
+        </div>
+      </form>
+
+      {/* Help button (opens modal) */}
+      <div className="mt-3 text-center">
+        <button
+          onClick={() => setShowHelp(true)}
+          className="text-sm text-gray-400 hover:text-blue-400 underline underline-offset-4 decoration-white/20"
+          type="button"
+        >
+          How to find your Steam64 ID?
+        </button>
+      </div>
+
+      {/* reassurance */}
+      <p className="mt-4 text-xs sm:text-sm text-gray-400 text-center">
+        We don’t store your IDs or libraries — comparisons run in real time using public data.
+      </p>
+    </div>
+
+    {/* Panels below form */}
+    
+    <BigFeaturePanels />
+    <FeatureHighlights />
+    <WorksWithStrip />
+    <FAQSection />
+  </>
+)}
+
+
       {/* RESULTS HEADER */}
       {data && !loading && (
         <header className="w-full text-center mt-4 mb-10">
@@ -251,7 +488,6 @@ export default function Home() {
           <div className="mt-4 h-px w-24 mx-auto bg-gradient-to-r from-transparent via-white/25 to-transparent" />
         </header>
       )}
-
 
       {/* ---------- sticky participants bar (unchanged) ---------- */}
       {data && (
@@ -472,8 +708,7 @@ export default function Home() {
                         href={`https://store.steampowered.com/app/${g.appid}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="block"
-                        title="Open in Steam"
+                        className="block" title="Open in Steam"
                       >
                         <img
                           src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
@@ -524,8 +759,7 @@ export default function Home() {
                         href={`https://store.steampowered.com/app/${g.appid}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="block"
-                        title="Open in Steam"
+                        className="block" title="Open in Steam"
                       >
                         <img
                           src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
@@ -569,7 +803,6 @@ export default function Home() {
                   alt="Steam ID example showing URL with ID"
                   className="w-full"
                 />
-
             </p>
             <div className="bg-gray-100 dark:bg-white/10 text-sm rounded-lg p-3 mb-3 font-mono text-gray-800 dark:text-gray-100">
               76561198881424318
