@@ -63,8 +63,7 @@ export default function Home() {
     }
   }
 
-  /* ---------- tiny UI helpers ---------- */
-
+  /* ---------- tiny UI helpers (unchanged) ---------- */
   const Hours = ({ mins }) => (
     <span className="text-xs text-gray-400">{Math.round((mins || 0) / 60)} hrs</span>
   );
@@ -106,102 +105,155 @@ export default function Home() {
   }
 
   /* ---------- render ---------- */
-
   return (
     <main className="flex flex-col items-center justify-center w-full max-w-6xl px-6 py-20 text-center relative">
-      <header className="text-center mb-12">
-        <h1 className="text-6xl font-extralight tracking-tight text-gray-900 dark:text-gray-100 drop-shadow-sm">
-          We All Play
-        </h1>
-        <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-          Find your next group game in seconds.
-          <span className="text-blue-500 font-medium"> Less Searching. More Playing.</span>
-        </p>
-        <div className="mt-3 h-[1px] w-24 mx-auto bg-gradient-to-r from-transparent via-blue-500/60 to-transparent"></div>
-      </header>
 
-      {/* ---------- form ---------- */}
+      {/* Radial background only on landing */}
+      {!data && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 opacity-70"
+          style={{
+            background:
+              "radial-gradient(1200px 600px at 50% -10%, rgba(59,130,246,0.18), transparent 60%), radial-gradient(800px 400px at 20% 20%, rgba(147,197,253,0.12), transparent 60%), radial-gradient(900px 500px at 80% 10%, rgba(99,102,241,0.12), transparent 60%)",
+          }}
+        />
+      )}
+
+      {/* ---------- HERO (spruced) ---------- */}
+      {!data && (
+        <header className="text-center mb-10">
+          <h1 className="text-6xl font-extralight tracking-tight drop-shadow-sm bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent">
+            We All Play
+          </h1>
+          <p className="mt-4 text-lg text-gray-400 max-w-xl mx-auto">
+            Find your next group game in seconds.&nbsp;
+            <span className="text-blue-400 font-medium">Less Searching. More Playing.</span>
+          </p>
+        </header>
+      )}
+
+      {/* ---------- FORM CARD (spruced, logic unchanged) ---------- */}
       {!data && (
         <>
-          <form
-            onSubmit={handleCompare}
-            className="flex flex-col sm:flex-row flex-wrap gap-4 w-full max-w-3xl justify-center mb-4"
-          >
-            <input
-              value={user1}
-              onChange={(e) => setUser1(e.target.value)}
-              placeholder="Your Steam64 ID or Custom URL"
-              className="flex-1 px-5 py-3 rounded-2xl border border-gray-300/40 dark:border-white/10 bg-white/60 dark:bg-white/10 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition"
-              required
-            />
-            <input
-              value={user2}
-              onChange={(e) => setUser2(e.target.value)}
-              placeholder="Friend 1 Steam64 ID or Custom URL"
-              className="flex-1 px-5 py-3 rounded-2xl border border-gray-300/40 dark:border-white/10 bg-white/60 dark:bg-white/10 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition"
-              required
-            />
-            <input
-              value={user3}
-              onChange={(e) => setUser3(e.target.value)}
-              placeholder="Friend 2 (optional)"
-              className="flex-1 px-5 py-3 rounded-2xl border border-gray-300/40 dark:border-white/10 bg-white/60 dark:bg-white/10 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition"
-            />
-            <input
-              value={user4}
-              onChange={(e) => setUser4(e.target.value)}
-              placeholder="Friend 3 (optional)"
-              className="flex-1 px-5 py-3 rounded-2xl border border-gray-300/40 dark:border-white/10 bg-white/60 dark:bg-white/10 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-3 rounded-2xl font-medium bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all duration-150 disabled:opacity-60"
-            >
-              {loading ? "Loading..." : "Compare"}
-            </button>
-          </form>
+          <div className="w-full max-w-3xl mx-auto rounded-3xl bg-white/5 backdrop-blur border border-white/10 shadow-xl shadow-black/20 p-5 sm:p-6">
+            <form onSubmit={handleCompare}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-          <button
-            onClick={() => setShowHelp(true)}
-            className="text-sm text-gray-600 dark:text-gray-300 underline hover:text-blue-500 transition"
-          >
-            How to find your Steam64 ID?
-          </button>
-
-          {showHelp && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-[#1b1d1f] p-6 rounded-2xl max-w-md text-left shadow-xl border border-white/10">
-                <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
-                  Finding your Steam64 ID
-                </h2>
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
-                  Open your Steam client or go to your Steam profile in a browser.
-                  Your Steam64 ID is the number in the URL — for example:
-                </p>
-                <div className="bg-gray-100 dark:bg-white/10 text-sm rounded-lg p-3 mb-3 font-mono text-gray-800 dark:text-gray-100">
-                  76561198881424318
+                {/* You */}
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
+                      <path d="M10 14a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M14 10a5 5 0 0 1 0 7L12.5 18.5a5 5 0 1 1-7-7L7 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  <input
+                    value={user1}
+                    onChange={(e) => setUser1(e.target.value)}
+                    placeholder="Your Steam64 ID or Profile URL"
+                    className="w-full pl-9 pr-3 py-3 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    required
+                  />
+                  <div className="mt-1 text-[11px] text-gray-400">Example: 7656119… or https://steamcommunity.com/id/you</div>
                 </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  You can also paste your full Steam profile link — we’ll handle it automatically.
-                </p>
-                <div className="flex justify-end mt-4">
-                  <button
-                    onClick={() => setShowHelp(false)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition"
-                  >
-                    Got it
-                  </button>
+
+                {/* Friend 1 */}
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
+                      <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M4 19a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </span>
+                  <input
+                    value={user2}
+                    onChange={(e) => setUser2(e.target.value)}
+                    placeholder="Friend 1 Steam64 ID or Profile URL"
+                    className="w-full pl-9 pr-3 py-3 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    required
+                  />
+                  <div className="mt-1 text-[11px] text-gray-400">They must have game details set to Public.</div>
+                </div>
+
+                {/* Friend 2 (optional) */}
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
+                      <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M4 19a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </span>
+                  <input
+                    value={user3}
+                    onChange={(e) => setUser3(e.target.value)}
+                    placeholder="Friend 2 (optional)"
+                    className="w-full pl-9 pr-3 py-3 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                  />
+                </div>
+
+                {/* Friend 3 (optional) */}
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-80">
+                      <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M4 19a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </span>
+                  <input
+                    value={user4}
+                    onChange={(e) => setUser4(e.target.value)}
+                    placeholder="Friend 3 (optional)"
+                    className="w-full pl-9 pr-3 py-3 rounded-2xl border border-white/10 bg-white/5 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                  />
                 </div>
               </div>
+
+              <div className="mt-4 flex items-center justify-end gap-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 rounded-2xl font-medium bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all duration-150 disabled:opacity-60 active:translate-y-px"
+                >
+                  {loading ? "Loading..." : "Compare"}
+                </button>
+              </div>
+            </form>
+
+            <div className="mt-3 text-center">
+              <button
+                onClick={() => setShowHelp(true)}
+                className="text-sm text-gray-400 hover:text-blue-400 underline underline-offset-4 decoration-white/20"
+                type="button"
+              >
+                How to find your Steam64 ID?
+              </button>
             </div>
-          )}
+          </div>
 
           {error && <p className="text-red-500 mt-4">{error}</p>}
         </>
       )}
+      {/* RESULTS HEADER */}
+      {data && !loading && (
+        <header className="w-full text-center mt-4 mb-10">
+          <h1 className="font-extralight leading-[1.1] tracking-[-0.02em]
+                        text-[42px] sm:text-6xl md:text-7xl
+                        bg-gradient-to-r from-white via-white/90 to-white/70
+                        bg-clip-text text-transparent drop-shadow-sm">
+            We All Play
+          </h1>
 
-      {/* ---------- sticky participants bar ---------- */}
+          <p className="mt-3 text-base sm:text-lg text-gray-300">
+            Here’s what you can play <span className="text-blue-400 font-medium">together.</span>
+          </p>
+
+          <div className="mt-4 h-px w-24 mx-auto bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+        </header>
+      )}
+
+
+      {/* ---------- sticky participants bar (unchanged) ---------- */}
       {data && (
         <div className="sticky top-4 z-10 mb-4 self-start">
           <div className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/10 backdrop-blur border border-white/10">
@@ -217,7 +269,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ---------- loading skeletons ---------- */}
+      {/* ---------- loading skeletons (unchanged) ---------- */}
       {loading && (
         <div className="w-full mt-6 space-y-6">
           {[...Array(3)].map((_, s) => (
@@ -234,7 +286,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ---------- results ---------- */}
+      {/* ---------- results (completely unchanged) ---------- */}
       {data && !loading && (
         <div className="w-full mt-6 space-y-6">
           {/* Shared */}
@@ -499,6 +551,35 @@ export default function Home() {
           >
             Compare Again
           </button>
+        </div>
+      )}
+
+      {/* Help modal (unchanged) */}
+      {showHelp && !data && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#1b1d1f] p-6 rounded-2xl max-w-md text-left shadow-xl border border-white/10">
+            <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+              Finding your Steam64 ID
+            </h2>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
+              Open your Steam client or go to your Steam profile in a browser.
+              Your Steam64 ID is the number in the URL — for example:
+            </p>
+            <div className="bg-gray-100 dark:bg-white/10 text-sm rounded-lg p-3 mb-3 font-mono text-gray-800 dark:text-gray-100">
+              76561198881424318
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              You can also paste your full Steam profile link — we’ll handle it automatically.
+            </p>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowHelp(false)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>
