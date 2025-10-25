@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function Home() {
   const [user1, setUser1] = useState("");
@@ -31,12 +31,10 @@ export default function Home() {
     setError("");
     setData(null);
 
-    // Need at least two valid inputs
     if (!validateInput(user1) || !validateInput(user2)) {
       setError("Please enter valid Steam64 IDs or profile URLs for the first two fields.");
       return;
     }
-    // Optional but if present must be valid
     if (!validateInput(user3) || !validateInput(user4)) {
       setError("Friend 2 or Friend 3 have invalid IDs.");
       return;
@@ -55,6 +53,9 @@ export default function Home() {
       }
       const json = await res.json();
       setData(json);
+
+      // expand Shared by default on first load
+      setExpanded((p) => ({ ...p, shared: true }));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -62,9 +63,49 @@ export default function Home() {
     }
   }
 
+  /* ---------- tiny UI helpers ---------- */
+
   const Hours = ({ mins }) => (
     <span className="text-xs text-gray-400">{Math.round((mins || 0) / 60)} hrs</span>
   );
+
+  const Avatar = ({ src, alt }) =>
+    src ? (
+      <img
+        src={src}
+        alt={alt || ""}
+        className="h-6 w-6 rounded-full ring-1 ring-white/20 object-cover"
+      />
+    ) : null;
+
+  function SkeletonCard() {
+    return (
+      <div className="rounded-lg bg-white/10 p-2 animate-pulse">
+        <div className="h-[87px] w-full bg-white/10 rounded mb-2"></div>
+        <div className="h-3 w-3/4 bg-white/10 rounded"></div>
+      </div>
+    );
+  }
+
+  const SharedHoursRow = (g) => {
+    const parts = [<Hours key="u1" mins={g.user1_playtime} />];
+    if (data?.usernames?.[1]) parts.push(<span key="s1"> | </span>, <Hours key="u2" mins={g.user2_playtime} />);
+    if (data?.usernames?.[2]) parts.push(<span key="s2"> | </span>, <Hours key="u3" mins={g.user3_playtime} />);
+    if (data?.usernames?.[3]) parts.push(<span key="s3"> | </span>, <Hours key="u4" mins={g.user4_playtime} />);
+    return <p className="text-xs text-gray-400">{parts}</p>;
+  };
+
+  function HeaderChip({ color, avatar, label, count }) {
+    return (
+      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10`}>
+        {avatar && <img src={avatar} alt="" className="h-6 w-6 rounded-full ring-1 ring-white/20" />}
+        <span className={`font-medium`} style={{ color }}>{label}</span>
+        <span className="text-xs px-2 py-[2px] rounded-full bg-white/10">{count}</span>
+      </span>
+    );
+  }
+
+  /* ---------- render ---------- */
 
   return (
     <main className="flex flex-col items-center justify-center w-full max-w-6xl px-6 py-20 text-center relative">
@@ -79,6 +120,7 @@ export default function Home() {
         <div className="mt-3 h-[1px] w-24 mx-auto bg-gradient-to-r from-transparent via-blue-500/60 to-transparent"></div>
       </header>
 
+      {/* ---------- form ---------- */}
       {!data && (
         <>
           <form
@@ -159,13 +201,52 @@ export default function Home() {
         </>
       )}
 
+      {/* ---------- sticky participants bar ---------- */}
       {data && (
-        <div className="w-full mt-12 space-y-6">
-          {/* Shared Games */}
+        <div className="sticky top-4 z-10 mb-4 self-start">
+          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/10 backdrop-blur border border-white/10">
+            {[0,1,2,3].map(i =>
+              data.avatars?.[i] ? (
+                <img key={i} src={data.avatars[i]} alt={data.usernames?.[i] ?? ""} className="h-7 w-7 rounded-full ring-1 ring-white/20" />
+              ) : null
+            )}
+            <span className="text-sm text-gray-300 ml-1">
+              {(data.usernames || []).filter(Boolean).join(" • ")}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- loading skeletons ---------- */}
+      {loading && (
+        <div className="w-full mt-6 space-y-6">
+          {[...Array(3)].map((_, s) => (
+            <div key={s} className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
+              <div className="flex justify-between items-center mb-4">
+                <div className="h-6 w-48 bg-white/10 rounded animate-pulse" />
+                <div className="h-5 w-16 bg-white/10 rounded animate-pulse" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-2">
+                {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ---------- results ---------- */}
+      {data && !loading && (
+        <div className="w-full mt-6 space-y-6">
+          {/* Shared */}
           <div className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-blue-400">
-                Shared Games ({data.shared?.length || 0})
+                <HeaderChip
+                  color="#60A5FA"
+                  avatar={null}
+                  label="Shared Games"
+                  count={data.shared?.length || 0}
+                />
               </h2>
               <button
                 className="text-sm text-gray-400 hover:text-blue-400"
@@ -178,26 +259,28 @@ export default function Home() {
             {expanded.shared && (
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
                 {(data.shared || []).map((g, i) => (
-                  <div key={i} className="flex flex-col items-center bg-white/10 p-2 rounded-lg">
-                    <img
-                      src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
-                      alt={g.name}
-                      className="rounded mb-2"
-                    />
+                  <div
+                    key={i}
+                    className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                  >
+                    <a
+                      href={`https://store.steampowered.com/app/${g.appid}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block"
+                      title="Open in Steam"
+                    >
+                      <img
+                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
+                        alt={`${g.name} cover art`}
+                        className="rounded mb-2"
+                        loading="lazy"
+                      />
+                    </a>
                     <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
                       {g.name}
                     </p>
-                    {/* hours for each included user */}
-                    <p className="text-xs text-gray-400">
-                      {/* user1 */}
-                      <Hours mins={g.user1_playtime} />
-                      {/* user2 */}
-                      {data.usernames?.[1] && <> | <Hours mins={g.user2_playtime} /></>}
-                      {/* user3 */}
-                      {data.usernames?.[2] && <> | <Hours mins={g.user3_playtime} /></>}
-                      {/* user4 */}
-                      {data.usernames?.[3] && <> | <Hours mins={g.user4_playtime} /></>}
-                    </p>
+                    {SharedHoursRow(g)}
                   </div>
                 ))}
               </div>
@@ -208,7 +291,12 @@ export default function Home() {
           <div className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-green-400">
-                Only {data.usernames?.[0] ?? "You"} ({data.onlyYou?.length || 0})
+                <HeaderChip
+                  color="#34D399"
+                  avatar={data.avatars?.[0]}
+                  label={`Only ${data.usernames?.[0] ?? "You"}`}
+                  count={data.onlyYou?.length || 0}
+                />
               </h2>
               <button
                 className="text-sm text-gray-400 hover:text-green-400"
@@ -221,12 +309,24 @@ export default function Home() {
             {expanded.onlyYou && (
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
                 {(data.onlyYou || []).map((g, i) => (
-                  <div key={i} className="flex flex-col items-center bg-white/10 p-2 rounded-lg">
-                    <img
-                      src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
-                      alt={g.name}
-                      className="rounded mb-2"
-                    />
+                  <div
+                    key={i}
+                    className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                  >
+                    <a
+                      href={`https://store.steampowered.com/app/${g.appid}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block"
+                      title="Open in Steam"
+                    >
+                      <img
+                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
+                        alt={`${g.name} cover art`}
+                        className="rounded mb-2"
+                        loading="lazy"
+                      />
+                    </a>
                     <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
                       {g.name}
                     </p>
@@ -242,13 +342,16 @@ export default function Home() {
             <div className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-pink-400">
-                  Only {data.usernames?.[1]} ({data.onlyFriend1?.length || 0})
+                  <HeaderChip
+                    color="#F472B6"
+                    avatar={data.avatars?.[1]}
+                    label={`Only ${data.usernames?.[1]}`}
+                    count={data.onlyFriend1?.length || 0}
+                  />
                 </h2>
                 <button
                   className="text-sm text-gray-400 hover:text-pink-400"
-                  onClick={() =>
-                    setExpanded((p) => ({ ...p, onlyFriend1: !p.onlyFriend1 }))
-                  }
+                  onClick={() => setExpanded((p) => ({ ...p, onlyFriend1: !p.onlyFriend1 }))}
                 >
                   {expanded.onlyFriend1 ? "▾ Hide" : "▸ Show"}
                 </button>
@@ -257,12 +360,24 @@ export default function Home() {
               {expanded.onlyFriend1 && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
                   {(data.onlyFriend1 || []).map((g, i) => (
-                    <div key={i} className="flex flex-col items-center bg-white/10 p-2 rounded-lg">
-                      <img
-                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
-                        alt={g.name}
-                        className="rounded mb-2"
-                      />
+                    <div
+                      key={i}
+                      className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                    >
+                      <a
+                        href={`https://store.steampowered.com/app/${g.appid}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block"
+                        title="Open in Steam"
+                      >
+                        <img
+                          src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
+                          alt={`${g.name} cover art`}
+                          className="rounded mb-2"
+                          loading="lazy"
+                        />
+                      </a>
                       <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
                         {g.name}
                       </p>
@@ -279,13 +394,16 @@ export default function Home() {
             <div className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-yellow-400">
-                  Only {data.usernames?.[2]} ({data.onlyFriend2?.length || 0})
+                  <HeaderChip
+                    color="#FBBF24"
+                    avatar={data.avatars?.[2]}
+                    label={`Only ${data.usernames?.[2]}`}
+                    count={data.onlyFriend2?.length || 0}
+                  />
                 </h2>
                 <button
                   className="text-sm text-gray-400 hover:text-yellow-400"
-                  onClick={() =>
-                    setExpanded((p) => ({ ...p, onlyFriend2: !p.onlyFriend2 }))
-                  }
+                  onClick={() => setExpanded((p) => ({ ...p, onlyFriend2: !p.onlyFriend2 }))}
                 >
                   {expanded.onlyFriend2 ? "▾ Hide" : "▸ Show"}
                 </button>
@@ -294,12 +412,24 @@ export default function Home() {
               {expanded.onlyFriend2 && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
                   {(data.onlyFriend2 || []).map((g, i) => (
-                    <div key={i} className="flex flex-col items-center bg-white/10 p-2 rounded-lg">
-                      <img
-                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
-                        alt={g.name}
-                        className="rounded mb-2"
-                      />
+                    <div
+                      key={i}
+                      className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                    >
+                      <a
+                        href={`https://store.steampowered.com/app/${g.appid}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block"
+                        title="Open in Steam"
+                      >
+                        <img
+                          src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
+                          alt={`${g.name} cover art`}
+                          className="rounded mb-2"
+                          loading="lazy"
+                        />
+                      </a>
                       <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
                         {g.name}
                       </p>
@@ -316,13 +446,16 @@ export default function Home() {
             <div className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-purple-400">
-                  Only {data.usernames?.[3]} ({data.onlyFriend3?.length || 0})
+                  <HeaderChip
+                    color="#A78BFA"
+                    avatar={data.avatars?.[3]}
+                    label={`Only ${data.usernames?.[3]}`}
+                    count={data.onlyFriend3?.length || 0}
+                  />
                 </h2>
                 <button
                   className="text-sm text-gray-400 hover:text-purple-400"
-                  onClick={() =>
-                    setExpanded((p) => ({ ...p, onlyFriend3: !p.onlyFriend3 }))
-                  }
+                  onClick={() => setExpanded((p) => ({ ...p, onlyFriend3: !p.onlyFriend3 }))}
                 >
                   {expanded.onlyFriend3 ? "▾ Hide" : "▸ Show"}
                 </button>
@@ -331,12 +464,24 @@ export default function Home() {
               {expanded.onlyFriend3 && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
                   {(data.onlyFriend3 || []).map((g, i) => (
-                    <div key={i} className="flex flex-col items-center bg-white/10 p-2 rounded-lg">
-                      <img
-                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
-                        alt={g.name}
-                        className="rounded mb-2"
-                      />
+                    <div
+                      key={i}
+                      className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                    >
+                      <a
+                        href={`https://store.steampowered.com/app/${g.appid}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block"
+                        title="Open in Steam"
+                      >
+                        <img
+                          src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
+                          alt={`${g.name} cover art`}
+                          className="rounded mb-2"
+                          loading="lazy"
+                        />
+                      </a>
                       <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
                         {g.name}
                       </p>

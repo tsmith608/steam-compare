@@ -62,10 +62,15 @@ function intersectSets(a, b) {
   return res;
 }
 
-// Fetch display names for provided IDs (preserve positional order)
-async function fetchUsernames(idsInOrder) {
+// Fetch display names + avatars for provided IDs (preserve positional order)
+async function fetchProfiles(idsInOrder) {
   const steamids = idsInOrder.filter(Boolean);
-  if (steamids.length === 0) return idsInOrder.map(() => null);
+  if (steamids.length === 0) {
+    return {
+      usernames: idsInOrder.map(() => null),
+      avatars: idsInOrder.map(() => null),
+    };
+  }
 
   const res = await fetch(
     `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${API_KEY}&steamids=${steamids.join(
@@ -74,8 +79,16 @@ async function fetchUsernames(idsInOrder) {
   );
   const data = await res.json();
   const players = data?.response?.players || [];
-  const nameById = new Map(players.map((p) => [String(p.steamid), p.personaname]));
-  return idsInOrder.map((id) => (id ? nameById.get(String(id)) || id : null));
+  const byId = new Map(players.map((p) => [String(p.steamid), p]));
+
+  const usernames = idsInOrder.map((id) =>
+    id ? byId.get(String(id))?.personaname || id : null
+  );
+  const avatars = idsInOrder.map((id) =>
+    id ? byId.get(String(id))?.avatarfull || byId.get(String(id))?.avatar || null : null
+  );
+
+  return { usernames, avatars };
 }
 
 /* -------------------------------- Route -------------------------------- */
@@ -100,8 +113,8 @@ export async function POST(req) {
       );
     }
 
-    // Get usernames (personaname) aligned to [id1..id4]
-    const usernames = await fetchUsernames([id1, id2, id3, id4]);
+    // Profiles (names + avatars)
+    const { usernames, avatars } = await fetchProfiles([id1, id2, id3, id4]);
 
     // Fetch libraries in the same order
     const [games1, games2, games3, games4] = await Promise.all([
@@ -193,6 +206,7 @@ export async function POST(req) {
       onlyFriend2,
       onlyFriend3,
       usernames, // [you, friend1, friend2, friend3] (null where not provided)
+      avatars,   // [you, friend1, friend2, friend3] (null where not provided)
     });
   } catch (err) {
     console.error("[API /compare Error]", err);
