@@ -162,7 +162,10 @@ function BigFeaturePanels() {
   ];
 
   return (
-  <section className="mt-14 sm:mt-16 px-3 sm:px-4 md:px-0">
+    <section
+     id="features"
+     className="mt-14 sm:mt-16 px-3 sm:px-4 md:px-0 scroll-mt-32 sm:scroll-mt-40"
+    >
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-y-12">
       {items.map((it, i) => (
         <article key={i} className="group text-left px-1 sm:px-2 md:px-1">
@@ -332,7 +335,7 @@ export default function Home() {
 
   /* ---------- render ---------- */
   return (
-    <main className="flex flex-col items-center justify-center w-full max-w-6xl px-6 py-20 text-center relative">
+    <main className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-6 py-20 text-center relative">
 
       {/* Radial background only on landing */}
       {!data && (
@@ -350,16 +353,6 @@ export default function Home() {
       {/* LANDING (hero + form). Results logic stays untouched */}
       {!data && (
   <>
-    {/* background */}
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 -z-10 opacity-70"
-      style={{
-        background:
-          "radial-gradient(1200px 600px at 50% -10%, rgba(59,130,246,0.18), transparent 60%), radial-gradient(800px 400px at 20% 20%, rgba(147,197,253,0.12), transparent 60%), radial-gradient(900px 500px at 80% 10%, rgba(99,102,241,0.12), transparent 60%)",
-      }}
-    />
-
     {/* hero */}
     <header className="w-full text-center pt-16 sm:pt-24">
       <h1 className="text-[44px] sm:text-6xl md:text-7xl font-extralight leading-[1.08] tracking-[-0.02em]
