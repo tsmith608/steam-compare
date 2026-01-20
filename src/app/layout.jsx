@@ -1,7 +1,7 @@
 import "./globals.css";
 import SiteHeader from "./SiteHeader";
 
-export const metadata = { 
+export const metadata = {
   title: "We Both Play",
   icons: {
     icon: [
@@ -14,8 +14,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className="bg-[#0d0f11] text-white antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased" suppressHydrationWarning>
         <SiteHeader />
         {children}
       </body>
