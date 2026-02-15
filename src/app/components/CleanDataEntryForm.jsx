@@ -150,7 +150,7 @@ export default function CleanDataEntryForm({
                                    border border-white/10 shadow-lg shadow-black/20
                                    transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? "Analyzing Library..." : "Compare Manually"}
+                        {loading ? "Analyzing Library..." : "Compare"}
                     </button>
 
                     <button

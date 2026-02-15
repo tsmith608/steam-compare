@@ -35,12 +35,24 @@ export const metadata = {
     ],
     apple: "/apple-icon.png",
   },
+  other: {
+    "google-adsense-account": "ca-pub-5774226834741887",
+    "impact-site-verification": "a9cefe9f-8aad-4a52-a4c2-195be9478964", // CDKeys (Impact Radius) verification
+  },
 };
+
+import Script from "next/script";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5774226834741887"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <SiteHeader />
         {children}
       </body>

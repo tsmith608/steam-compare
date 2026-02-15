@@ -13,6 +13,13 @@ import SiteFooter from "./components/SiteFooter";
 
 
 
+const getAffiliateLink = (gameName) => {
+  const encoded = encodeURIComponent(gameName);
+  // CDKeys Search URL with affiliate tracking (placeholder ID 'steamcompare')
+  // Using CDKeys avoids "account selling" risks common on G2A.
+  return `https://www.cdkeys.com/catalogsearch/result/?q=${encoded}&utm_source=steamcompare&utm_medium=affiliate&utm_campaign=search`;
+};
+
 export default function Home() {
   const [user1, setUser1] = useState("");
   const [user2, setUser2] = useState("");
@@ -289,11 +296,11 @@ export default function Home() {
                       className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
                     >
                       <a
-                        href={`https://store.steampowered.com/app/${g.appid}`}
+                        href={getAffiliateLink(g.name)}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="block"
-                        title="Open in Steam"
+                        title="Find cheap key on CDKeys"
                       >
                         <img
                           src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
@@ -339,11 +346,11 @@ export default function Home() {
                       className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
                     >
                       <a
-                        href={`https://store.steampowered.com/app/${g.appid}`}
+                        href={getAffiliateLink(g.name)}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="block"
-                        title="Open in Steam"
+                        title="Find cheap key on CDKeys"
                       >
                         <img
                           src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
@@ -352,6 +359,22 @@ export default function Home() {
                           loading="lazy"
                         />
                       </a>
+                      <div className="flex items-center justify-between gap-2 w-full px-1">
+                        <span className="text-[10px] font-semibold text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded border border-green-500/20 truncate">
+                          {g.name}
+                        </span>
+                        <a
+                          href={getAffiliateLink(g.name)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-blue-600 hover:bg-blue-500 text-white p-1 roundedshadow transition-colors shrink-0"
+                          title="Find cheap key on CDKeys"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
+                        </a>
+                      </div>
+
                       <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
                         {g.name}
                       </p>
@@ -390,11 +413,11 @@ export default function Home() {
                         className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
                       >
                         <a
-                          href={`https://store.steampowered.com/app/${g.appid}`}
+                          href={getAffiliateLink(g.name)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="block"
-                          title="Open in Steam"
+                          title="Find cheap key on CDKeys"
                         >
                           <img
                             src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
@@ -403,9 +426,21 @@ export default function Home() {
                             loading="lazy"
                           />
                         </a>
-                        <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
-                          {g.name}
-                        </p>
+                        <div className="flex items-center justify-between gap-2 w-full px-1 mb-1">
+                          <span className="text-[10px] font-semibold text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded border border-green-500/20 truncate">
+                            {g.name}
+                          </span>
+                          <a
+                            href={getAffiliateLink(g.name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-blue-600 hover:bg-blue-500 text-white p-1 rounded shadow transition-colors shrink-0"
+                            title="Find cheap key on CDKeys"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
+                          </a>
+                        </div>
                         <Hours mins={g.playtime_forever} />
                       </div>
                     ))}
@@ -442,10 +477,11 @@ export default function Home() {
                         className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
                       >
                         <a
-                          href={`https://store.steampowered.com/app/${g.appid}`}
+                          href={getAffiliateLink(g.name)}
                           target="_blank"
-                          rel="noreferrer"
-                          className="block" title="Open in Steam"
+                          rel="noopener noreferrer"
+                          className="block"
+                          title="Find cheap key on CDKeys"
                         >
                           <img
                             src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
@@ -454,6 +490,21 @@ export default function Home() {
                             loading="lazy"
                           />
                         </a>
+                        <div className="flex items-center justify-between gap-2 w-full px-1 mb-1">
+                          <span className="text-[10px] font-semibold text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded border border-green-500/20 truncate">
+                            {g.name}
+                          </span>
+                          <a
+                            href={getAffiliateLink(g.name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-blue-600 hover:bg-blue-500 text-white p-1 rounded shadow transition-colors shrink-0"
+                            title="Find cheap key on CDKeys"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
+                          </a>
+                        </div>
                         <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
                           {g.name}
                         </p>
@@ -461,60 +512,76 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
-                )}
+                )
+                }
               </div>
             )}
 
             {/* Only Friend 3 */}
-            {data.usernames?.[3] && (
-              <div className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold text-purple-400">
-                    <HeaderChip
-                      color="#A78BFA"
-                      avatar={data.avatars?.[3]}
-                      label={`Only ${data.usernames?.[3]}`}
-                      count={data.onlyFriend3?.length || 0}
-                    />
-                  </h2>
-                  <button
-                    className="text-sm text-gray-400 hover:text-purple-400"
-                    onClick={() => setExpanded((p) => ({ ...p, onlyFriend3: !p.onlyFriend3 }))}
-                  >
-                    {expanded.onlyFriend3 ? "▾ Hide" : "▸ Show"}
-                  </button>
-                </div>
-
-                {expanded.onlyFriend3 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
-                    {(data.onlyFriend3 || []).map((g, i) => (
-                      <div
-                        key={i}
-                        className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
-                      >
-                        <a
-                          href={`https://store.steampowered.com/app/${g.appid}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block" title="Open in Steam"
-                        >
-                          <img
-                            src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
-                            alt={`${g.name} cover art`}
-                            className="rounded mb-2"
-                            loading="lazy"
-                          />
-                        </a>
-                        <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
-                          {g.name}
-                        </p>
-                        <Hours mins={g.playtime_forever} />
-                      </div>
-                    ))}
+            {
+              data.usernames?.[3] && (
+                <div className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-purple-400">
+                      <HeaderChip
+                        color="#A78BFA"
+                        avatar={data.avatars?.[3]}
+                        label={`Only ${data.usernames?.[3]}`}
+                        count={data.onlyFriend3?.length || 0}
+                      />
+                    </h2>
+                    <button
+                      className="text-sm text-gray-400 hover:text-purple-400"
+                      onClick={() => setExpanded((p) => ({ ...p, onlyFriend3: !p.onlyFriend3 }))}
+                    >
+                      {expanded.onlyFriend3 ? "▾ Hide" : "▸ Show"}
+                    </button>
                   </div>
-                )}
-              </div>
-            )}
+
+                  {expanded.onlyFriend3 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
+                      {(data.onlyFriend3 || []).map((g, i) => (
+                        <div
+                          key={i}
+                          className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                        >
+                          <a
+                            href={getAffiliateLink(g.name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block"
+                            title="Find cheap key on CDKeys"
+                          >
+                            <img
+                              src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
+                              alt={`${g.name} cover art`}
+                              className="rounded mb-2"
+                              loading="lazy"
+                            />
+                          </a>
+                          <div className="flex items-center justify-between gap-2 w-full px-1 mb-1">
+                            <span className="text-[10px] font-semibold text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded border border-green-500/20 truncate">
+                              {g.name}
+                            </span>
+                            <a
+                              href={getAffiliateLink(g.name)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-blue-600 hover:bg-blue-500 text-white p-1 rounded shadow transition-colors shrink-0"
+                              title="Find cheap key on CDKeys"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
+                            </a>
+                          </div>
+                          <Hours mins={g.playtime_forever} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            }
 
             <button
               onClick={() => setData(null)}
@@ -525,74 +592,79 @@ export default function Home() {
           </div>
         )}
 
+
         {/* Help modal (unchanged) */}
-        {showHelp && !data && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-[#1b1d1f] p-6 rounded-2xl max-w-md text-left shadow-xl border border-white/10">
-              <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
-                Finding your Steam64 ID
-              </h2>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
-                Open your Steam client or go to your Steam profile in a browser.
-                Click on your profile name and look for a number like this in the URL:
-                <img
-                  src="/steam-id-example.png"
-                  alt="Steam ID example showing URL with ID"
-                  className="w-full"
-                />
-              </p>
-              <div className="bg-gray-100 dark:bg-white/10 text-sm rounded-lg p-3 mb-3 font-mono text-gray-800 dark:text-gray-100">
-                76561198881424318
-              </div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                You can also paste your full Steam profile link — we’ll handle it automatically.
-              </p>
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={() => setShowHelp(false)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition"
-                >
-                  Got it
-                </button>
+        {
+          showHelp && !data && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-[#1b1d1f] p-6 rounded-2xl max-w-md text-left shadow-xl border border-white/10">
+                <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                  Finding your Steam64 ID
+                </h2>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
+                  Open your Steam client or go to your Steam profile in a browser.
+                  Click on your profile name and look for a number like this in the URL:
+                  <img
+                    src="/steam-id-example.png"
+                    alt="Steam ID example showing URL with ID"
+                    className="w-full"
+                  />
+                </p>
+                <div className="bg-gray-100 dark:bg-white/10 text-sm rounded-lg p-3 mb-3 font-mono text-gray-800 dark:text-gray-100">
+                  76561198881424318
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  You can also paste your full Steam profile link — we’ll handle it automatically.
+                </p>
+                <div className="flex justify-end mt-4">
+                  <button
+                    onClick={() => setShowHelp(false)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition"
+                  >
+                    Got it
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* floating header that smooth-scrolls back to the form */}
-        {showSticky && !data && !loading && (
-          <div className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top)]">
-            <div className="mx-auto max-w-6xl px-3 sm:px-6">
-              <div className="mt-3 flex items-center justify-between gap-3
+        {
+          showSticky && !data && !loading && (
+            <div className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top)]">
+              <div className="mx-auto max-w-6xl px-3 sm:px-6">
+                <div className="mt-3 flex items-center justify-between gap-3
                             rounded-2xl border border-white/10
                             bg-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/30
                             shadow-lg shadow-black/20 px-3 py-2">
-                <div className="flex items-center gap-2 text-sm text-gray-200">
-                  <span className="hidden sm:inline">Wanna know what you both play?</span>
-                  <span className="sm:hidden">Compare</span>
-                </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-200">
+                    <span className="hidden sm:inline">Wanna know what you both play?</span>
+                    <span className="sm:hidden">Compare</span>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                    setHighlightForm(true);
-                    setTimeout(() => firstInputRef.current?.focus(), 450);
-                  }}
-                  className="px-5 py-2 rounded-xl font-medium
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                      setHighlightForm(true);
+                      setTimeout(() => firstInputRef.current?.focus(), 450);
+                    }}
+                    className="px-5 py-2 rounded-xl font-medium
                            bg-gradient-to-r from-blue-500 to-blue-600
                            hover:from-blue-400 hover:to-blue-500
                            text-white shadow-lg shadow-blue-500/20
                            transition-all duration-150 active:translate-y-px"
-                >
-                  Compare Now
-                </button>
+                  >
+                    Compare Now
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )
+        }
+      </div >
       <SiteFooter />
-    </main>
+    </main >
   );
 }
