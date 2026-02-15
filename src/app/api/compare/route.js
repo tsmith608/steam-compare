@@ -22,8 +22,8 @@ async function resolveSteamID(input) {
   const vanity = vanityMatch
     ? vanityMatch[1]
     : cleaned
-        .replace(/^https?:\/\/|www\.|steamcommunity\.com\/|id\/|profiles\//gi, "")
-        .split(/[/?#]/)[0];
+      .replace(/^https?:\/\/|www\.|steamcommunity\.com\/|id\/|profiles\//gi, "")
+      .split(/[/?#]/)[0];
 
   const res = await fetch(
     `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${API_KEY}&vanityurl=${encodeURIComponent(
@@ -95,7 +95,15 @@ async function fetchProfiles(idsInOrder) {
 
 export async function POST(req) {
   try {
-    const { user1, user2, user3, user4 } = await req.json();
+    const body = await req.json();
+
+    // Hardening: Sanitize inputs
+    const sanitize = (s) => (s || "").toString().trim().replace(/[<>"'%;()&+]/g, "");
+
+    const user1 = sanitize(body.user1);
+    const user2 = sanitize(body.user2);
+    const user3 = sanitize(body.user3);
+    const user4 = sanitize(body.user4);
 
     // Resolve in fixed order (you, friend1, friend2, friend3)
     const [id1, id2, id3, id4] = await Promise.all([
@@ -195,9 +203,7 @@ export async function POST(req) {
     const onlyFriend2 = id3 ? onlyFriend(m3, [m1, m2, m4]) : [];
     const onlyFriend3 = id4 ? onlyFriend(m4, [m1, m2, m3]) : [];
 
-    console.log(
-      `[Shared:${shared.length}] [OnlyYou:${onlyYou.length}] [F1:${onlyFriend1.length}] [F2:${onlyFriend2.length}] [F3:${onlyFriend3.length}]`
-    );
+
 
     return NextResponse.json({
       shared,
