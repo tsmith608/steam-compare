@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function SiteFooter() {
     return (
         <footer className="w-full bg-[#0a0a0c] border-t border-white/5 py-12 mt-32 relative overflow-hidden">
@@ -16,9 +18,9 @@ export default function SiteFooter() {
 
                 {/* Links - Placeholders for now */}
                 <nav className="flex gap-8 text-sm text-gray-400 font-medium">
-                    <button className="hover:text-white transition-colors cursor-not-allowed opacity-60">About</button>
-                    <button className="hover:text-white transition-colors cursor-not-allowed opacity-60">Privacy</button>
-                    <button className="hover:text-white transition-colors cursor-not-allowed opacity-60">Terms</button>
+                    <Link href="/about" className="hover:text-white transition-colors">About</Link>
+                    <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+                    <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
                 </nav>
 
                 {/* Copyright */}
