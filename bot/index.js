@@ -3,7 +3,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const fs = require('fs');
 const { Client, Collection, GatewayIntentBits, Events } = require('discord.js');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -21,6 +21,36 @@ for (const file of commandFiles) {
 
 client.once(Events.ClientReady, c => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
+});
+
+client.on(Events.GuildCreate, async guild => {
+    const welcomeCommand = client.commands.get('welcome');
+    if (welcomeCommand) {
+        // Try to find a channel to send the welcome message to
+        const channel = guild.systemChannel || guild.channels.cache.find(c => c.type === 0 && c.permissionsFor(guild.members.me).has('SendMessages'));
+        if (channel) {
+            // Mock interaction-like object or just send message
+            // Since execute expects interaction, we might want to refactor welcome logic or just construct a simplified message here.
+            // For simplicity, let's just send a message directly matching what /welcome does.
+            const welcomeText = `
+**Welcome to Steamer!** 🎮
+I'm here to help you and your friends find games to play together.
+
+**How to get started:**
+1.  **Link your Steam Account**:
+    Type \`/link\` (or \`/login\`) to securely link your Discord account to your Steam profile.
+    
+2.  **Compare Games**:
+    Type \`/compare @Friend1 @Friend2\` to instantly see what multiplayer games you share.
+
+3.  **Visit the Website**:
+    Check out [Webothplay.com](https://webothplay.com) for the full visual experience.
+
+*Type \`/help\` for more info.*
+`;
+            await channel.send(welcomeText).catch(console.error);
+        }
+    }
 });
 
 client.on(Events.InteractionCreate, async interaction => {
