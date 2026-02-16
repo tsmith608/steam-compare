@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 
-export default function FriendPickerModal({ friends = [], loading = false, me = null, onPicked, onClose }) {
+export default function FriendPickerModal({ friends = [], loading = false, me = null, onPicked, onClose, limit = 3 }) {
   const [query, setQuery] = useState("");
   const [chosen, setChosen] = useState(() => new Set());
 
@@ -27,7 +27,7 @@ export default function FriendPickerModal({ friends = [], loading = false, me = 
     setChosen(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
-      else if (next.size < 3) next.add(id);
+      else if (next.size < limit) next.add(id);
       return next;
     });
   }
@@ -48,7 +48,7 @@ export default function FriendPickerModal({ friends = [], loading = false, me = 
           <div className="flex items-center gap-3">
             {me?.avatar && <img src={me.avatar} alt="" className="h-8 w-8 rounded-full ring-1 ring-white/20 object-cover" />}
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold">Pick up to three friends</h2>
+              <h2 className="text-lg sm:text-xl font-semibold">Pick up to {limit} friends</h2>
               {me?.personaname && (
                 <p className="text-[11px] text-gray-400">
                   Logged in as <span className="text-gray-300">{decodeURIComponent(me.personaname || "")}</span>
@@ -104,7 +104,7 @@ export default function FriendPickerModal({ friends = [], loading = false, me = 
 
         {/* Footer */}
         <div className="px-4 sm:px-5 py-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between border-t border-white/10">
-          <div className="text-sm text-gray-400">Selected: <span className="text-gray-200">{chosen.size}</span>/3</div>
+          <div className="text-sm text-gray-400">Selected: <span className="text-gray-200">{chosen.size}</span>/{limit}</div>
           <div className="flex items-center gap-2 justify-end">
             <button onClick={onClose} className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10">Cancel</button>
             <button onClick={useSelected} disabled={chosen.size === 0} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60">

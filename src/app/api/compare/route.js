@@ -1,5 +1,6 @@
 // app/api/compare/route.js
 import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
 
 const API_KEY = process.env.STEAM_API_KEY;
 
@@ -69,6 +70,7 @@ async function fetchProfiles(idsInOrder) {
     return {
       usernames: idsInOrder.map(() => null),
       avatars: idsInOrder.map(() => null),
+      ids: idsInOrder.map(() => null),
     };
   }
 
@@ -88,7 +90,7 @@ async function fetchProfiles(idsInOrder) {
     id ? byId.get(String(id))?.avatarfull || byId.get(String(id))?.avatar || null : null
   );
 
-  return { usernames, avatars };
+  return { usernames, avatars, ids: idsInOrder };
 }
 
 /* -------------------------------- Route -------------------------------- */
@@ -97,125 +99,135 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
+    // Support both old {user1..4} and new {users: []} format
+    let inputUsers = body.users || [body.user1, body.user2, body.user3, body.user4];
+    inputUsers = inputUsers.filter(u => u && u.trim()); // Remove empties
+
     // Hardening: Sanitize inputs
     const sanitize = (s) => (s || "").toString().trim().replace(/[<>"'%;()&+]/g, "");
 
-    const user1 = sanitize(body.user1);
-    const user2 = sanitize(body.user2);
-    const user3 = sanitize(body.user3);
-    const user4 = sanitize(body.user4);
+    // Resolve all IDs first
+    const resolvedIds = await Promise.all(
+      inputUsers.map(u => resolveSteamID(sanitize(u)))
+    );
 
-    // Resolve in fixed order (you, friend1, friend2, friend3)
-    const [id1, id2, id3, id4] = await Promise.all([
-      resolveSteamID(user1),
-      resolveSteamID(user2),
-      resolveSteamID(user3),
-      resolveSteamID(user4),
-    ]);
+    const validIds = resolvedIds.filter(Boolean);
 
-    const presentIDs = [id1, id2, id3, id4].filter(Boolean);
-    if (presentIDs.length < 2) {
+    if (validIds.length < 2) {
       return NextResponse.json(
         { error: "At least two valid Steam profiles are required." },
         { status: 400 }
       );
     }
 
-    // Profiles (names + avatars)
-    const { usernames, avatars } = await fetchProfiles([id1, id2, id3, id4]);
+    // Check Premium Status
+    // We check if ANY of the involved users are premium.
+    // Ideally, the "owner" of the session is the first user, but checking all is friendlier.
+    let isPremium = false;
+    if (validIds.length > 0) {
+      // Construct a safe parameterized query for "IN" clause
+      const placeholders = validIds.map((_, i) => `$${i + 1}`).join(",");
+      const premiumCheck = await query(
+        `SELECT 1 FROM premium_users WHERE steam_id IN (${placeholders}) LIMIT 1`,
+        validIds
+      );
+      if (premiumCheck.rowCount > 0) {
+        isPremium = true;
+      }
+    }
 
-    // Fetch libraries in the same order
-    const [games1, games2, games3, games4] = await Promise.all([
-      fetchLibrary(id1),
-      id2 ? fetchLibrary(id2) : Promise.resolve([]),
-      id3 ? fetchLibrary(id3) : Promise.resolve([]),
-      id4 ? fetchLibrary(id4) : Promise.resolve([]),
-    ]);
+    // Limit Check
+    if (!isPremium && validIds.length > 4) {
+      return NextResponse.json(
+        { error: "Free plan is limited to 4 users. One of you needs Premium for up to 12!" },
+        { status: 403 }
+      );
+    }
 
-    // Maps for quick lookups
-    const m1 = toMap(games1);
-    const m2 = toMap(games2);
-    const m3 = toMap(games3);
-    const m4 = toMap(games4);
+    // Hard limit even for premium to prevent abuse/timeouts
+    if (validIds.length > 12) {
+      return NextResponse.json(
+        { error: "Even Grand Party Mode is limited to 12 users for performance." },
+        { status: 400 }
+      );
+    }
 
-    // Active libs for "shared" (only users actually entered)
-    const activeMaps = [
-      { id: id1, map: m1 },
-      id2 ? { id: id2, map: m2 } : null,
-      id3 ? { id: id3, map: m3 } : null,
-      id4 ? { id: id4, map: m4 } : null,
-    ].filter(Boolean);
+    // Fetch Profiles
+    const { usernames, avatars, ids } = await fetchProfiles(validIds);
 
-    // ---------------------- Shared: everyone owns -----------------------
-    const appidSets = activeMaps.map(({ map }) => new Set(map.keys()));
+    // Fetch Libraries
+    const libraries = await Promise.all(validIds.map(id => fetchLibrary(id)));
+
+    // Create maps
+    const maps = libraries.map(lib => toMap(lib));
+
+    // Calculate Shared Games
+    // Start with the first user's games, then intersect with everyone else
+    if (maps.length === 0) return NextResponse.json({ shared: [], unique: {}, profiles: [] });
+
+    const appidSets = maps.map(m => new Set(m.keys()));
     let sharedSet = appidSets[0];
     for (let i = 1; i < appidSets.length; i++) {
       sharedSet = intersectSets(sharedSet, appidSets[i]);
     }
 
-    const shared = Array.from(sharedSet).map((appid) => {
-      const g1 = m1.get(appid);
-      const name =
-        g1?.name ||
-        m2.get(appid)?.name ||
-        m3.get(appid)?.name ||
-        m4.get(appid)?.name ||
-        String(appid);
+    const shared = Array.from(sharedSet).map(appid => {
+      // Get metadata from first map that has it (should be all, but safe fallback)
+      const gameData = maps[0].get(appid) || { name: String(appid) };
+
+      // Collect playtime for each user
+      const playtimes = {};
+      validIds.forEach((id, idx) => {
+        playtimes[id] = maps[idx].get(appid)?.playtime_forever || 0;
+      });
+
       return {
         appid,
-        name,
-        user1_playtime: m1.get(appid)?.playtime_forever || 0,
-        user2_playtime: m2.get(appid)?.playtime_forever || 0,
-        user3_playtime: m3.get(appid)?.playtime_forever || 0,
-        user4_playtime: m4.get(appid)?.playtime_forever || 0,
+        name: gameData.name,
+        playtimes
       };
     });
 
-    // ---------------------- Only You: unique to you ---------------------
-    const othersUnion = new Set([...m2.keys(), ...m3.keys(), ...m4.keys()]);
-    const onlyYou = Array.from(m1.values())
-      .filter((g) => !othersUnion.has(Number(g.appid)))
-      .map((g) => ({
-        appid: g.appid,
-        name: g.name,
-        playtime_forever: g.playtime_forever || 0,
-      }));
+    // Calculate Unique Games (Only User X owns)
+    // For each user, find games in their map that are NOT in the union of all other maps
+    const unique = {};
 
-    // Helper: friend owns and NO ONE ELSE (including you) owns
-    function onlyFriend(friendMap, otherMaps) {
-      const others = new Set();
-      for (const om of otherMaps) for (const k of om.keys()) others.add(k);
-      const res = [];
-      for (const [appid, g] of friendMap.entries()) {
-        if (!others.has(appid)) {
-          res.push({
+    validIds.forEach((targetId, targetIdx) => {
+      const targetMap = maps[targetIdx];
+      const otherMaps = maps.filter((_, i) => i !== targetIdx);
+
+      // Build union of others
+      const othersUnion = new Set();
+      otherMaps.forEach(m => {
+        for (const k of m.keys()) othersUnion.add(k);
+      });
+
+      const uniqueGames = [];
+      for (const [appid, g] of targetMap.entries()) {
+        if (!othersUnion.has(Number(appid))) {
+          uniqueGames.push({
             appid,
             name: g.name,
-            playtime_forever: g.playtime_forever || 0,
+            playtime_forever: g.playtime_forever || 0
           });
         }
       }
-      return res;
-    }
-
-    // ---------------------- Only Friend 1/2/3 ---------------------------
-    const onlyFriend1 = id2 ? onlyFriend(m2, [m1, m3, m4]) : [];
-    const onlyFriend2 = id3 ? onlyFriend(m3, [m1, m2, m4]) : [];
-    const onlyFriend3 = id4 ? onlyFriend(m4, [m1, m2, m3]) : [];
-
-
+      unique[targetId] = uniqueGames;
+    });
 
     return NextResponse.json({
       shared,
-      onlyYou,
-      onlyFriend1,
-      onlyFriend2,
-      onlyFriend3,
-      usernames, // [you, friend1, friend2, friend3] (null where not provided)
-      avatars,   // [you, friend1, friend2, friend3] (null where not provided)
+      unique,
+      profiles: validIds.map((id, i) => ({
+        steamid: id,
+        username: usernames[i],
+        avatar: avatars[i]
+      })),
+      isPremium
     });
   } catch (err) {
     console.error("[API /compare Error]", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+

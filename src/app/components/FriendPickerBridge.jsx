@@ -13,35 +13,41 @@ function getParam(name) {
       const hashQ = new URLSearchParams(u.hash.split("?")[1]);
       return hashQ.get(name);
     }
-  } catch {}
+  } catch { }
   return null;
 }
 
-export default function FriendPickerBridge({ setUser1, setUser2, setUser3, setUser4 }) {
+export default function FriendPickerBridge({ setUsers, isPremium }) {
   const [open, setOpen] = useState(false);
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
   const [me, setMe] = useState(null);
   const [errMsg, setErrMsg] = useState("");
 
+  const limit = isPremium ? 11 : 3;
+
   useEffect(() => {
     // 1) find steamid from URL or session
     let steamid = getParam("steamid");
-    const name   = getParam("name");
+    const name = getParam("name");
     const avatar = getParam("avatar");
     const shouldAutoOpen = getParam("autopick") === "1";
 
     // fallback to sessionStorage if URL lacks steamid
     if (!steamid) {
-      try { steamid = sessionStorage.getItem("wb.steamid") || ""; } catch {}
+      try { steamid = sessionStorage.getItem("wb.steamid") || ""; } catch { }
     }
 
     if (steamid) {
       // keep it around for subsequent loads
-      try { sessionStorage.setItem("wb.steamid", steamid); } catch {}
+      try { sessionStorage.setItem("wb.steamid", steamid); } catch { }
 
       // 2) fill first input immediately
-      try { setUser1?.(steamid); } catch {}
+      setUsers(prev => {
+        const n = [...prev];
+        n[0] = steamid;
+        return n;
+      });
 
       // show "me" in the modal header if we have it
       if (name || avatar) {
@@ -82,25 +88,55 @@ export default function FriendPickerBridge({ setUser1, setUser2, setUser3, setUs
             const u = new URL(window.location.href);
             u.searchParams.delete("autopick");
             window.history.replaceState({}, "", u);
-          } catch {}
+          } catch { }
         });
     } else {
       // no steamid detected
       setErrMsg("No SteamID found. Log in via Steam first.");
     }
-  }, [setUser1]);
+  }, [setUsers]);
 
-  if (!open) return null;
+  if (!open) {
+    if (friends.length > 0) {
+      return (
+        <div className="mt-2 flex justify-center w-full">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-blue-400 font-bold transition-all shadow-lg hover:shadow-blue-900/10 flex items-center justify-center gap-2"
+          >
+            <span>👥 Manage Friends List</span>
+          </button>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <FriendPickerModal
       me={me}
       friends={friends}
       loading={loading}
+      limit={limit}
       onPicked={(ids) => {
-        setUser2?.(ids[0] || "");
-        setUser3?.(ids[1] || "");
-        setUser4?.(ids[2] || "");
+        setUsers(prev => {
+          const next = [...prev];
+          let slot = 1;
+          const maxSlots = isPremium ? 12 : 4;
+
+          ids.forEach(friendId => {
+            // Fill existing slots first
+            if (slot < next.length) {
+              next[slot] = friendId;
+            } else if (next.length < maxSlots) {
+              // Expand if under max limit
+              next.push(friendId);
+            }
+            slot++;
+          });
+          return next;
+        });
         setOpen(false);
       }}
       onClose={() => setOpen(false)}

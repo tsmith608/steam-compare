@@ -1,4 +1,5 @@
 import Link from "next/link";
+import KofiButton from "./KofiButton";
 
 export default function SiteFooter() {
     return (
@@ -28,6 +29,8 @@ export default function SiteFooter() {
                     &copy; {new Date().getFullYear()} We Both Play
                 </div>
             </div>
+
+            <KofiButton />
         </footer>
     );
 }

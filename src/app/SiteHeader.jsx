@@ -1,31 +1,11 @@
 "use client";
 import Link from "next/link";
-import { useLayoutEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 export default function SiteHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const [pad, setPad] = useState({ left: 24, right: 24 });
-
-  useLayoutEffect(() => {
-    const compute = () => {
-      const main = document.querySelector("main");
-      if (!main) return setPad({ left: 24, right: 24 });
-      const r = main.getBoundingClientRect();
-      setPad({ left: Math.max(0, Math.round(r.left)), right: Math.max(0, Math.round(window.innerWidth - r.right)) });
-    };
-    compute();
-    const ro = new ResizeObserver(compute);
-    ro.observe(document.documentElement);
-    window.addEventListener("resize", compute, { passive: true });
-    window.addEventListener("scroll", compute, { passive: true });
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", compute);
-      window.removeEventListener("scroll", compute);
-    };
-  }, []);
 
   const goHome = (e) => {
     e.preventDefault();
@@ -61,9 +41,9 @@ export default function SiteHeader() {
 
   return (
     <header className="w-full">
-      <nav className="py-4 flex items-center justify-between" style={{ paddingLeft: pad.left, paddingRight: pad.right }}>
+      <nav className="py-4 flex items-center justify-between max-w-7xl mx-auto px-6">
         {/* Brand acts as "return to top/landing" */}
-        <a href="/" onClick={goHome} className="flex items-center gap-2" aria-label="We Both Play — Home">
+        <a href="/" onClick={goHome} className="flex items-center gap-3" aria-label="We Both Play — Home">
           <img src="/logo.png" className="h-6 w-auto" onError={(e) => (e.currentTarget.style.display = "none")} />
           <span className="text-base sm:text-lg font-semibold tracking-tight text-gray-100">We Both Play</span>
         </a>
@@ -71,6 +51,7 @@ export default function SiteHeader() {
         <div className="hidden md:flex items-center gap-6 text-sm">
           <Link href="/#features" className="text-gray-300 hover:text-white transition">Features</Link>
           <Link href="/#faq" className="text-gray-300 hover:text-white transition">FAQ</Link>
+          <Link href="/upgrade" className="text-amber-400 hover:text-amber-300 transition font-medium">Premium</Link>
           <Link href="/blog" className="text-gray-300 hover:text-white transition">Blog</Link>
         </div>
 
@@ -80,6 +61,7 @@ export default function SiteHeader() {
           </summary>
           <div className="absolute right-0 mt-2 min-w-[180px] rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-gray-100">
             <Link href="/#features" className="block px-2 py-2 rounded-lg hover:bg-white/10">Features</Link>
+            <Link href="/upgrade" className="block px-2 py-2 rounded-lg hover:bg-white/10 text-amber-400">Premium</Link>
             <Link href="/#faq" className="block px-2 py-2 rounded-lg hover:bg-white/10">FAQ</Link>
             <Link href="/blog" className="block px-2 py-2 rounded-lg hover:bg-white/10">Blog</Link>
           </div>

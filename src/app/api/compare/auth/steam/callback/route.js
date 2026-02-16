@@ -54,20 +54,83 @@ export async function GET(req) {
     // non-fatal
   }
 
-  // 5) Clear nonce cookie and redirect with query params
-  const qp = new URLSearchParams({
-    autopick: "1",
-    steamid,
-  });
-  if (name) qp.set("name", encodeURIComponent(name));
-  if (avatar) qp.set("avatar", encodeURIComponent(avatar));
+  // 5) Clear nonce cookie
+  const resCookies = new Map();
+  resCookies.set("steam_nonce", { value: "", httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
 
-  const res = NextResponse.redirect(`${url.origin}/?${qp.toString()}`, 302);
-  res.cookies.set("steam_nonce", "", { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
-  return res;
+  // 6) Build profile object
+  const profile = { steamid, name, avatar };
+  const safeProfile = JSON.stringify(profile);
+
+  // 7) Return HTML that handles both Popup (close & notify) and Redirect (go home)
+  // If window.opener exists, we are in a popup -> send message and close.
+  // Otherwise, we are in a full page redirect -> go to homepage with params.
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><title>Authenticating...</title></head>
+    <body>
+    <script>
+      (function() {
+        var profile = ${safeProfile};
+        var targetOrigin = window.location.origin;
+        
+        if (window.opener) {
+          // Popup mode: notify opener
+          try {
+            window.opener.postMessage({ type: "steam-auth-success", profile: profile }, targetOrigin);
+            window.close();
+          } catch(e) {
+            console.error(e);
+          }
+        } else {
+          // Redirect mode: forward to home
+          var q = new URLSearchParams();
+          q.set("autopick", "1");
+          q.set("steamid", profile.steamid);
+          if (profile.name) q.set("name", profile.name);
+          if (profile.avatar) q.set("avatar", profile.avatar);
+          window.location.href = "/?" + q.toString();
+        }
+      })();
+    </script>
+    </body>
+    </html>
+  `;
+
+  const response = new NextResponse(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html" },
+  });
+
+  // Apply cookie clearing
+  response.cookies.set("steam_nonce", "", { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
+
+  return response;
 }
 
 function redirectHome(origin, params = {}) {
-  const q = new URLSearchParams({ autopick: "1", ...params });
-  return NextResponse.redirect(`${origin}/?${q.toString()}`, 302);
+  // Error fallback: send message 'steam-auth-error' if popup, else redirect home
+  const safeParams = JSON.stringify(params);
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <body>
+    <script>
+      (function() {
+        var params = ${safeParams};
+        if (window.opener) {
+           window.opener.postMessage({ type: "steam-auth-error", error: params }, window.location.origin);
+           window.close();
+        } else {
+           var q = new URLSearchParams(params);
+           q.set("autopick", "1");
+           window.location.href = "/?" + q.toString();
+        }
+      })();
+    </script>
+    </body>
+    </html>
+  `;
+  return new NextResponse(html, { status: 200, headers: { "Content-Type": "text/html" } });
 }
