@@ -29,6 +29,8 @@ function HomeContent() {
   const steamid = searchParams.get("steamid");
   const [users, setUsers] = useState(["", "", "", ""]); // Start with 4 slots for familiar UI, or fewer?
   // Let's start with 4 to match original look, but make it dynamic.
+  const [data, setData] = useState(null);
+
   // Handle URL parameters for auto-population and comparison
   useEffect(() => {
     const steamIds = searchParams.getAll("steamid");
