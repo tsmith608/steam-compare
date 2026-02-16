@@ -125,6 +125,9 @@ export async function POST(req) {
     // Ideally, the "owner" of the session is the first user, but checking all is friendlier.
     let isPremium = false;
     if (validIds.length > 0) {
+      console.log("[API/compare] Checking premium for:", validIds);
+      const startTime = Date.now();
+
       // Construct a safe parameterized query for "IN" clause
       const placeholders = validIds.map((_, i) => `$${i + 1}`).join(",");
       const premiumCheck = await query(
@@ -134,6 +137,7 @@ export async function POST(req) {
       if (premiumCheck.rowCount > 0) {
         isPremium = true;
       }
+      console.log("[API/compare] Premium check result:", isPremium, "Time:", Date.now() - startTime, "ms");
     }
 
     // Limit Check
