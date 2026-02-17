@@ -1,8 +1,8 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function ClaimPage() {
+function ClaimContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const steamid = searchParams.get('steamid');
@@ -87,8 +87,8 @@ export default function ClaimPage() {
                             type="submit"
                             disabled={status === 'loading'}
                             className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all transform active:scale-95 ${status === 'loading'
-                                    ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                                    : 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-500/20'
+                                ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-500/20'
                                 }`}
                         >
                             {status === 'loading' ? 'Verifying...' : 'Unlock Premium Now'}
@@ -115,5 +115,13 @@ export default function ClaimPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ClaimPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <ClaimContent />
+        </Suspense>
     );
 }

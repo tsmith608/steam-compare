@@ -1,9 +1,9 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function UpgradePage() {
+function UpgradeContent() {
     const searchParams = useSearchParams();
     const steamidParam = searchParams.get('steamid');
     const [steamid, setSteamid] = useState(steamidParam);
@@ -336,5 +336,13 @@ export default function UpgradePage() {
 
             </div>
         </div>
+    );
+}
+
+export default function UpgradePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <UpgradeContent />
+        </Suspense>
     );
 }
