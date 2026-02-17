@@ -4,45 +4,59 @@ import { motion } from 'framer-motion';
 
 const testimonials = [
     {
-        name: "Alex",
-        avatar: "https://avatars.akamai.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
-        text: "Finally, a way to settle the 'what should we play' argument in seconds. The shared backlog feature is a game changer for our weekend sessions.",
+        name: "Tyndal",
+        avatar: "/pfp/pfp1.jpg",
+        text: "Now we have a way to settle the 'what should we play' argument in seconds. Its a game changer for our weekend sessions.",
         role: "Squad Leader",
         rating: 5
     },
     {
-        name: "Jordan",
-        avatar: "https://avatars.akamai.steamstatic.com/c5d3429fa8669c1766a5e6659c25f778fccae068_full.jpg",
-        text: "Found out my friend actually owns 40% of my library. We've been buying the same games for years without knowing!",
+        name: "Farted",
+        avatar: "/pfp/pfp2.jpg",
+        text: "Found out my friend actually owns like 40% of my library so we have lots of options.",
         role: "Casual Gamer",
         rating: 5
     },
     {
-        name: "Sam",
-        avatar: "https://avatars.akamai.steamstatic.com/51528641978d7c4939b6e82a93b4512401831c19_full.jpg",
+        name: "TwoJuice",
+        avatar: "/pfp/pfp3.jpg",
         text: "The UI is incredible. It feels like a native Steam extension. Super helpful for planning our next co-op run.",
         role: "Achievement Hunter",
         rating: 4
     },
     {
-        name: "Riley",
-        avatar: "https://avatars.akamai.steamstatic.com/6666ec7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
+        name: "JoJoDio22",
+        avatar: "/pfp/pfp4.jpg",
         text: "Being able to see exactly who owns what and who's played what makes organizing our 4-stack a breeze. Highly recommend.",
         role: "Tactician",
         rating: 5
     },
     {
-        name: "Casey",
-        avatar: "https://avatars.akamai.steamstatic.com/7777ec7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
-        text: "The 'Game Roulette' feature is actually dangerous. We ended up playing some random indie game for 6 hours straight.",
+        name: "Elucidx",
+        avatar: "/pfp/pfp5.jpg",
+        text: "The 'Game Roulette' feature is actually dangerous. We ended up playing some random indie game we forgot about for 6 hours straight.",
         role: "Indie Lover",
         rating: 5
     },
     {
-        name: "Taylor",
-        avatar: "https://avatars.akamai.steamstatic.com/8888ec7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
+        name: "Senpai72",
+        avatar: "/pfp/pfp6.jpg",
         text: "Clean, fast, and does exactly what it says. No more logging into three different sites to compare libraries.",
         role: "Speedrunner",
+        rating: 5
+    },
+    {
+        name: "JamesJamesJames",
+        avatar: "/pfp/pfp7.jpg",
+        text: "The squad pulse feature is so good for seeing which of my friends are actually online and ready to play.",
+        role: "Pro Gamer",
+        rating: 5
+    },
+    {
+        name: "Morgan<3",
+        avatar: "/pfp/pfp8.jpg",
+        text: "I've been using this for months and it's saved me so much time. No more manual library checks!",
+        role: "Legacy User",
         rating: 5
     }
 ];

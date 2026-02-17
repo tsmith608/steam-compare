@@ -1,6 +1,5 @@
 "use client";
 import { Suspense, useState, useEffect } from "react";
-import SiteFooter from "../components/SiteFooter";
 import GoogleAdSense from "../components/GoogleAdSense";
 import Link from "next/link";
 
@@ -230,8 +229,6 @@ function CommandsContent() {
                     </Link>
                 </div>
             </div>
-
-            <SiteFooter />
         </main>
     );
 }

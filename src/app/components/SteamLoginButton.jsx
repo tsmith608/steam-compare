@@ -121,9 +121,9 @@ export default function SteamLoginButton({
     >
       {/* Steam logo */}
       <img
-        src="https://store.akamai.steamstatic.com/public/shared/images/header/logo_steam.svg"
+        src="/Steam-Emblem.png"
         alt=""
-        className="h-4 w-26 opacity-90 mx-auto"
+        className="h-5 w-auto brightness-0 invert opacity-90 mx-auto"
       />
       <span>{busy ? "Connecting…" : (label || "Sign in with Steam")}</span>
     </button>

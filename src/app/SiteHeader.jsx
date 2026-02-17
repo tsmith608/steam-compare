@@ -207,7 +207,7 @@ export default function SiteHeader() {
               href="/api/compare/auth/steam/start"
               className="px-4 py-2 bg-[#171a21] hover:bg-[#2a475e] text-[#c5c3c0] hover:text-white border border-[#2a475e] rounded-lg text-xs font-bold uppercase tracking-widest transition-all shadow-lg flex items-center gap-2 group"
             >
-              <img src="https://store.akamai.steamstatic.com/public/shared/images/header/logo_steam.svg" className="w-4 h-4 opacity-80 group-hover:opacity-100 transition-opacity" />
+              <img src="/Steam-Emblem.png" className="h-4 w-auto brightness-0 invert opacity-90 group-hover:opacity-100 transition-opacity" />
               Sign In
             </a>
           )}
@@ -278,7 +278,7 @@ export default function SiteHeader() {
                   href="/api/compare/auth/steam/start"
                   className="flex w-full items-center justify-center gap-2 px-4 py-3 bg-[#171a21] hover:bg-[#2a475e] text-white border border-[#2a475e] rounded-xl font-bold uppercase tracking-widest transition-all shadow-lg group"
                 >
-                  <img src="https://store.akamai.steamstatic.com/public/shared/images/header/logo_steam.svg" className="w-5 h-5 opacity-80 group-hover:opacity-100" />
+                  <img src="/Steam-Emblem.png" className="h-5 w-auto brightness-0 invert opacity-90 group-hover:opacity-100" />
                   Sign In
                 </a>
               </div>

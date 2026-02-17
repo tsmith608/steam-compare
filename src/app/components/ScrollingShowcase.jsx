@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export default function ScrollingShowcase() {
     const items = [
-        { label: "Steam", img: "https://store.akamai.steamstatic.com/public/shared/images/header/logo_steam.svg" },
+        { label: "Steam", img: "/Steam-Emblem.png" },
         { label: "Windows", img: "https://upload.wikimedia.org/wikipedia/commons/4/48/Windows_logo_-_2012.svg" },
         { label: "macOS", img: "https://upload.wikimedia.org/wikipedia/commons/3/30/MacOS_logo.svg" },
         { label: "Deck", img: "https://upload.wikimedia.org/wikipedia/commons/a/a7/Steam_Deck_logo.svg" },
