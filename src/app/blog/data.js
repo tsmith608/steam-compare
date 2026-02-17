@@ -1,10 +1,40 @@
 export const blogPosts = [
-    {
-        slug: "progress-update-feb-2026",
-        title: "Building We Both Play: Progress & Roadmap",
-        date: "February 16, 2026",
-        excerpt: "We've been hard at work! From Premium Tiers to a polished UI, here's what's new and what's coming next for We Both Play.",
-        content: `
+  {
+    slug: "getting-ready-to-launch",
+    title: "Getting Ready to Launch: Discord Bot & Premium Upgrades",
+    date: "February 17, 2026",
+    excerpt: "We're almost there! Discord Bot integration, Premium Tiers, and preparing for takeoff. Here's everything you need to know before we launch.",
+    content: `
+      <h2>🚀 We Are Cleared for Takeoff!</h2>
+      <p>The countdown has begun. After weeks of intense development, testing, and feedback from our amazing community, <strong>We Both Play</strong> is getting ready for its official public launch. We've packed this release with features that transform how you and your friends decide what to play next.</p>
+
+      <h3>🤖 The Discord Bot is Here</h3>
+      <p>We know you spend your time in Discord voice channels, debating what game to load up. Now, you don't even have to leave the chat. Our new <strong>Discord Bot</strong> brings the power of We Both Play directly to your server.</p>
+      <p>With commands like <code>/compare</code>, <code>/roulette</code>, and <code>/hype</code>, you can instantly find common ground with your squad. Plus, we've added a handy <strong>"Add Bot"</strong> button right to our home page to make setup a breeze.</p>
+
+      <h3>💎 Premium Tiers: Level Up Your Experience</h3>
+      <p>To support the project and give power users the tools they need, we've introduced our flexible Premium Membership tiers:</p>
+      <ul>
+        <li><strong>Noob (Free Forever):</strong> Compare up to 3 friends, basic stats, and essential bot commands. Perfect for small groups.</li>
+        <li><strong>Pro ($3.99/mo):</strong> Unlocks ad-free browsing, advanced filters, saved squads, and expanded comparisons for up to 6 players.</li>
+        <li><strong>Hacker ($9.99/mo):</strong> The ultimate tier. Compare up to 12 players at once! Plus, it comes with the exclusive <strong>Hacker Server Perk</strong>: if you have the Hacker tier, <em>everyone</em> in your Discord server gets access to premium bot features. It's the ultimate way to be the MVP of your community.</li>
+      </ul>
+
+      <h3>🛡️ Built for Trust & Quality</h3>
+      <p>We're committed to building a sustainable platform that respects your time and privacy. We've ensured full compliance with ad standards to keep the site clean and usable. Our focus is on providing genuine value—helping you find joy in your library, not just showing you ads.</p>
+
+      <h3>🔜 What's Next?</h3>
+      <p>The launch is just the beginning. We're already working on more features, including mobile app concepts and even deeper integration with other game libraries. Stay tuned!</p>
+      
+      <p>Ready to jump in? <a href="/upgrade">Check out the upgrades</a> or <a href="/">invite the bot</a> today!</p>
+    `
+  },
+  {
+    slug: "progress-update-feb-2026",
+    title: "Building We Both Play: Progress & Roadmap",
+    date: "February 16, 2026",
+    excerpt: "We've been hard at work! From Premium Tiers to a polished UI, here's what's new and what's coming next for We Both Play.",
+    content: `
       <h2>We've Been Busy!</h2>
       <p>It's been an exciting few weeks for <strong>We Both Play</strong>. We've been listening to your feedback and pushing out updates to make finding shared games easier, faster, and more enjoyable. Here's a look at what we've shipped recently and where we're heading.</p>
 
@@ -35,5 +65,5 @@ export const blogPosts = [
 
       <p>Thank you for using We Both Play! Stay tuned for more updates.</p>
     `
-    }
+  }
 ];
