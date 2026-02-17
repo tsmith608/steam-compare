@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+export const dynamic = 'force-dynamic';
+
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function POST(request) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+        console.error('Missing STRIPE_SECRET_KEY');
+        return NextResponse.json({ error: 'Payment system not configured' }, { status: 500 });
+    }
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
     const body = await request.text();
     const sig = request.headers.get('stripe-signature');
 
