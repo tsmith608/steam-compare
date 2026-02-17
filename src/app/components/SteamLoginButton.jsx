@@ -117,7 +117,7 @@ export default function SteamLoginButton({
         "disabled:opacity-60 disabled:cursor-not-allowed",
         className,
       ].join(" ")}
-      aria-label={label}
+      aria-label={label || "Sign in with Steam"}
     >
       {/* Steam logo */}
       <img
@@ -125,7 +125,7 @@ export default function SteamLoginButton({
         alt=""
         className="h-4 w-26 opacity-90 mx-auto"
       />
-      <span>{busy ? "Connecting…" : label}</span>
+      <span>{busy ? "Connecting…" : (label || "Sign in with Steam")}</span>
     </button>
   );
 }

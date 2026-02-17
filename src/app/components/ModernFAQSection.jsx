@@ -63,10 +63,18 @@ export default function ModernFAQSection() {
             q: "Does this work with Family Sharing?",
             a: "Yes! If games are in your library, they will appear in the comparison, regardless of how they were acquired. We check for ownership on the Steam platform.",
         },
+        {
+            q: "What benefits does Premium offer?",
+            a: "Premium unlocks the Backlog Slayer (sort games by time-to-beat & rating), advanced filters for the Game Roulette, an ad-free experience, and a special profile badge. Dashboard stats and Gamer Resumes are free for everyone!",
+        },
+        {
+            q: "How do I claim my Premium status?",
+            a: "Buying on Stripe automatically upgrades your account. No short codes or manual claiming required! If you previously upgraded via Ko-fi, you can still use the claim link in the Premium tab.",
+        },
     ];
 
     return (
-        <section className="mt-20 w-full max-w-3xl mx-auto text-left">
+        <section id="faq" className="mt-20 w-full max-w-3xl mx-auto text-left scroll-mt-24">
             <div className="flex items-center gap-3 mb-8">
                 <div className="h-8 w-1 bg-blue-500 rounded-full" />
                 <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Common Questions</h3>

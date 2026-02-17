@@ -3,7 +3,13 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const fs = require('fs');
 const { Client, Collection, GatewayIntentBits, Events } = require('discord.js');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMembers
+    ]
+});
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');

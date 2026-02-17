@@ -26,10 +26,31 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
         }
 
         // The put method is used to fully refresh all commands in the guild with the current set
-        const data = await rest.put(
-            Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
-            { body: commands },
-        );
+        let data;
+        const guildId = process.env.GUILD_ID;
+
+        if (guildId) {
+            console.log(`Using Guild ID: ${guildId} (Instant Updates)`);
+
+            // 1. Deploy Guild Commands
+            data = await rest.put(
+                Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, guildId),
+                { body: commands },
+            );
+
+            // 2. Clear Global Commands (to prevent duplicates)
+            console.log("Clearing Global Commands to prevent duplicates...");
+            await rest.put(
+                Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
+                { body: [] },
+            );
+        } else {
+            console.log("Using Global Commands (May take up to 1 hour to update)");
+            data = await rest.put(
+                Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
+                { body: commands },
+            );
+        }
 
         console.log(`Successfully reloaded ${data.length} application (/) commands.`);
     } catch (error) {

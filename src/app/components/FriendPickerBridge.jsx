@@ -17,14 +17,22 @@ function getParam(name) {
   return null;
 }
 
-export default function FriendPickerBridge({ setUsers, isPremium }) {
+export default function FriendPickerBridge({ setUsers, isPremium, tier }) {
   const [open, setOpen] = useState(false);
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
   const [me, setMe] = useState(null);
   const [errMsg, setErrMsg] = useState("");
 
-  const limit = isPremium ? 11 : 3;
+  const getMaxUsers = () => {
+    if (!isPremium) return 4;
+    if (tier === 'Bronze') return 6;
+    if (tier === 'Silver') return 10;
+    if (tier === 'Gold') return 16;
+    return 12; // Default for admin or legacy
+  };
+
+  const limit = getMaxUsers() - 1; // slots available for friends
 
   useEffect(() => {
     // 1) find steamid from URL or session
@@ -42,8 +50,11 @@ export default function FriendPickerBridge({ setUsers, isPremium }) {
       // keep it around for subsequent loads
       try { sessionStorage.setItem("wb.steamid", steamid); } catch { }
 
-      // 2) fill first input immediately
+      // 2) fill first input immediately (if not already set by parent)
+      // Actually, parent (page.jsx) now handles restoration from session too.
+      // But we keep this for redundancy or standalone usage.
       setUsers(prev => {
+        if (prev[0] === steamid) return prev;
         const n = [...prev];
         n[0] = steamid;
         return n;
@@ -105,7 +116,7 @@ export default function FriendPickerBridge({ setUsers, isPremium }) {
             onClick={() => setOpen(true)}
             className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-blue-400 font-bold transition-all shadow-lg hover:shadow-blue-900/10 flex items-center justify-center gap-2"
           >
-            <span>👥 Manage Friends List</span>
+            <span>👥 Pick Friends to Compare</span>
           </button>
         </div>
       );
@@ -123,7 +134,7 @@ export default function FriendPickerBridge({ setUsers, isPremium }) {
         setUsers(prev => {
           const next = [...prev];
           let slot = 1;
-          const maxSlots = isPremium ? 12 : 4;
+          const maxSlots = getMaxUsers();
 
           ids.forEach(friendId => {
             // Fill existing slots first

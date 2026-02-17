@@ -1,5 +1,7 @@
 import "./globals.css";
 import SiteHeader from "./SiteHeader";
+import SiteFooter from "./components/SiteFooter";
+import Script from "next/script";
 
 export const metadata = {
   title: "We Both Play - Steam Library Comparison Tool",
@@ -13,7 +15,7 @@ export const metadata = {
     siteName: "We Both Play",
     images: [
       {
-        url: "/og-image.png", // Ensure this exists or use a screenshot
+        url: "/logo.png",
         width: 1200,
         height: 630,
         alt: "We Both Play Interface",
@@ -26,7 +28,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "We Both Play",
     description: "Compare Steam libraries and find shared games instantly.",
-    images: ["/og-image.png"],
+    images: ["/logo.png"],
   },
   icons: {
     icon: [
@@ -37,18 +39,39 @@ export const metadata = {
   },
   other: {
     "google-adsense-account": "ca-pub-5774226834741887",
-    "impact-site-verification": "a9cefe9f-8aad-4a52-a4c2-195be9478964", // CDKeys (Impact Radius) verification
+    "impact-site-verification": "a9cefe9f-8aad-4a52-a4c2-195be9478964",
   },
 };
-
-import Script from "next/script";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* AdSense Main Script */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/position/js/adsbygoogle.js?client=ca-pub-5774226834741887"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+        {/* Google Analytics Placeholder */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-KSRRGKT9ZZ"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-KSRRGKT9ZZ');
+          `}
+        </Script>
+      </head>
       <body className="antialiased" suppressHydrationWarning>
         <SiteHeader />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );

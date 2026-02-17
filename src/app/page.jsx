@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import SteamLoginButton from "./components/SteamLoginButton";
 import FriendPickerBridge from "./components/FriendPickerBridge";
 import CleanDataEntryForm from "./components/CleanDataEntryForm";
@@ -9,9 +10,14 @@ import HighlightsSection from "./components/HighlightsSection";
 import FilterBar from "./components/FilterBar";
 import GoogleAdSense from "./components/GoogleAdSense";
 import PresetManager from "./components/PresetManager";
+import GameRoulette from "./components/GameRoulette";
+import SquadStats from "./components/SquadStats";
+import BacklogSlayer from "./components/BacklogSlayer";
+import SquadActivity from "./components/SquadActivity";
 
 import ModernFAQSection from "./components/ModernFAQSection";
-import SiteFooter from "./components/SiteFooter";
+import TestimonialsSection from "./components/TestimonialsSection";
+
 /* ---------- Landing-only UI blocks  ---------- */
 
 
@@ -26,34 +32,75 @@ const getAffiliateLink = (gameName) => {
 
 function HomeContent() {
   const searchParams = useSearchParams();
-  const steamid = searchParams.get("steamid");
-  const [users, setUsers] = useState(["", "", "", ""]); // Start with 4 slots for familiar UI, or fewer?
+
+  // Auth State (Persisted)
+  const [authState, setAuthState] = useState({
+    steamid: searchParams.get("steamid"),
+    name: searchParams.get("name"),
+    avatar: searchParams.get("avatar")
+  });
+
+  const [users, setUsers] = useState(["", "", "", ""]);
   // Let's start with 4 to match original look, but make it dynamic.
   const [data, setData] = useState(null);
 
-  // Handle URL parameters for auto-population and comparison
+  // Handle Persistence & URL Params
   useEffect(() => {
-    const steamIds = searchParams.getAll("steamid");
-    if (steamIds.length > 0) {
-      // 1. Populate users state
-      const newUsers = ["", "", "", ""];
-      steamIds.forEach((id, i) => {
-        if (i < 4) newUsers[i] = id;
-      });
-      setUsers(newUsers);
+    const urlId = searchParams.get("steamid");
+    const urlName = searchParams.get("name");
+    const urlAvatar = searchParams.get("avatar");
+    const multiIds = searchParams.getAll("steamid");
 
-      // 2. Trigger comparison automatically
-      // We need to wait for state to update, or pass newUsers directly?
-      // handleCompare depends on state, so we should allow it to read from args if possible,
-      // or just call it with the new list.
-      // Looking at handleCompare signature: handleCompare(e, usersOverride)
-      handleCompare(null, newUsers);
+    if (urlId) {
+      // 1. We have URL params -> Save to session & Update State
+      sessionStorage.setItem("wb.steamid", urlId);
+      if (urlName) sessionStorage.setItem("wb.username", urlName);
+      if (urlAvatar) sessionStorage.setItem("wb.avatar", urlAvatar);
+
+      setAuthState({ steamid: urlId, name: urlName, avatar: urlAvatar });
+
+      // Handle multi-ID population (for quick links)
+      if (multiIds.length > 0) {
+        const newUsers = ["", "", "", ""];
+        multiIds.forEach((id, i) => { if (i < 4) newUsers[i] = id; });
+        setUsers(newUsers);
+        // Only trigger compare if multiple IDs and it looks like a shared link (not just a login redirect)
+        if (multiIds.length > 1) {
+          handleCompare(null, newUsers);
+        }
+      } else {
+        // Just single login, ensure user[0] is set
+        setUsers(prev => {
+          const n = [...prev];
+          n[0] = urlId;
+          return n;
+        });
+      }
+
+    } else {
+      // 2. No URL params -> Try to restore from Session
+      const sId = sessionStorage.getItem("wb.steamid");
+      const sName = sessionStorage.getItem("wb.username");
+      const sAvatar = sessionStorage.getItem("wb.avatar");
+
+      if (sId) {
+        setAuthState({ steamid: sId, name: sName, avatar: sAvatar });
+        // Ensure inputs are populated
+        setUsers(prev => {
+          if (prev[0]) return prev; // Don't overwrite if user typed something? 
+          // Actually, if we are restoring session, we should probably set user[0]
+          const n = [...prev];
+          n[0] = sId;
+          return n;
+        });
+      }
     }
   }, [searchParams]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showHelp, setShowHelp] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [userTier, setUserTier] = useState(null);
 
   // Filter State
   const [filters, setFilters] = useState({ category: "all", genre: "all" });
@@ -162,11 +209,17 @@ function HomeContent() {
     const timer = setTimeout(() => {
       fetch(`/api/check-premium?steamid=${encodeURIComponent(mainUser)}`)
         .then(r => r.json())
-        .then(d => setIsPremium(d.isPremium))
-        .catch(() => setIsPremium(false));
+        .then(d => {
+          setIsPremium(d.isPremium);
+          setUserTier(d.tier);
+        })
+        .catch(() => {
+          setIsPremium(false);
+          setUserTier(null);
+        });
     }, 500);
     return () => clearTimeout(timer);
-  }, [users[0]]); // Dependencies: only re-check if first user changes
+  }, [users[0]]);
 
   useEffect(() => {
     if (!highlightForm) return;
@@ -242,7 +295,7 @@ function HomeContent() {
 
   function SkeletonCard() {
     return (
-      <div className="rounded-lg bg-white/10 p-2 animate-pulse">
+      <div className="rounded-lg bg-white/10 p-2 animate-pulse" aria-busy="true" aria-label="Loading game card">
         <div className="h-[87px] w-full bg-white/10 rounded mb-2"></div>
         <div className="h-3 w-3/4 bg-white/10 rounded"></div>
       </div>
@@ -260,11 +313,26 @@ function HomeContent() {
     return <p className="text-xs text-gray-400">{parts}</p>;
   };
 
-  function HeaderChip({ color, avatar, label, count }) {
+  function HeaderChip({ color, avatar, label, count, tier }) {
+    const isPremiumTier = tier === 'Hacker' || tier === 'Pro';
     return (
       <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10`}>
-        {avatar && <img src={avatar} alt="" className="h-6 w-6 rounded-full ring-1 ring-white/20" />}
+        {avatar && (
+          <div className="relative">
+            <img src={avatar} alt="" className="h-6 w-6 rounded-full ring-1 ring-white/20" />
+            {isPremiumTier && (
+              <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full flex items-center justify-center border border-black shadow-sm ${tier === 'Hacker' ? 'bg-amber-500' : 'bg-blue-500'}`}>
+                <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+              </div>
+            )}
+          </div>
+        )}
         <span className={`font-medium`} style={{ color }}>{label}</span>
+        {isPremiumTier && (
+          <span className={`text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded ${tier === 'Hacker' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}`}>
+            {tier}
+          </span>
+        )}
         <span className="text-xs px-2 py-[2px] rounded-full bg-white/10">{count}</span>
       </span>
     );
@@ -323,9 +391,12 @@ function HomeContent() {
                 SteamLoginButton={SteamLoginButton}
                 FriendPickerBridge={FriendPickerBridge}
                 isPremium={isPremium}
-                isLoggedIn={!!steamid}
-                userName={searchParams.get("name")}
-                userAvatar={searchParams.get("avatar")}
+                tier={userTier}
+
+                isLoggedIn={!!authState.steamid}
+                userName={authState.name}
+                userAvatar={authState.avatar}
+                currentSteamId={authState.steamid}
               />
             </div>
 
@@ -334,8 +405,62 @@ function HomeContent() {
 
             <FeatureDemoSection />
             <HighlightsSection />
+            <TestimonialsSection />
 
             <ModernFAQSection />
+
+            {/* --- NEW: How It Works Section (AdSense Compliance) --- */}
+            <section className="w-full max-w-4xl mx-auto py-20 border-t border-white/5">
+              <div className="text-left space-y-12">
+                <div className="text-center">
+                  <h2 className="text-3xl sm:text-4xl font-light text-white mb-4 italic">
+                    How <span className="text-blue-500 font-bold not-italic font-sans">We Both Play</span> Works
+                  </h2>
+                  <p className="text-gray-400 max-w-xl mx-auto">
+                    The ultimate tool for Steam library comparison and multiplayer discovery.
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-12">
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-blue-400 flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-sm">1</span>
+                      Privacy-First Data Sync
+                    </h3>
+                    <p className="text-[15px] text-gray-400 leading-relaxed">
+                      We use the official Steam Web API to fetch publicly available data from the profiles you provide. We never ask for your password or store your library data permanently. Our tool respects your privacy while providing instant results.
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-blue-400 flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-sm">2</span>
+                      Smart Comparison Engine
+                    </h3>
+                    <p className="text-[15px] text-gray-400 leading-relaxed">
+                      Our engine cross-references thousands of games in seconds. It doesn't just look for matches; it analyzes tags, categories, and playtime to suggest what you should play next with your squad.
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-blue-400 flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-sm">3</span>
+                      Beyond Just "Shared Games"
+                    </h3>
+                    <p className="text-[15px] text-gray-400 leading-relaxed">
+                      With features like <strong>Backlog Slayer</strong> and <strong>Game Roulette</strong>, we help you make decisions. Use our "Only X" feature to see what games your friends are missing, making it the perfect tool for gifting.
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-blue-400 flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-sm">4</span>
+                      Multi-Platform Support
+                    </h3>
+                    <p className="text-[15px] text-gray-400 leading-relaxed">
+                      Whether you use our web platform for deep dives or our <strong>Discord Bot</strong> for quick checks during voice chat, We Both Play is designed to fit into your existing gaming workflow.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
           </>
         )}
 
@@ -362,19 +487,26 @@ function HomeContent() {
           <div className="sticky top-4 z-10 mb-4 self-start flex gap-4 items-center">
             <div className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/10 backdrop-blur border border-white/10">
               {data.profiles && data.profiles.map((p, i) => (
-                <img
-                  key={p.steamid}
-                  src={p.avatar}
-                  alt={p.username}
-                  title={p.username}
-                  className="h-7 w-7 rounded-full ring-1 ring-white/20"
-                />
+                <div key={p.steamid} className="relative group">
+                  <img
+                    src={p.avatar}
+                    alt={p.username}
+                    title={`${p.username} (${p.tier})`}
+                    className={`h-7 w-7 rounded-full ring-1 ${p.tier === 'Pro' ? 'ring-amber-500/50' : (p.tier === 'Hacker' ? 'ring-blue-500/50' : 'ring-white/20')}`}
+                  />
+                  {(p.tier === 'Hacker' || p.tier === 'Pro') && (
+                    <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full flex items-center justify-center border border-black shadow-sm ${p.tier === 'Pro' ? 'bg-amber-500' : 'bg-blue-500'}`}>
+                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                    </div>
+                  )}
+                </div>
               ))}
               <span className="text-sm text-gray-300 ml-1">
                 {data.profiles?.length} Players
               </span>
             </div>
           </div>
+
         )}
 
         {/* ---------- loading skeletons (unchanged) ---------- */}
@@ -396,289 +528,412 @@ function HomeContent() {
 
         {/* ---------- results (completely unchanged) ---------- */}
         {data && !loading && (
-          <div className="w-full mt-6 space-y-6">
+          <div className="w-full mt-6 flex flex-col items-center">
+            {/* Main Content Area with Absolute Margin Ads */}
+            <div className="w-full relative max-w-6xl mx-auto flex flex-col items-center">
 
-            {/* --- Results Section --- */}
-            <div className="max-w-6xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-
-              {/* Preset Manager at Top of Results for Easy Saving */}
-              <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-black border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
-                  <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+              {/* Left Margin Ad - Absolutely positioned to avoid "smooshing" */}
+              <aside className="hidden 2xl:block absolute -left-48 top-24 w-40">
+                <div className="p-2 border border-white/5 rounded-xl bg-white/[0.02]">
+                  <p className="text-[8px] text-gray-600 uppercase tracking-widest text-center mb-2">Advertisement</p>
+                  <GoogleAdSense isPremium={isPremium} slot="8627342981" />
                 </div>
-                <PresetManager
-                  users={users}
-                  setUsers={setUsers}
-                  onSelect={(newUsers) => handleCompare(null, newUsers)} // Trigger compare on load
-                />
-              </div>
+              </aside>
 
-              {/* Shared Games Card */}
-              <div className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-blue-400">
-                    <HeaderChip
-                      color="#60A5FA"
-                      avatar={null}
-                      label="Shared Games"
-                      count={
-                        filters.category === "all"
-                          ? (data.shared?.length || 0)
-                          : (data.shared?.filter(g => {
-                            const details = gameDetails[g.appid];
-                            if (!details) return false; // hide if loading? or show? let's hide to be safe or show all is safer?
-                            // actually if details missing, we can't filter.
-                            // if filter is active, and no details, maybe false?
-                            return checkCategory(details, filters.category);
-                          }).length || 0)
-                      }
+              <div className="w-full space-y-6">
+                {/* --- Results Section --- */}
+                <div className="max-w-6xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+                  {/* Preset Manager at Top of Results for Easy Saving */}
+                  <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-black border border-white/10 rounded-2xl px-6 py-3 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+                      <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m7-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8m13 10v-2a4 4 0 0 0-3-3.87m-4-12a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>
+                    </div>
+                    <PresetManager
+                      users={users}
+                      setUsers={setUsers}
+                      onSelect={(newUsers) => handleCompare(null, newUsers)} // Trigger compare on load
+                      currentSteamId={authState.steamid}
+                      isPremium={isPremium}
                     />
-                  </h2>
-                  <button
-                    className="text-sm text-gray-400 hover:text-blue-400"
-                    onClick={() => setExpanded((p) => ({ ...p, shared: !p.shared }))}
-                  >
-                    {expanded.shared ? "▾ Hide" : "▸ Show"}
-                  </button>
-                </div>
 
-                {/* Filter Bar */}
-                <FilterBar
-                  isPremium={isPremium}
-                  onFilterChange={setFilters}
-                  availableCategories={availableCategories}
-                />
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <BacklogSlayer users={users} isPremium={isPremium} />
+                      <GameRoulette games={data.shared || []} />
+                    </div>
 
-                {expanded.shared && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
-                    {(data.shared || [])
-                      .filter(g => {
-                        if (filters.category === "all") return true;
-                        const details = gameDetails[g.appid];
-                        if (!details) return false;
-                        return checkCategory(details, filters.category);
-                      })
-                      .map((g, i) => (
-                        <div
-                          key={i}
-                          className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
-                        >
-                          <a
-                            href={getAffiliateLink(g.name)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block"
-                            title="Find cheap key on CDKeys"
-                          >
-                            <img
-                              src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
-                              alt={`${g.name} cover art`}
-                              className="rounded mb-2"
-                              loading="lazy"
-                            />
-                          </a>
-                          <div className="flex items-center justify-between gap-2 w-full px-1 mb-1">
-                            {/* Tags if available? */}
-                            {gameDetails[g.appid]?.categories?.find(c => c.description === "Multi-player") && (
-                              <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1 rounded border border-blue-500/20">MP</span>
-                            )}
-                            {gameDetails[g.appid]?.categories?.find(c => c.description === "Co-op") && (
-                              <span className="text-[9px] bg-green-900/40 text-green-300 px-1 rounded border border-green-500/20">Co-op</span>
-                            )}
-                          </div>
-                          <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
-                            {g.name}
-                          </p>
-                          {SharedHoursRow(g)}
-                        </div>
-                      ))}
+                    <div className="mt-4">
+                      <SquadActivity users={users} isPremium={isPremium} profiles={data.profiles || []} />
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Dynamic "Only X" Sections */}
-              {data.profiles && data.profiles.map((profile, i) => {
-                // Skip if no unique games (optional) or render empty?
-                // The API returns unique map keyed by SteamID.
-                const uniqueGames = data.unique?.[profile.steamid] || [];
-                if (uniqueGames.length === 0) return null;
-
-                // Colors cycle
-                const colors = ["#34D399", "#F472B6", "#FBBF24", "#A78BFA", "#EC4899", "#8B5CF6", "#10B981", "#EF4444"];
-                const color = colors[i % colors.length];
-                const colorClass = `text-[${color}]`; // logic for tailwind might need safelist, stick to dynamic inline style or map
-
-                const isOpen = expanded.others[profile.steamid] ?? false;
-
-                return (
-                  <div key={profile.steamid} className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
-                    <div className="flex justify-between items-center">
-                      <h2 className="text-xl font-semibold" style={{ color }}>
+                  {/* Shared Games Card */}
+                  <div className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-semibold text-blue-400">
                         <HeaderChip
-                          color={color}
-                          avatar={profile.avatar}
-                          label={`Only ${profile.username || "User " + (i + 1)}`}
-                          count={uniqueGames.length}
+                          color="#60A5FA"
+                          avatar={null}
+                          label="Shared Games"
+                          count={
+                            filters.category === "all"
+                              ? (data.shared?.length || 0)
+                              : (data.shared?.filter(g => {
+                                const details = gameDetails[g.appid];
+                                if (!details) return false; // hide if loading? or show? let's hide to be safe or show all is safer?
+                                // actually if details missing, we can't filter.
+                                // if filter is active, and no details, maybe false?
+                                return checkCategory(details, filters.category);
+                              }).length || 0)
+                          }
                         />
                       </h2>
                       <button
-                        className="text-sm text-gray-400 hover:text-white"
-                        onClick={() => setExpanded(p => ({
-                          ...p,
-                          others: { ...p.others, [profile.steamid]: !isOpen }
-                        }))}
+                        className="text-sm text-gray-400 hover:text-blue-400"
+                        onClick={() => setExpanded((p) => ({ ...p, shared: !p.shared }))}
                       >
-                        {isOpen ? "▾ Hide" : "▸ Show"}
+                        {expanded.shared ? "▾ Hide" : "▸ Show"}
                       </button>
                     </div>
+                    {expanded.shared && (
+                      <>
+                        <SquadStats sharedGames={data.shared || []} profiles={data.profiles || []} />
 
-                    {isOpen && (
-                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
-                        {uniqueGames.map((g, idx) => (
-                          <div
-                            key={idx}
-                            className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
-                          >
-                            <a
-                              href={getAffiliateLink(g.name)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block"
-                              title="Find cheap key on CDKeys"
-                            >
+                        {/* Filter Bar */}
+                        <FilterBar
+                          isPremium={isPremium}
+                          onFilterChange={setFilters}
+                          availableCategories={availableCategories}
+                          sharedGames={data.shared || []}
+                          gameDetails={gameDetails}
+                        />
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
+                          {(data.shared || [])
+                            .filter(g => {
+                              if (filters.category === "all") return true;
+                              const details = gameDetails[g.appid];
+                              if (!details) return false;
+                              return checkCategory(details, filters.category);
+                            })
+                            .map((g, i) => (
+                              <div
+                                key={i}
+                                className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                              >
+                                <a
+                                  href={getAffiliateLink(g.name)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block"
+                                  title="Find cheap key on CDKeys"
+                                >
+                                  <img
+                                    src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
+                                    alt={`${g.name} cover art`}
+                                    className="rounded mb-2"
+                                    loading="lazy"
+                                  />
+                                </a>
+                                <div className="flex items-center justify-between gap-2 w-full px-1 mb-1">
+                                  {/* Tags if available? */}
+                                  <div className="flex gap-1 overflow-hidden">
+                                    {gameDetails[g.appid]?.categories?.find(c => c.description === "Multi-player") && (
+                                      <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1 rounded border border-blue-500/20">MP</span>
+                                    )}
+                                    {gameDetails[g.appid]?.categories?.find(c => c.description === "Co-op") && (
+                                      <span className="text-[9px] bg-green-900/40 text-green-300 px-1 rounded border border-green-500/20">Co-op</span>
+                                    )}
+                                  </div>
+
+                                  <a
+                                    href={`steam://run/${g.appid}`}
+                                    className="bg-blue-600 hover:bg-blue-500 text-white p-1 rounded shadow transition-colors shrink-0"
+                                    title="Launch on Steam"
+                                    aria-label={`Launch ${g.name} on Steam`}
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                  </a>
+                                </div>
+                                <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
+                                  {g.name}
+                                </p>
+                                {SharedHoursRow(g)}
+                              </div>
+                            ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Shared Wishlist Card */}
+                  {data.sharedWishlist && data.sharedWishlist.length > 0 && (
+                    <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 p-6 rounded-2xl border border-blue-500/20 shadow-lg">
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold text-purple-400">
+                          <HeaderChip
+                            color="#A78BFA"
+                            avatar={null}
+                            label="Shared Wishlist"
+                            count={data.sharedWishlist.length}
+                          />
+                        </h2>
+                        <p className="text-xs text-purple-300/60 font-medium uppercase tracking-widest hidden sm:block">You all want these</p>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                        {data.sharedWishlist.map((g, i) => (
+                          <div key={i} className="flex flex-col items-center bg-white/5 p-2 rounded-lg border border-white/5 hover:border-blue-500/30 transition-all">
+                            <a href={getAffiliateLink(g.name)} target="_blank" rel="noopener noreferrer" className="block relative group">
                               <img
                                 src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
-                                alt={`${g.name} cover art`}
-                                className="rounded mb-2"
-                                loading="lazy"
+                                alt={g.name}
+                                className="rounded mb-2 opacity-80 group-hover:opacity-100 transition-opacity"
                               />
+                              <div className="absolute top-1 right-1 bg-purple-600 text-[8px] font-bold px-1 rounded shadow-lg">WANT</div>
                             </a>
-                            <div className="flex items-center justify-between gap-2 w-full px-1 mb-1">
-                              <span className="text-[10px] font-semibold text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded border border-green-500/20 truncate">
-                                {g.name}
-                              </span>
-                              <a
-                                href={getAffiliateLink(g.name)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="bg-blue-600 hover:bg-blue-500 text-white p-1 rounded shadow transition-colors shrink-0"
-                                title="Find cheap key on CDKeys"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
-                              </a>
-                            </div>
-                            <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
-                              {g.name}
-                            </p>
-                            <Hours mins={g.playtime_forever} />
+                            <p className="text-xs font-medium text-gray-300 truncate w-full text-center" title={g.name}>{g.name}</p>
                           </div>
                         ))}
                       </div>
-                    )}
+                    </div>
+                  )}
+
+                  {/* Gift Ideas / Wishlist Matches */}
+                  {data.wishlistMatches && Object.values(data.wishlistMatches).some(m => m.length > 0) && (
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-bold text-gray-400 uppercase tracking-[0.2em] text-center pt-8">🎁 Gifting Opportunities</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {data.profiles?.map(p => {
+                          const matches = data.wishlistMatches[p.steamid] || [];
+                          if (matches.length === 0) return null;
+                          return (
+                            <div key={p.steamid} className="bg-white/5 p-5 rounded-2xl border border-white/10">
+                              <div className="flex items-center gap-3 mb-4">
+                                <img src={p.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-blue-500/30" />
+                                <div>
+                                  <span className="text-sm font-bold text-white block">{p.username} wants...</span>
+                                  <span className="text-[10px] text-gray-500 uppercase">And others in the squad own them!</span>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                {matches.slice(0, 5).map(m => (
+                                  <div key={m.appid} className="flex items-center justify-between gap-3 bg-white/5 p-2 rounded-xl border border-white/5 hover:bg-white/10 transition-colors group">
+                                    <div className="flex items-center gap-3 overflow-hidden">
+                                      <img src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${m.appid}/capsule_231x87.jpg`} className="h-8 rounded" alt="" />
+                                      <span className="text-xs font-medium text-gray-200 truncate">{m.name}</span>
+                                    </div>
+                                    <a
+                                      href={getAffiliateLink(m.name)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-[10px] font-bold text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
+                                    >
+                                      BUY GIFT
+                                    </a>
+                                  </div>
+                                ))}
+                                {matches.length > 5 && <p className="text-[10px] text-gray-600 text-center italic">+{matches.length - 5} more items</p>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dynamic "Only X" Sections */}
+                  {data.profiles && data.profiles.map((profile, i) => {
+                    // Skip if no unique games (optional) or render empty?
+                    // The API returns unique map keyed by SteamID.
+                    const uniqueGames = data.unique?.[profile.steamid] || [];
+                    if (uniqueGames.length === 0) return null;
+
+                    // Colors cycle
+                    const colors = ["#34D399", "#F472B6", "#FBBF24", "#A78BFA", "#EC4899", "#8B5CF6", "#10B981", "#EF4444"];
+                    const color = colors[i % colors.length];
+                    const colorClass = `text-[${color}]`; // logic for tailwind might need safelist, stick to dynamic inline style or map
+
+                    const isOpen = expanded.others[profile.steamid] ?? false;
+
+                    return (
+                      <div key={profile.steamid} className="bg-white/10 dark:bg-white/5 p-6 rounded-2xl border border-white/10 shadow-md">
+                        <div className="flex justify-between items-center">
+                          <h2 className="text-xl font-semibold" style={{ color }}>
+                            <HeaderChip
+                              color={color}
+                              avatar={profile.avatar}
+                              label={`Only ${profile.username || "User " + (i + 1)}`}
+                              count={uniqueGames.length}
+                              tier={profile.tier}
+                            />
+                          </h2>
+                          <button
+                            className="text-sm text-gray-400 hover:text-white"
+                            onClick={() => setExpanded(p => ({
+                              ...p,
+                              others: { ...p.others, [profile.steamid]: !isOpen }
+                            }))}
+                          >
+                            {isOpen ? "▾ Hide" : "▸ Show"}
+                          </button>
+                        </div>
+
+                        {isOpen && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
+                            {uniqueGames.map((g, idx) => (
+                              <div
+                                key={idx}
+                                className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                              >
+                                <a
+                                  href={getAffiliateLink(g.name)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block"
+                                  title="Find cheap key on CDKeys"
+                                >
+                                  <img
+                                    src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
+                                    alt={`${g.name} cover art`}
+                                    className="rounded mb-2"
+                                    loading="lazy"
+                                  />
+                                </a>
+                                <div className="flex items-center justify-between gap-2 w-full px-1 mb-1">
+                                  <span className="text-[10px] font-semibold text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded border border-green-500/20 truncate">
+                                    {g.name}
+                                  </span>
+                                  <a
+                                    href={getAffiliateLink(g.name)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="bg-blue-600 hover:bg-blue-500 text-white p-1 rounded shadow transition-colors shrink-0"
+                                    title="Find cheap key on CDKeys"
+                                    aria-label={`Find cheap key for ${g.name} on CDKeys`}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
+                                  </a>
+                                </div>
+                                <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
+                                  {g.name}
+                                </p>
+                                {SharedHoursRow(g)}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => setData(null)}
+                    className="mt-10 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow transition"
+                  >
+                    Compare Again
+                  </button>
+
+                  <div className="mt-4 text-center">
+                    <Link
+                      href="/upgrade"
+                      className="inline-block px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold rounded-xl shadow-lg shadow-amber-500/20 transition-all duration-150"
+                    >
+                      Go Premium
+                    </Link>
                   </div>
-                );
-              })}
+                </div>
 
-              <button
-                onClick={() => setData(null)}
-                className="mt-10 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow transition"
-              >
-                Compare Again
-              </button>
+                <aside className="hidden 2xl:block absolute -right-48 top-24 w-40">
+                  <div className="p-2 border border-white/5 rounded-xl bg-white/[0.02]">
+                    <p className="text-[8px] text-gray-600 uppercase tracking-widest text-center mb-2">Advertisement</p>
+                    <GoogleAdSense isPremium={isPremium} slot="8627342981" />
+                  </div>
+                </aside>
 
-              <div className="mt-4 text-center">
-                <a
-                  href="https://ko-fi.com/F1F11N6SO4"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-                >
-                  Support me on Ko-fi
-                </a>
               </div>
             </div>
           </div>
         )}
-      </div>
 
 
 
 
 
-      {/* Help modal (unchanged) */}
-      {
-        showHelp && !data && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-[#1b1d1f] p-6 rounded-2xl max-w-md text-left shadow-xl border border-white/10">
-              <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
-                Finding your Steam64 ID
-              </h2>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
-                Open your Steam client or go to your Steam profile in a browser.
-                Click on your profile name and look for a number like this in the URL:
-                <img
-                  src="/steam-id-example.png"
-                  alt="Steam ID example showing URL with ID"
-                  className="w-full"
-                />
-              </p>
-              <div className="bg-gray-100 dark:bg-white/10 text-sm rounded-lg p-3 mb-3 font-mono text-gray-800 dark:text-gray-100">
-                76561198881424318
-              </div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                You can also paste your full Steam profile link — we’ll handle it automatically.
-              </p>
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={() => setShowHelp(false)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition"
-                >
-                  Got it
-                </button>
+        {/* Help modal (unchanged) */}
+        {
+          showHelp && !data && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-[#1b1d1f] p-6 rounded-2xl max-w-md text-left shadow-xl border border-white/10">
+                <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                  Finding your Steam64 ID
+                </h2>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
+                  Open your Steam client or go to your Steam profile in a browser.
+                  Click on your profile name and look for a number like this in the URL:
+                  <img
+                    src="/steam-id-example.png"
+                    alt="Steam ID example showing URL with ID"
+                    className="w-full"
+                  />
+                </p>
+                <div className="bg-gray-100 dark:bg-white/10 text-sm rounded-lg p-3 mb-3 font-mono text-gray-800 dark:text-gray-100">
+                  76561198881424318
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  You can also paste your full Steam profile link — we’ll handle it automatically.
+                </p>
+                <div className="flex justify-end mt-4">
+                  <button
+                    onClick={() => setShowHelp(false)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition"
+                  >
+                    Got it
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )
-      }
+          )
+        }
 
-      {/* floating header that smooth-scrolls back to the form */}
-      {
-        showSticky && !data && !loading && (
-          <div className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top)]">
-            <div className="mx-auto max-w-6xl px-3 sm:px-6">
-              <div className="mt-3 flex items-center justify-between gap-3
+        {/* floating header that smooth-scrolls back to the form */}
+        {
+          showSticky && !data && !loading && (
+            <div className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top)]">
+              <div className="mx-auto max-w-6xl px-3 sm:px-6">
+                <div className="mt-3 flex items-center justify-between gap-3
                             rounded-2xl border border-white/10
                             bg-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/30
                             shadow-lg shadow-black/20 px-3 py-2">
-                <div className="flex items-center gap-2 text-sm text-gray-200">
-                  <span className="hidden sm:inline">Wanna know what you both play?</span>
-                  <span className="sm:hidden">Compare</span>
-                </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-200">
+                    <span className="hidden sm:inline">Wanna know what you both play?</span>
+                    <span className="sm:hidden">Compare</span>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                    setHighlightForm(true);
-                    setTimeout(() => firstInputRef.current?.focus(), 450);
-                  }}
-                  className="px-5 py-2 rounded-xl font-medium
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                      setHighlightForm(true);
+                      setTimeout(() => firstInputRef.current?.focus(), 450);
+                    }}
+                    className="px-5 py-2 rounded-xl font-medium
                            bg-gradient-to-r from-blue-500 to-blue-600
                            hover:from-blue-400 hover:to-blue-500
                            text-white shadow-lg shadow-blue-500/20
                            transition-all duration-150 active:translate-y-px"
-                >
-                  Compare Now
-                </button>
+                  >
+                    Compare Now
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )
-      }
+          )
+        }
 
 
-      <SiteFooter />
+      </div> {/* Closes Content Wrapper from 357 */}
+
     </main >
   );
 }

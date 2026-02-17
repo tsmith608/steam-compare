@@ -10,8 +10,17 @@ export async function GET(request) {
     }
 
     try {
-        const result = await query('SELECT 1 FROM premium_users WHERE steam_id = $1', [steamid]);
-        return NextResponse.json({ isPremium: result.rowCount > 0 });
+        const result = await query(
+            'SELECT tier FROM users WHERE steam_id = $1 AND (expires_at IS NULL OR expires_at > NOW())',
+            [steamid]
+        );
+        const dbTier = result.rowCount > 0 ? result.rows[0].tier : 'Noob';
+        const isPremium = dbTier === 'Hacker' || dbTier === 'Pro';
+
+        return NextResponse.json({
+            isPremium,
+            tier: dbTier
+        });
     } catch (error) {
         console.error('Database error:', error);
         // Fail safe on error

@@ -38,6 +38,14 @@ async function resolveSteamID(input) {
   throw new Error(`Could not resolve Steam vanity name: ${input}`);
 }
 
+// Blacklist of AppIDs to hide generally (Utilities, Test Servers, etc.)
+const JUNK_APP_IDS = new Set([
+  431960, // Wallpaper Engine
+  622590, // Tom Clancy's Rainbow Six Siege - Test Server
+  1040460, // Tom Clancy's Rainbow Six Siege - Technical Test Server
+  654310, // For Honor - Public Test
+]);
+
 // Fetch owned games (may be empty array). Throws if response missing (likely private).
 async function fetchLibrary(steamid) {
   if (!steamid) return [];
@@ -50,7 +58,37 @@ async function fetchLibrary(steamid) {
       `Steam library not accessible for ${steamid}. Set Game Details privacy to Public.`
     );
   }
-  return j.response.games || [];
+
+  // Filter out junk apps
+  return (j.response.games || []).filter(g => {
+    if (JUNK_APP_IDS.has(g.appid)) return false;
+    // Name-based fallback for R6 Test Servers or similar if IDs change
+    if (g.name && g.name.includes("Rainbow Six Siege") && (g.name.includes("Test") || g.name.includes("TTS"))) return false;
+    if (g.name && g.name.includes("Public Test")) return false;
+    return true;
+  });
+}
+
+// Fetch wishlist (returns object keyed by appid)
+async function fetchWishlist(steamid) {
+  if (!steamid) return {};
+  try {
+    const url = `https://store.steampowered.com/wishlist/profiles/${steamid}/wishlistdata/`;
+    const r = await fetch(url);
+    if (!r.ok) return {};
+
+    const contentType = r.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      console.warn(`[Wishlist] Non-JSON response for ${steamid}: ${contentType}`);
+      return {};
+    }
+
+    const j = await r.json();
+    return j || {};
+  } catch (err) {
+    console.warn(`[Wishlist] Failed to fetch for ${steamid}:`, err.message);
+    return {};
+  }
 }
 
 // Build a Map appid->game for quick lookups
@@ -120,50 +158,54 @@ export async function POST(req) {
       );
     }
 
-    // Check Premium Status
-    // We check if ANY of the involved users are premium.
-    // Ideally, the "owner" of the session is the first user, but checking all is friendlier.
-    let isPremium = false;
+    // Check Premium Status/Tier
+    let highestTier = 'Noob';
+    let tierCheck = { rows: [] };
     if (validIds.length > 0) {
-      console.log("[API/compare] Checking premium for:", validIds);
-      const startTime = Date.now();
-
-      // Construct a safe parameterized query for "IN" clause
       const placeholders = validIds.map((_, i) => `$${i + 1}`).join(",");
-      const premiumCheck = await query(
-        `SELECT 1 FROM premium_users WHERE steam_id IN (${placeholders}) LIMIT 1`,
+      tierCheck = await query(
+        `SELECT steam_id, tier FROM users WHERE steam_id IN (${placeholders}) AND (expires_at IS NULL OR expires_at > NOW())`,
         validIds
       );
-      if (premiumCheck.rowCount > 0) {
-        isPremium = true;
+
+      if (tierCheck.rows.length > 0) {
+        // Find highest tier (Hacker > Pro > Noob)
+        const tiersFound = tierCheck.rows.map(r => r.tier);
+        if (tiersFound.includes('Hacker')) highestTier = 'Hacker';
+        else if (tiersFound.includes('Pro')) highestTier = 'Pro';
       }
-      console.log("[API/compare] Premium check result:", isPremium, "Time:", Date.now() - startTime, "ms");
     }
 
-    // Limit Check
-    if (!isPremium && validIds.length > 4) {
+    const tierLimits = { 'Noob': 3, 'Pro': 6, 'Hacker': 12 };
+    const maxUsers = tierLimits[highestTier] || 3;
+
+    if (validIds.length > maxUsers) {
+      const nextTier = highestTier === 'Noob' ? 'Pro' : 'Hacker';
+      const upgradeMsg = highestTier === 'Hacker'
+        ? "Even Hacker is limited to 12 users for performance."
+        : `Your highest tier (${highestTier}) is limited to ${maxUsers} users. Upgrade to ${nextTier} for more!`;
+
       return NextResponse.json(
-        { error: "Free plan is limited to 4 users. One of you needs Premium for up to 12!" },
+        { error: upgradeMsg },
         { status: 403 }
       );
     }
 
-    // Hard limit even for premium to prevent abuse/timeouts
-    if (validIds.length > 12) {
-      return NextResponse.json(
-        { error: "Even Grand Party Mode is limited to 12 users for performance." },
-        { status: 400 }
-      );
-    }
+    const isPremium = highestTier !== 'Noob';
 
     // Fetch Profiles
     const { usernames, avatars, ids } = await fetchProfiles(validIds);
 
-    // Fetch Libraries
-    const libraries = await Promise.all(validIds.map(id => fetchLibrary(id)));
+    // Fetch Libraries + Wishlists
+    const [libraries, wishlists] = await Promise.all([
+      Promise.all(validIds.map(id => fetchLibrary(id))),
+      Promise.all(validIds.map(id => fetchWishlist(id)))
+    ]);
 
-    // Create maps
+    // Create maps for libraries
     const maps = libraries.map(lib => toMap(lib));
+    // Create sets for wishlists appids
+    const wishlistSets = wishlists.map(w => new Set(Object.keys(w).map(Number)));
 
     // Calculate Shared Games
     // Start with the first user's games, then intersect with everyone else
@@ -219,13 +261,69 @@ export async function POST(req) {
       unique[targetId] = uniqueGames;
     });
 
+    // Calculate Shared Wishlist (All have wishlisted it)
+    let sharedWishlistSet = wishlistSets[0];
+    for (let i = 1; i < wishlistSets.length; i++) {
+      sharedWishlistSet = intersectSets(sharedWishlistSet, wishlistSets[i]);
+    }
+    const sharedWishlist = Array.from(sharedWishlistSet).map(appid => {
+      // Find metadata from any wishlist that has it
+      let name = String(appid);
+      for (const w of wishlists) {
+        if (w[appid]?.name) {
+          name = w[appid].name;
+          break;
+        }
+      }
+      return { appid, name };
+    });
+
+    // Calculate "Buy for Friend" (You own, they wishlist)
+    const wishlistMatches = {}; // steamid -> games they want that OTHERS own
+    validIds.forEach((targetId, targetIdx) => {
+      const targetWishlist = wishlistSets[targetIdx];
+      const othersMapsUnion = new Set();
+      maps.forEach((m, idx) => {
+        if (idx !== targetIdx) {
+          for (const k of m.keys()) othersMapsUnion.add(k);
+        }
+      });
+      // Correct logic: find games in targetWishlist that are in ANY of the otherMaps
+      const matches = [];
+      for (const appid of targetWishlist) {
+        let owners = [];
+        maps.forEach((m, idx) => {
+          if (idx !== targetIdx && m.has(appid)) {
+            owners.push(validIds[idx]);
+          }
+        });
+        if (owners.length > 0) {
+          // Metadata from the wishlist
+          const name = wishlists[targetIdx][appid]?.name || String(appid);
+          matches.push({ appid, name, owners });
+        }
+      }
+      wishlistMatches[targetId] = matches;
+    });
+
+    // Build a map of tiers for the profiles
+    const tierMap = {};
+    if (tierCheck && tierCheck.rows) {
+      tierCheck.rows.forEach(r => {
+        tierMap[r.steam_id] = r.tier;
+      });
+    }
+
     return NextResponse.json({
       shared,
       unique,
+      sharedWishlist,
+      wishlistMatches,
       profiles: validIds.map((id, i) => ({
         steamid: id,
         username: usernames[i],
-        avatar: avatars[i]
+        avatar: avatars[i],
+        tier: tierMap[id] || 'Noob'
       })),
       isPremium
     });

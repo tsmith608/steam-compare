@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
+const { checkTierAccess } = require('../utils/tierCheck');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,18 +16,38 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
+        // 0. Check Tier Access
+        const access = await checkTierAccess(interaction, 'Noob'); // We don't block compare, just scale it
+        const executorTier = access.currentTier;
+
+        const tierLimits = { 'Noob': 3, 'Pro': 6, 'Hacker': 12 };
+        const maxUsers = tierLimits[executorTier] || 3;
+
         // 1. Collect all users involved (Self + mentions + voice)
         const targets = [interaction.user];
         const u1 = interaction.options.getUser('user1');
         const u2 = interaction.options.getUser('user2');
         const u3 = interaction.options.getUser('user3');
-        const voiceChannel = interaction.options.getChannel('voice');
+        let voiceChannel = interaction.options.getChannel('voice');
+
+        // Auto-detect voice if no specific users/channel provided (and user is in a VC)
+        if (!u1 && !u2 && !u3 && !voiceChannel) {
+            const member = interaction.member;
+            if (member && member.voice.channel) {
+                voiceChannel = member.voice.channel;
+            }
+        }
 
         if (u1) targets.push(u1);
         if (u2) targets.push(u2);
         if (u3) targets.push(u3);
 
         if (voiceChannel) {
+            if (executorTier === 'Noob' && !access.isServerPerk) {
+                return interaction.editReply({
+                    content: `❌ **Voice Channel Comparison** is a **Pro** tier feature.\n\nType \`/upgrade\` to unlock it, or have a **Hacker** tier member join your server!`,
+                });
+            }
             // Need GuildVoiceStates intent for this to work reliably
             voiceChannel.members.forEach(member => {
                 if (!member.user.bot) {
@@ -38,12 +59,15 @@ module.exports = {
         // Remove duplicates
         const uniqueUsers = [...new Map(targets.map(u => [u.id, u])).values()];
 
+        if (uniqueUsers.length > maxUsers) {
+            return interaction.editReply({
+                content: `❌ Your **${executorTier}** tier is limited to comparing **${maxUsers} users**.\n\nYou tried to compare ${uniqueUsers.length} users.\n\nType \`/upgrade\` to increase your limit!`,
+            });
+        }
+
         // 2. Resolve Steam IDs via valid API
         const resolved = [];
         const missing = [];
-
-        // Production URL
-        const API_BASE = 'https://webothplay.com';
 
         for (const user of uniqueUsers) {
             try {
@@ -65,11 +89,11 @@ module.exports = {
             }
         }
 
-        // 3. Handle Missing Users
-        if (missing.length > 0) {
+        // 3. Handle Resilience
+        if (resolved.length < 2) {
             const missingNames = missing.map(u => `**${u.username}**`).join(', ');
             return interaction.editReply({
-                content: `❌ I couldn't find Steam accounts for: ${missingNames}.\n\nThey need to run \`/link\` first to connect their accounts!`,
+                content: `❌ I only found linked Steam accounts for **${resolved.length}** user(s).\n\nNeed at least 2 people to compare! ${missing.length > 0 ? `Missing: ${missingNames}` : ''}`,
             });
         }
 
@@ -79,12 +103,16 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(0x60A5FA)
-            .setTitle('🎮 Ready to Compare!')
+            .setTitle('🎮 Library Comparison')
             .setDescription(`Found Steam accounts for **${resolved.length} users**.\n[**Click here to view full comparison**](${compareUrl})`)
             .addFields(
-                { name: 'Users', value: resolved.map(r => `• ${r.user.username}`).join('\n') }
+                { name: 'Comparing', value: resolved.map(r => `• ${r.user.username}`).join('\n'), inline: true }
             )
             .setTimestamp();
+
+        if (missing.length > 0) {
+            embed.addFields({ name: '⚠️ Skipped (Not Linked)', value: missing.map(u => `• ${u.username}`).join('\n'), inline: true });
+        }
 
         // 5. Fetch Top 10 Games (Bonus)
         try {

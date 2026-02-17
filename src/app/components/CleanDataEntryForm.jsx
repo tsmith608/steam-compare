@@ -17,7 +17,9 @@ export default function CleanDataEntryForm({
     formRef,
     SteamLoginButton,
     FriendPickerBridge,
-    isPremium, isLoggedIn, userName, userAvatar
+    isPremium, isLoggedIn, userName, userAvatar,
+    tier, // New prop
+    currentSteamId
 }) {
 
     // Helper to handle input changes with sanitization
@@ -30,9 +32,17 @@ export default function CleanDataEntryForm({
         });
     };
 
+    const getMaxUsers = () => {
+        if (!isPremium) return 4;
+        if (tier === 'Bronze') return 6;
+        if (tier === 'Silver') return 10;
+        if (tier === 'Gold') return 16;
+        return 12; // Default for admin or legacy
+    };
+
     const addUser = () => {
-        if (users.length >= 12) return;
-        if (!isPremium && users.length >= 4) return; // limit for free
+        const max = getMaxUsers();
+        if (users.length >= max) return;
         setUsers(prev => [...prev, ""]);
     };
 
@@ -52,11 +62,27 @@ export default function CleanDataEntryForm({
                 <div className="flex flex-col items-center justify-center gap-4">
                     {/* Make Steam Button Prominent or Show User Profile */}
                     {isLoggedIn ? (
-                        <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-xl border border-white/10">
-                            {userAvatar && <img src={userAvatar} alt="" className="w-10 h-10 rounded-full ring-2 ring-blue-500" />}
-                            <div className="text-left">
-                                <div className="text-xs text-gray-400 uppercase tracking-widest font-bold">Signed in as</div>
-                                <div className="text-white font-bold text-lg">{userName || "Steam User"}</div>
+                        <div className="flex flex-col items-center gap-4 py-4">
+                            <div className="relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                                <img src={userAvatar} alt="" className="relative w-24 h-24 rounded-full border-2 border-blue-500 shadow-2xl" />
+                                <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-black flex items-center justify-center" title="Online">
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <span className="text-xs text-blue-400 font-bold uppercase tracking-[0.2em] block mb-1">Authenticated via Steam</span>
+                                <h2 className="text-2xl font-black text-white tracking-tight">{userName}</h2>
+                                <div className="mt-4 flex flex-wrap justify-center gap-3">
+                                    <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                        <span className="text-xs font-bold text-gray-300 uppercase tracking-widest">Active Session</span>
+                                    </div>
+                                    <SteamLoginButton
+                                        label="Swap Account"
+                                        className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-[10px] text-gray-400 font-bold uppercase tracking-widest rounded-xl transition-all"
+                                    />
+                                </div>
                             </div>
                         </div>
                     ) : (
@@ -75,6 +101,7 @@ export default function CleanDataEntryForm({
                     <FriendPickerBridge
                         setUsers={setUsers}
                         isPremium={isPremium}
+                        tier={tier}
                     />
                 </div>
             </div>
@@ -122,21 +149,14 @@ export default function CleanDataEntryForm({
                     ))}
 
                     {/* Add Button */}
-                    {users.length < 12 && (
+                    {users.length < getMaxUsers() && (
                         <div className="flex items-end">
                             <button
                                 type="button"
                                 onClick={addUser}
-                                disabled={!isPremium && users.length >= 4}
-                                className={`w-full py-3 rounded-xl border border-dashed border-white/20 text-gray-400 font-medium transition-all
-                                   ${(!isPremium && users.length >= 4)
-                                        ? "opacity-50 cursor-not-allowed bg-black/10"
-                                        : "hover:bg-white/5 hover:border-white/40 hover:text-white"
-                                    }`}
+                                className="w-full py-3 rounded-xl border border-dashed border-white/20 text-gray-400 font-medium transition-all hover:bg-white/5 hover:border-white/40 hover:text-white"
                             >
-                                {(!isPremium && users.length >= 4)
-                                    ? "Unlock Premium for more slots"
-                                    : "+ Add Another Friend"}
+                                + Add Another Friend
                             </button>
                         </div>
                     )}
@@ -156,7 +176,7 @@ export default function CleanDataEntryForm({
                     </button>
 
                     <p className="text-xs text-stone-500">
-                        {isPremium ? "✨ Premium Member" : "Free Mode (Up to 4 Players)"}
+                        {isPremium ? `✨ ${tier} Member (${getMaxUsers()} Slots)` : "Free Mode (Up to 4 Players)"}
                     </p>
 
                     <button
@@ -169,7 +189,13 @@ export default function CleanDataEntryForm({
 
                     {/* Presets */}
                     <div className="w-full">
-                        <PresetManager users={users} setUsers={setUsers} />
+                        <PresetManager
+                            users={users}
+                            setUsers={setUsers}
+                            onSelect={(newUsers) => handleCompare(null, newUsers)}
+                            currentSteamId={currentSteamId}
+                            isPremium={isPremium}
+                        />
                     </div>
                 </div>
             </div>

@@ -40,8 +40,8 @@ export default function FeatureDemoSection() {
     const features = [
         {
             number: "01",
-            title: "Paste profiles",
-            subtitle: "Drop in Steam64 IDs or full profile links. Custom vanity URLs work too.",
+            title: "Connect the Squad",
+            subtitle: "Grab any Steam profile URL or Steam64 ID. Paste them in to build your comparison list instantly.",
             video: {
                 mp4: "/panels/paste-profiles.mp4",
                 poster: "/panels/paste-profiles.png",
@@ -51,8 +51,8 @@ export default function FeatureDemoSection() {
         },
         {
             number: "02",
-            title: "Compare instantly",
-            subtitle: "Compare playtime with up to three of your friends on titles you all own.",
+            title: "Side-by-Side Stats",
+            subtitle: "View shared games with playtime stats for the whole squad. Compare up to 10 friends at once.",
             video: {
                 mp4: "/panels/compare-instantly.mp4",
             },
@@ -61,8 +61,8 @@ export default function FeatureDemoSection() {
         },
         {
             number: "03",
-            title: "Plan your session",
-            subtitle: "See what games are exclusively owned by each of your friends.",
+            title: "Explore Collections",
+            subtitle: "Filter by player to see unique titles and hidden gems. Uncover those \"Only You\" games for your next session.",
             video: {
                 mp4: "/panels/plan-session.mp4",
                 poster: "/panels/plan-session.png",
@@ -72,8 +72,8 @@ export default function FeatureDemoSection() {
         },
         {
             number: "04",
-            title: "Click through to Steam",
-            subtitle: "Every card links to the Steam store page for your convenience.",
+            title: "Launch or Buy",
+            subtitle: "One click takes you straight to Steam. Launch the games you own or wishlist new titles for the group.",
             video: {
                 mp4: "/panels/open-store.mp4",
             },

@@ -12,8 +12,17 @@ export async function POST(req) {
         // Fetch 5 at a time to be nice to rate limits but parallel enough to be fast
         const CONCURRENCY = 5;
 
-        for (let i = 0; i < appids.length; i += CONCURRENCY) {
-            const batch = appids.slice(i, i + CONCURRENCY);
+        // Filter junk IDs
+        const JUNK_APP_IDS = new Set([
+            431960, // Wallpaper Engine
+            622590, // Tom Clancy's Rainbow Six Siege - Test Server
+            1040460, // Tom Clancy's Rainbow Six Siege - Technical Test Server
+        ]);
+
+        const safeAppIds = appids.filter(id => !JUNK_APP_IDS.has(Number(id)));
+
+        for (let i = 0; i < safeAppIds.length; i += CONCURRENCY) {
+            const batch = safeAppIds.slice(i, i + CONCURRENCY);
             // console.log(`[API] Fetching batch ${i / CONCURRENCY + 1}: ${batch.join(", ")}`);
 
             await Promise.all(batch.map(async (appid) => {
@@ -38,7 +47,7 @@ export async function POST(req) {
             }));
 
             // Small delay between batches
-            if (i + CONCURRENCY < appids.length) {
+            if (i + CONCURRENCY < safeAppIds.length) {
                 await new Promise(r => setTimeout(r, 200));
             }
         }

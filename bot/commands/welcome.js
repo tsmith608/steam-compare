@@ -1,9 +1,10 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('welcome')
-        .setDescription('Introduction to Steamer and how to use it.'),
+        .setDescription('Introduction to Steamer and how to use it.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
     async execute(interaction) {
         const welcomeEncoded = `
 **Welcome to Steamer!** 🎮
@@ -26,6 +27,6 @@ Type \`/help\` for a list of all commands.
 
 *Happy Gaming!* 🚀
 `;
-        await interaction.reply({ content: welcomeEncoded, ephemeral: true });
+        await interaction.reply({ content: welcomeEncoded, ephemeral: false });
     },
 };
