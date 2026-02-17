@@ -28,8 +28,9 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
         // The put method is used to fully refresh all commands in the guild with the current set
         let data;
         const guildId = process.env.GUILD_ID;
+        const deployGlobal = process.argv.includes('--global');
 
-        if (guildId) {
+        if (guildId && !deployGlobal) {
             console.log(`Using Guild ID: ${guildId} (Instant Updates)`);
 
             // 1. Deploy Guild Commands
