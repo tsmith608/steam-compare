@@ -136,7 +136,7 @@ export default function DashboardView({ overrideSteamId }) {
     }, [paramSteamId, userName, userAvatar, overrideSteamId]);
 
     const isPublicView = !!overrideSteamId;
-    const activeSteamId = fetchedUser?.steamid || overrideSteamId || paramSteamId || localAuth.id;
+    const activeSteamId = String(fetchedUser?.steamid || overrideSteamId || paramSteamId || localAuth.id || "");
 
     // CRITICAL FIX: If we have a fetched user (public profile), show THEIR name/avatar, not ours.
     // If loading a public profile (`isPublicView`), do NOT fall back to `localAuth` (viewer's info).
@@ -144,9 +144,8 @@ export default function DashboardView({ overrideSteamId }) {
     const activeUserAvatar = fetchedUser?.avatarfull || fetchedUser?.avatar || userAvatar || (!isPublicView ? localAuth.avatar : null);
 
     // isOwner logic: Check if the current ID matches logged-in ID, or if the resolved fetched ID matches
-    // isOwner logic: Check if the current ID matches logged-in ID, or if the resolved fetched ID matches
     const loggedInId = typeof window !== 'undefined' ? sessionStorage.getItem("wb.steamid") : null;
-    const isOwner = (loggedInId && activeSteamId === loggedInId) ||
+    const isOwner = (loggedInId && String(activeSteamId) === String(loggedInId)) ||
         (fetchedUser?.steamid && loggedInId && String(fetchedUser.steamid) === String(loggedInId));
 
     useEffect(() => {
@@ -268,6 +267,11 @@ export default function DashboardView({ overrideSteamId }) {
     }, [overrideSteamId, paramSteamId, localAuth.id]); // Now depends on localAuth.id to fix the "loads forever" issue when signing in.
 
     const handleSaveProfile = async () => {
+        console.log("Attempting to save profile for ID:", activeSteamId);
+        if (!activeSteamId) {
+            alert("Error: No Steam ID found. Please refresh and try again.");
+            return;
+        }
         try {
             const res = await fetch('/api/user/profile', {
                 method: 'POST',
@@ -291,9 +295,14 @@ export default function DashboardView({ overrideSteamId }) {
             });
             if (res.ok) {
                 setIsEditing(false);
+                alert("Profile saved successfully!");
+            } else {
+                const data = await res.json();
+                alert(`Failed to save profile: ${data.error || 'Unknown error'}`);
             }
         } catch (err) {
             console.error(err);
+            alert("An error occurred while saving the profile. The file might be too large for the server.");
         }
     };
 
@@ -337,13 +346,18 @@ export default function DashboardView({ overrideSteamId }) {
     };
 
     const handleSaveCollection = async (collectionData) => {
+        console.log("Attempting to save collection for ID:", activeSteamId, "Title:", collectionData.title);
+        if (!activeSteamId || !collectionData.title) {
+            alert(`Error: Missing ${!activeSteamId ? 'Steam ID' : 'Title'}`);
+            return;
+        }
         try {
             const res = await fetch('/api/user/collections', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...collectionData,
-                    steamId: activeSteamId
+                    steamId: String(activeSteamId)
                 })
             });
             if (res.ok) {

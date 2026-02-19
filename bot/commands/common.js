@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
 
+const API_BASE = 'https://webothplay.com';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('common')
@@ -31,7 +33,6 @@ module.exports = {
         }
 
         const uniqueUsers = [...new Map(targets.map(u => [u.id, u])).values()];
-        const API_BASE = 'https://webothplay.com';
 
         // 0. Check Tier Access
         const access = await checkTierAccess(interaction, 'Pro');

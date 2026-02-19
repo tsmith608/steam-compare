@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
 
+const API_BASE = 'https://webothplay.com';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('flex')
@@ -11,7 +13,6 @@ module.exports = {
         await interaction.deferReply();
         const gameSearch = interaction.options.getString('game').toLowerCase();
         const targetUser = interaction.options.getUser('user');
-        const API_BASE = 'https://webothplay.com';
 
         try {
             // 0. Check Tier Access

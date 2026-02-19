@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
 
+const API_BASE = 'https://webothplay.com';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('stats')
@@ -10,7 +12,6 @@ module.exports = {
         await interaction.deferReply();
 
         const targetUser = interaction.options.getUser('user') || interaction.user;
-        const API_BASE = 'https://webothplay.com';
 
         let steamId = null;
         // 0. Check Tier Access

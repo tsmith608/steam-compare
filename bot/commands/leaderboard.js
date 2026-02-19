@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
 
+const API_BASE = 'https://webothplay.com';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('leaderboard')
@@ -15,7 +17,6 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const category = interaction.options.getString('category') || 'playtime';
-        const API_BASE = 'https://webothplay.com';
         const guild = interaction.guild;
 
         try {

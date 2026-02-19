@@ -51,10 +51,11 @@ export async function POST(req) {
         }
 
         // Defensive ID Resolution: Ensure steamId is numeric
-        if (!steamId.match(/^\d{17}$/)) {
+        const steamIdStr = String(steamId);
+        if (!steamIdStr.match(/^\d{17}$/)) {
             const userRes = await query(
                 "SELECT steam_id FROM users WHERE LOWER(vanity_id) = LOWER($1) OR LOWER(persona_name) = LOWER($1) LIMIT 1",
-                [steamId]
+                [steamIdStr]
             );
 
             if (userRes.rows.length > 0) {

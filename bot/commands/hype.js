@@ -1,13 +1,14 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
 
+const API_BASE = 'https://webothplay.com';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('hype')
         .setDescription('See what games are trending in this server right now!'),
     async execute(interaction) {
         await interaction.deferReply();
-        const API_BASE = 'https://webothplay.com';
         const guild = interaction.guild;
 
         if (!guild) {

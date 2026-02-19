@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
 
+const API_BASE = 'https://webothplay.com';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('compatibility')
@@ -15,8 +17,6 @@ module.exports = {
         if (user1.id === user2.id) {
             return interaction.editReply({ content: "You are 100% compatible with yourself. Narcissist. 🪞" });
         }
-
-        const API_BASE = 'https://webothplay.com';
 
         // Resolve IDs
         let id1, id2;
