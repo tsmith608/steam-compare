@@ -61,14 +61,12 @@ export default function PresetManager({ users, setUsers, onSelect, currentSteamI
     };
 
     const loadPreset = (presetUsers) => {
-        if (confirm("Load this squad?")) {
-            let newUsers = [...presetUsers];
-            while (newUsers.length < 2) {
-                newUsers.push("");
-            }
-            setUsers(newUsers);
-            if (onSelect) onSelect(newUsers);
+        let newUsers = [...presetUsers];
+        while (newUsers.length < 2) {
+            newUsers.push("");
         }
+        setUsers(newUsers);
+        if (onSelect) onSelect(newUsers);
     };
 
     const deletePreset = (id) => {

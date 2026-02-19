@@ -31,7 +31,7 @@ export default function BacklogSlayer({ users, isPremium }) {
     return (
         <div className="w-full h-full relative group flex flex-col">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-2 shrink-0">
+            <div className="flex items-center gap-3 mb-1 shrink-0">
                 <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-lg shadow-purple-500/10">
                     <span className="text-xl">🗡️</span>
                 </div>
@@ -41,7 +41,7 @@ export default function BacklogSlayer({ users, isPremium }) {
                 </div>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-900/10 to-black border border-purple-500/20 rounded-2xl p-3 relative overflow-hidden flex-grow flex flex-col justify-center items-center min-h-[100px]">
+            <div className="bg-gradient-to-br from-purple-900/10 to-black border border-purple-500/20 rounded-2xl p-2 relative overflow-hidden flex-grow flex flex-col justify-center items-center min-h-[100px]">
                 {/* Background decoration */}
                 <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <svg className="w-64 h-64 text-purple-500" fill="currentColor" viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z" /></svg>
@@ -86,7 +86,7 @@ export default function BacklogSlayer({ users, isPremium }) {
                                         </a>
                                         <div className="text-center">
                                             <h4 className="text-sm font-bold text-gray-200 truncate">{g.name}</h4>
-                                            <span className="text-[9px] text-gray-500 uppercase tracking-widest">0 Hours Total</span>
+                                            <span className="text-[9px] text-gray-500 uppercase tracking-widest">&lt; 2 Hours Played</span>
                                         </div>
                                     </div>
                                 ))}

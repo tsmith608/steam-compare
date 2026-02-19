@@ -23,7 +23,7 @@ export default function GameRoulette({ games = [], onPick }) {
     return (
         <div className="w-full h-full relative group flex flex-col">
             {/* Header - Moved outside to match BacklogSlayer */}
-            <div className="flex items-center gap-3 mb-2 shrink-0">
+            <div className="flex items-center gap-3 mb-1 shrink-0">
                 <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-lg shadow-purple-500/10">
                     <span className="text-xl">🎰</span>
                 </div>
@@ -33,7 +33,7 @@ export default function GameRoulette({ games = [], onPick }) {
                 </div>
             </div>
 
-            <div className="w-full p-3 rounded-2xl bg-gradient-to-br from-purple-900/40 via-black to-blue-900/40 border border-purple-500/20 shadow-2xl relative overflow-hidden flex-grow flex flex-col justify-center items-center min-h-[100px]">
+            <div className="w-full p-2 rounded-2xl bg-gradient-to-br from-purple-900/40 via-black to-blue-900/40 border border-purple-500/20 shadow-2xl relative overflow-hidden flex-grow flex flex-col justify-center items-center min-h-[100px]">
                 {/* Background Decorative */}
                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
                     <svg className="w-32 h-32 text-purple-400" fill="currentColor" viewBox="0 0 24 24">

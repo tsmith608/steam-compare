@@ -66,13 +66,18 @@ export async function POST(req) {
             if (meta && meta.name && meta.name.includes("Rainbow Six Siege") && (meta.name.includes("Test") || meta.name.includes("TTS"))) continue;
             if (meta && meta.name && meta.name.includes("Public Test")) continue;
 
-            let totalPlaytime = 0;
+            let qualifies = true;
             for (const lib of libraries) {
                 const game = lib.find(g => g.appid === appid);
-                if (game) totalPlaytime += (game.playtime_forever || 0);
+                const playtime = game ? (game.playtime_forever || 0) : 0;
+                // If any user has played more than 2 hours (120 minutes), it's not a "backlog" game
+                if (playtime > 120) {
+                    qualifies = false;
+                    break;
+                }
             }
 
-            if (totalPlaytime === 0) {
+            if (qualifies) {
                 backlog.push(metadata.get(appid));
             }
         }

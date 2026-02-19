@@ -33,9 +33,9 @@ export default function SquadActivity({ users, isPremium, profiles }) {
     const getAvatar = (sid) => profiles.find(p => p.steamid === sid)?.avatar;
 
     return (
-        <div className="w-full mb-8">
+        <div className="w-full mb-0">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center border border-orange-500/30 shadow-lg shadow-orange-500/10">
                     <span className="text-xl">🔥</span>
                 </div>
@@ -45,9 +45,9 @@ export default function SquadActivity({ users, isPremium, profiles }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {activity.map((game, i) => (
-                    <div key={game.appid} className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-4 items-center hover:bg-white/10 transition-colors">
+                    <div key={game.appid} className="bg-white/5 border border-white/10 rounded-xl p-2 flex gap-4 items-center hover:bg-white/10 transition-colors">
                         <img
                             src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/capsule_sm_120.jpg`}
                             alt={game.name}

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 const OPENID_ENDPOINT = "https://steamcommunity.com/openid/login";
@@ -41,7 +42,7 @@ export async function GET(req) {
   }
 
   // 4) Get persona & avatar for header
-  let name = "", avatar = "";
+  let name = "", avatar = "", vanityId = "";
   try {
     const sum = await fetch(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${STEAM_API_KEY}&steamids=${steamid}`)
       .then(r => r.json());
@@ -49,9 +50,33 @@ export async function GET(req) {
     if (me) {
       name = me.personaname || "";
       avatar = me.avatarmedium || me.avatarfull || "";
+
+      // Extract vanityId from profileurl
+      // https://steamcommunity.com/id/vanityname/ or https://steamcommunity.com/profiles/17digitid/
+      if (me.profileurl && me.profileurl.includes("/id/")) {
+        const vanityMatch = me.profileurl.match(/\/id\/([^\/?#]+)/);
+        if (vanityMatch) vanityId = vanityMatch[1];
+      }
     }
   } catch {
     // non-fatal
+  }
+
+  // 4.5) Store in DB
+  if (steamid) {
+    try {
+      await query(
+        `INSERT INTO users (steam_id, persona_name, vanity_id, updated_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (steam_id) DO UPDATE SET
+         persona_name = EXCLUDED.persona_name,
+         vanity_id = EXCLUDED.vanity_id,
+         updated_at = NOW()`,
+        [steamid, name, vanityId]
+      );
+    } catch (dbErr) {
+      console.error("Failed to store user info in DB:", dbErr);
+    }
   }
 
   // 5) Clear nonce cookie

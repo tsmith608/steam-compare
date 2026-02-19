@@ -558,7 +558,7 @@ function HomeContent() {
                 <div className="max-w-6xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
                   {/* Preset Manager at Top of Results for Easy Saving */}
-                  <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-black border border-white/10 rounded-2xl px-6 py-3 shadow-2xl relative overflow-hidden">
+                  <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-black border border-white/10 rounded-2xl px-4 py-3 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
                       <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m7-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8m13 10v-2a4 4 0 0 0-3-3.87m-4-12a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>
                     </div>
@@ -570,12 +570,12 @@ function HomeContent() {
                       isPremium={isPremium}
                     />
 
-                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                       <BacklogSlayer users={users} isPremium={isPremium} />
                       <GameRoulette games={data.shared || []} />
                     </div>
 
-                    <div className="mt-4">
+                    <div className="mt-3">
                       <SquadActivity users={users} isPremium={isPremium} profiles={data.profiles || []} />
                     </div>
                   </div>
@@ -635,11 +635,9 @@ function HomeContent() {
                                 className="flex flex-col items-center bg-white/10 p-2 rounded-lg transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
                               >
                                 <a
-                                  href={getAffiliateLink(g.name)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="block"
-                                  title="Find cheap key on CDKeys"
+                                  href={`steam://run/${g.appid}`}
+                                  className="block relative group/image"
+                                  title="Play on Steam"
                                 >
                                   <img
                                     src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`}
@@ -647,6 +645,12 @@ function HomeContent() {
                                     className="rounded mb-2"
                                     loading="lazy"
                                   />
+                                  <div className="absolute inset-0 bg-blue-600/90 rounded flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity duration-200 mb-2">
+                                    <span className="text-white font-bold text-sm tracking-wider flex items-center gap-1">
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z" /></svg>
+                                      PLAY NOW
+                                    </span>
+                                  </div>
                                 </a>
                                 <div className="flex items-center justify-between gap-2 w-full px-1 mb-1">
                                   {/* Tags if available? */}
@@ -658,15 +662,7 @@ function HomeContent() {
                                       <span className="text-[9px] bg-green-900/40 text-green-300 px-1 rounded border border-green-500/20">Co-op</span>
                                     )}
                                   </div>
-
-                                  <a
-                                    href={`steam://run/${g.appid}`}
-                                    className="bg-blue-600 hover:bg-blue-500 text-white p-1 rounded shadow transition-colors shrink-0"
-                                    title="Launch on Steam"
-                                    aria-label={`Launch ${g.name} on Steam`}
-                                  >
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                  </a>
+                                  {/* Play Now button moved to hover overlay */}
                                 </div>
                                 <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>
                                   {g.name}
@@ -820,12 +816,13 @@ function HomeContent() {
                                     href={getAffiliateLink(g.name)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="bg-blue-600 hover:bg-blue-500 text-white p-1 rounded shadow transition-colors shrink-0"
+                                    className="bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow transition-colors shrink-0 flex items-center gap-1"
                                     title="Find cheap key on CDKeys"
                                     aria-label={`Find cheap key for ${g.name} on CDKeys`}
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                                    FIND KEY
                                   </a>
                                 </div>
                                 <p className="text-sm font-medium text-gray-100 truncate w-full text-center" title={g.name}>

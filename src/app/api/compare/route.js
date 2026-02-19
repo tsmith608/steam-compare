@@ -35,6 +35,20 @@ async function resolveSteamID(input) {
   if (data?.response?.success === 1 && data.response.steamid) {
     return data.response.steamid;
   }
+
+  // Fallback: Check our database for persona_name or vanity_id
+  try {
+    const dbRes = await query(
+      "SELECT steam_id FROM users WHERE LOWER(persona_name) = LOWER($1) OR LOWER(vanity_id) = LOWER($1) LIMIT 1",
+      [vanity]
+    );
+    if (dbRes.rows.length > 0) {
+      return dbRes.rows[0].steam_id;
+    }
+  } catch (dbErr) {
+    console.error("DB check for vanity failed:", dbErr);
+  }
+
   throw new Error(`Could not resolve Steam vanity name: ${input}`);
 }
 
