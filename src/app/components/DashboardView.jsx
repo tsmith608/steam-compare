@@ -265,7 +265,7 @@ export default function DashboardView({ overrideSteamId }) {
 
         init();
         setIsEditing(false); // Reset editing state when profile changes
-    }, [overrideSteamId, paramSteamId]); // Only re-run if the URL params change, not when localAuth changes unexpectedly
+    }, [overrideSteamId, paramSteamId, localAuth.id]); // Now depends on localAuth.id to fix the "loads forever" issue when signing in.
 
     const handleSaveProfile = async () => {
         try {
