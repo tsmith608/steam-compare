@@ -23,6 +23,7 @@ export default function FriendPickerBridge({ setUsers, isPremium, tier }) {
   const [loading, setLoading] = useState(false);
   const [me, setMe] = useState(null);
   const [errMsg, setErrMsg] = useState("");
+  const [currentSteamId, setCurrentSteamId] = useState("");
 
   const getMaxUsers = () => {
     if (!isPremium) return 4;
@@ -47,6 +48,7 @@ export default function FriendPickerBridge({ setUsers, isPremium, tier }) {
     }
 
     if (steamid) {
+      setCurrentSteamId(steamid);
       // keep it around for subsequent loads
       try { sessionStorage.setItem("wb.steamid", steamid); } catch { }
 
@@ -71,13 +73,17 @@ export default function FriendPickerBridge({ setUsers, isPremium, tier }) {
       // 3) always fetch friends when we have a steamid
       setLoading(true);
       setErrMsg("");
+      console.log("[FriendPickerBridge] Fetching friends for:", steamid);
       fetch(`/api/compare/auth/steam/friends?steamid=${encodeURIComponent(steamid)}&t=${Date.now()}`, {
         method: "GET",
         cache: "no-store",
         headers: { "Accept": "application/json" },
       })
         .then(async (r) => {
-          if (!r.ok) throw new Error(`Friends HTTP ${r.status}`);
+          if (!r.ok) {
+            console.error("[FriendPickerBridge] HTTP Error:", r.status);
+            throw new Error(`Friends HTTP ${r.status}`);
+          }
           return r.json();
         })
         .then(({ friends }) => {
@@ -108,7 +114,7 @@ export default function FriendPickerBridge({ setUsers, isPremium, tier }) {
   }, [setUsers]);
 
   if (!open) {
-    if (friends.length > 0) {
+    if (currentSteamId || friends.length > 0) {
       return (
         <div className="mt-2 flex justify-center w-full">
           <button
@@ -130,6 +136,7 @@ export default function FriendPickerBridge({ setUsers, isPremium, tier }) {
       friends={friends}
       loading={loading}
       limit={limit}
+      error={errMsg}
       onPicked={(ids) => {
         setUsers(prev => {
           const next = [...prev];

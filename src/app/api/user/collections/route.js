@@ -44,10 +44,27 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { id, steamId, title, description, gameIds, isPublic } = body;
+        let { id, steamId, title, description, gameIds, isPublic } = body;
 
         if (!steamId || !title) {
             return NextResponse.json({ error: "Missing steamId or title" }, { status: 400 });
+        }
+
+        // Defensive ID Resolution: Ensure steamId is numeric
+        if (!steamId.match(/^\d{17}$/)) {
+            const userRes = await query(
+                "SELECT steam_id FROM users WHERE LOWER(vanity_id) = LOWER($1) OR LOWER(persona_name) = LOWER($1) LIMIT 1",
+                [steamId]
+            );
+
+            if (userRes.rows.length > 0) {
+                steamId = userRes.rows[0].steam_id;
+            } else {
+                // If we can't resolve it, we might have a problem if it's a vanity name not in our DB.
+                // However, the dashboard usually ensures the user exists.
+                // We'll proceed, but it might fail DB constraints if it's not a BigInt-compatible string.
+                console.warn(`Could not resolve vanity Steam ID: ${steamId}`);
+            }
         }
 
         // Validate/Normalize gameIds to ensure they are stored consistently

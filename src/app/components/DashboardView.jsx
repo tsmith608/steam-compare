@@ -135,13 +135,18 @@ export default function DashboardView({ overrideSteamId }) {
         }
     }, [paramSteamId, userName, userAvatar, overrideSteamId]);
 
-    const activeSteamId = overrideSteamId || paramSteamId || localAuth.id;
-    const activeUserName = userName || localAuth.name || fetchedUser?.personaname || fetchedUser?.username;
-    const activeUserAvatar = userAvatar || localAuth.avatar || fetchedUser?.avatarfull || fetchedUser?.avatar;
+    const isPublicView = !!overrideSteamId;
+    const activeSteamId = fetchedUser?.steamid || overrideSteamId || paramSteamId || localAuth.id;
+
+    // CRITICAL FIX: If we have a fetched user (public profile), show THEIR name/avatar, not ours.
+    // If loading a public profile (`isPublicView`), do NOT fall back to `localAuth` (viewer's info).
+    const activeUserName = fetchedUser?.personaname || fetchedUser?.username || userName || (!isPublicView ? localAuth.name : null) || overrideSteamId;
+    const activeUserAvatar = fetchedUser?.avatarfull || fetchedUser?.avatar || userAvatar || (!isPublicView ? localAuth.avatar : null);
 
     // isOwner logic: Check if the current ID matches logged-in ID, or if the resolved fetched ID matches
+    // isOwner logic: Check if the current ID matches logged-in ID, or if the resolved fetched ID matches
     const loggedInId = typeof window !== 'undefined' ? sessionStorage.getItem("wb.steamid") : null;
-    const isOwner = (activeSteamId && loggedInId && activeSteamId === loggedInId) ||
+    const isOwner = (loggedInId && activeSteamId === loggedInId) ||
         (fetchedUser?.steamid && loggedInId && String(fetchedUser.steamid) === String(loggedInId));
 
     useEffect(() => {
@@ -260,7 +265,7 @@ export default function DashboardView({ overrideSteamId }) {
 
         init();
         setIsEditing(false); // Reset editing state when profile changes
-    }, [activeSteamId]);
+    }, [overrideSteamId, paramSteamId]); // Only re-run if the URL params change, not when localAuth changes unexpectedly
 
     const handleSaveProfile = async () => {
         try {
@@ -344,9 +349,13 @@ export default function DashboardView({ overrideSteamId }) {
             if (res.ok) {
                 setShowCollectionModal(false);
                 fetchCollections();
+            } else {
+                const data = await res.json();
+                alert(`Failed to save collection: ${data.error || 'Unknown error'}`);
             }
         } catch (err) {
             console.error(err);
+            alert("An error occurred while saving the collection.");
         }
     };
 
@@ -404,8 +413,23 @@ export default function DashboardView({ overrideSteamId }) {
         <div className={`min-h-screen relative w-full ${theme.font} ${theme.style || ""}`}>
             <div
                 className="fixed inset-0 -z-30 transition-all duration-1000"
-                style={{ background: profile.custom_page_bg ? `url(${profile.custom_page_bg}) center/cover no-repeat fixed` : theme.bg }}
-            />
+            >
+                {profile.custom_page_bg && (profile.custom_page_bg.startsWith('data:video') || profile.custom_page_bg.endsWith('.mp4') || profile.custom_page_bg.endsWith('.webm')) ? (
+                    <video
+                        src={profile.custom_page_bg}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <div
+                        className="w-full h-full"
+                        style={{ background: profile.custom_page_bg ? `url(${profile.custom_page_bg}) center/cover no-repeat fixed` : theme.bg }}
+                    />
+                )}
+            </div>
             {theme.overlay && <div className={`${theme.overlay} fixed -z-20`}></div>}
             {theme.scanlines && (
                 <div className="fixed inset-0 -z-10 pointer-events-none opacity-[0.03]"
@@ -414,14 +438,30 @@ export default function DashboardView({ overrideSteamId }) {
 
             <div className="max-w-6xl mx-auto px-6 py-12 w-full relative z-10">
                 <header className={`relative flex flex-col md:flex-row items-center gap-8 mb-16 p-8 ${theme.cardStyle || "rounded-3xl"} border ${theme.border} shadow-2xl backdrop-blur-sm overflow-hidden`}>
-                    <div
-                        className="absolute inset-0 -z-10 opacity-70 transition-all duration-1000"
-                        style={{
-                            background: profile.custom_banner ? `url(${profile.custom_banner}) no-repeat` : "rgba(0,0,0,0.4)",
-                            backgroundSize: 'cover',
-                            backgroundPosition: `center ${profile.custom_banner_pos}%`
-                        }}
-                    />
+                    <div className="absolute inset-0 -z-10 opacity-70 transition-all duration-1000 overflow-hidden rounded-[inherit]">
+                        {profile.custom_banner && (profile.custom_banner.startsWith('data:video') || profile.custom_banner.endsWith('.mp4') || profile.custom_banner.endsWith('.webm')) ? (
+                            <video
+                                src={profile.custom_banner}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover"
+                                style={{
+                                    objectPosition: `center ${profile.custom_banner_pos}%`
+                                }}
+                            />
+                        ) : (
+                            <div
+                                className="w-full h-full"
+                                style={{
+                                    background: profile.custom_banner ? `url(${profile.custom_banner}) no-repeat` : "rgba(0,0,0,0.4)",
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: `center ${profile.custom_banner_pos}%`
+                                }}
+                            />
+                        )}
+                    </div>
 
                     <div className="relative group">
                         <div className={`absolute inset-0 ${theme.accent.replace('text-', 'bg-')} blur-xl opacity-20 group-hover:opacity-40 transition-opacity`}></div>
@@ -485,16 +525,16 @@ export default function DashboardView({ overrideSteamId }) {
                                 </div>
 
                                 <div className="bg-black/40 p-3 rounded-xl border border-white/5">
-                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2">Custom Banner Image (Header)</label>
+                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2">Custom Banner (Image/Video)</label>
                                     <div className="flex flex-col gap-2">
                                         <input
                                             type="file"
-                                            accept="image/*"
+                                            accept="image/*,video/mp4,video/webm"
                                             onChange={(e) => {
                                                 const file = e.target.files[0];
                                                 if (file) {
-                                                    if (file.size > 2 * 1024 * 1024) {
-                                                        alert("Image too large (max 2MB)");
+                                                    if (file.size > 50 * 1024 * 1024) {
+                                                        alert("File too large (max 50MB)");
                                                         return;
                                                     }
                                                     const reader = new FileReader();
@@ -528,16 +568,16 @@ export default function DashboardView({ overrideSteamId }) {
                                 </div>
 
                                 <div className="bg-black/40 p-3 rounded-xl border border-white/5">
-                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2">Custom Page Background</label>
+                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2">Custom Page Background (Image/Video)</label>
                                     <div className="flex flex-col gap-2">
                                         <input
                                             type="file"
-                                            accept="image/*"
+                                            accept="image/*,video/mp4,video/webm"
                                             onChange={(e) => {
                                                 const file = e.target.files[0];
                                                 if (file) {
-                                                    if (file.size > 2 * 1024 * 1024) {
-                                                        alert("Image too large (max 2MB)");
+                                                    if (file.size > 50 * 1024 * 1024) {
+                                                        alert("File too large (max 50MB)");
                                                         return;
                                                     }
                                                     const reader = new FileReader();

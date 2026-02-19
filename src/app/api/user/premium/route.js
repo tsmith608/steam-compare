@@ -12,7 +12,16 @@ export async function GET(req) {
     }
 
     try {
-        const res = await query("SELECT created_at as added_at, tier, expires_at FROM users WHERE steam_id = $1", [steamId]);
+        // Try exact Steam ID match first
+        let res = await query("SELECT created_at as added_at, tier, expires_at, steam_id FROM users WHERE steam_id = $1", [steamId]);
+
+        // If not found, try vanity_id or persona_name match
+        if (res.rows.length === 0) {
+            res = await query(
+                "SELECT created_at as added_at, tier, expires_at, steam_id FROM users WHERE LOWER(vanity_id) = LOWER($1) OR LOWER(persona_name) = LOWER($1) LIMIT 1",
+                [steamId]
+            );
+        }
 
         if (res.rows.length === 0) {
             return NextResponse.json({ isPremium: false });

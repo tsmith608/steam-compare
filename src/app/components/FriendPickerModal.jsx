@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 
-export default function FriendPickerModal({ friends = [], loading = false, me = null, onPicked, onClose, limit = 3 }) {
+export default function FriendPickerModal({ friends = [], loading = false, me = null, onPicked, onClose, limit = 3, error }) {
   const [query, setQuery] = useState("");
   const [chosen, setChosen] = useState(() => new Set());
 
@@ -74,6 +74,8 @@ export default function FriendPickerModal({ friends = [], loading = false, me = 
           <div className="h-[38vh] min-h-[280px] overflow-auto rounded-xl border border-white/10 bg-white/[0.04]">
             {loading ? (
               <div className="p-5 text-gray-400">Loading friends…</div>
+            ) : error ? (
+              <div className="p-5 text-red-400">{error}</div>
             ) : filtered.length === 0 ? (
               <div className="p-5 text-gray-400">No friends to show. Their friend list may be private or filtered out.</div>
             ) : (

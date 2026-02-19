@@ -17,11 +17,18 @@ export async function GET(req) {
   }
 
   try {
-    // 1) Get friend IDs
+    console.log(`[API] /friends fetching for steamid: ${steamid}, key_exists: ${!!STEAM_API_KEY}`);
     const listData = await fetch(
       `https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key=${STEAM_API_KEY}&steamid=${steamid}&relationship=friend`,
       { cache: "no-store" }
-    ).then(r => r.json()).catch(() => null);
+    ).then(async r => {
+      const txt = await r.text();
+      console.log(`[API] /friends raw response: status=${r.status} body=${txt.substring(0, 200)}`); // Log first 200 chars
+      try { return JSON.parse(txt); } catch { return null; }
+    }).catch(err => {
+      console.error("[API] /friends fetch error:", err);
+      return null;
+    });
 
     const ids = (listData?.friendslist?.friends || []).map(f => f.steamid);
 
