@@ -68,35 +68,60 @@ module.exports = {
         }
 
         // 2. Resolve Steam IDs via valid API
+        // 2. Resolve Steam IDs via Batch API
+        const discordIds = uniqueUsers.map(u => u.id);
         const resolved = [];
         const missing = [];
 
-        for (const user of uniqueUsers) {
-            try {
-                // Fetch from our local API
-                const res = await fetch(`${API_BASE}/api/discord/link?discord_id=${user.id}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.steamId) {
-                        resolved.push({ user, steamId: data.steamId });
+        try {
+            const res = await fetch(`${API_BASE}/api/discord/batch-links`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ discordIds })
+            });
+
+            if (res.ok) {
+                const { links } = await res.json();
+                const linkMap = new Map(links.map(l => [l.discordId, l.steamId]));
+
+                for (const user of uniqueUsers) {
+                    const steamId = linkMap.get(user.id);
+                    if (steamId) {
+                        resolved.push({ user, steamId });
                     } else {
                         missing.push(user);
                     }
-                } else {
-                    missing.push(user);
                 }
-            } catch (err) {
-                console.error(`Failed to fetch for ${user.username}:`, err);
-                missing.push(user);
+            } else {
+                throw new Error(`API Error: ${res.status}`);
             }
+        } catch (err) {
+            console.error("Batch resolve failed:", err);
+            return interaction.editReply({
+                content: `❌ **Service Error**: I couldn't connect to the account database. Please try again later.`,
+            });
         }
 
-        // 3. Handle Resilience
+        // 3. Handle Resilience with Descriptive Messaging
         if (resolved.length < 2) {
+            const isExecutorLinked = resolved.some(r => r.user.id === interaction.user.id);
             const missingNames = missing.map(u => `**${u.username}**`).join(', ');
-            return interaction.editReply({
-                content: `❌ I only found linked Steam accounts for **${resolved.length}** user(s).\n\nNeed at least 2 people to compare! ${missing.length > 0 ? `Missing: ${missingNames}` : ''}`,
-            });
+
+            let responseContent = `❌ **Comparison Failed**\n\n`;
+
+            if (!isExecutorLinked) {
+                responseContent += `You haven't linked your Steam account yet! Type \`/link\` to get started.\n\n`;
+            }
+
+            if (resolved.length === 0) {
+                responseContent += `I couldn't find linked Steam accounts for **anyone** in this list: ${missingNames}`;
+            } else {
+                responseContent += `I found a link for ${resolved.map(r => `**${r.user.username}**`).join(', ')}, but I need at least **two** linked users to compare.\n\n**Missing:** ${missingNames}`;
+            }
+
+            responseContent += `\n\n💡 *All users must run \`/link\` and sign in with Steam before they can be compared.*`;
+
+            return interaction.editReply({ content: responseContent });
         }
 
         // 4. Generate Link
