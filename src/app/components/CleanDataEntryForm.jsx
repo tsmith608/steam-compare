@@ -102,6 +102,7 @@ export default function CleanDataEntryForm({
                         setUsers={setUsers}
                         isPremium={isPremium}
                         tier={tier}
+                        steamId={currentSteamId}
                     />
                 </div>
             </div>

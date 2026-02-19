@@ -26,6 +26,19 @@ async function resolveSteamID(input) {
       .replace(/^https?:\/\/|www\.|steamcommunity\.com\/|id\/|profiles\//gi, "")
       .split(/[/?#]/)[0];
 
+  // Optimization: Check DB *before* external API for vanity
+  try {
+    const dbRes = await query(
+      "SELECT steam_id FROM users WHERE LOWER(persona_name) = LOWER($1) OR LOWER(vanity_id) = LOWER($1) LIMIT 1",
+      [vanity]
+    );
+    if (dbRes.rows.length > 0) {
+      return dbRes.rows[0].steam_id;
+    }
+  } catch (dbErr) {
+    console.error("DB check for vanity failed:", dbErr);
+  }
+
   const res = await fetch(
     `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${API_KEY}&vanityurl=${encodeURIComponent(
       vanity
@@ -116,6 +129,7 @@ function intersectSets(a, b) {
 }
 
 // Fetch display names + avatars for provided IDs (preserve positional order)
+// Updated to use DB cache first, then API for missing/stale data
 async function fetchProfiles(idsInOrder) {
   const steamids = idsInOrder.filter(Boolean);
   if (steamids.length === 0) {
@@ -126,20 +140,64 @@ async function fetchProfiles(idsInOrder) {
     };
   }
 
-  const res = await fetch(
-    `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${API_KEY}&steamids=${steamids.join(
-      ","
-    )}`
+  // 1. Fetch from DB
+  const dbRes = await query(
+    `SELECT steam_id, persona_name, avatar_url, updated_at FROM users WHERE steam_id = ANY($1)`,
+    [steamids]
   );
-  const data = await res.json();
-  const players = data?.response?.players || [];
-  const byId = new Map(players.map((p) => [String(p.steamid), p]));
+  const dbMap = new Map(dbRes.rows.map(r => [r.steam_id, r]));
+
+  // 2. Identify missing or stale IDs
+  const STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+  const now = Date.now();
+
+  const missingableIds = steamids.filter(id => {
+    const record = dbMap.get(id);
+    if (!record) return true;
+    if (!record.persona_name || !record.avatar_url) return true;
+
+    // Check staleness
+    const lastUpdate = new Date(record.updated_at).getTime();
+    if (isNaN(lastUpdate) || (now - lastUpdate > STALE_THRESHOLD)) return true;
+
+    return false;
+  });
+
+  // 3. Fetch missing/stale from API
+  if (missingableIds.length > 0) {
+    try {
+      const res = await fetch(
+        `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${API_KEY}&steamids=${missingableIds.join(",")}`
+      );
+      const data = await res.json();
+      const players = data?.response?.players || [];
+
+      // 4. Upsert fresh data into DB
+      await Promise.all(players.map(p =>
+        query(
+          `INSERT INTO users (steam_id, persona_name, avatar_url, updated_at)
+           VALUES ($1, $2, $3, NOW())
+           ON CONFLICT (steam_id) 
+           DO UPDATE SET 
+             persona_name = EXCLUDED.persona_name,
+             avatar_url = EXCLUDED.avatar_url,
+             updated_at = NOW() RETURNING steam_id, persona_name, avatar_url, updated_at`,
+          [p.steamid, p.personaname, p.avatarfull]
+        ).then(r => {
+          if (r.rows[0]) dbMap.set(r.rows[0].steam_id, r.rows[0]);
+        }).catch(e => console.error(`Failed to cache profile ${p.steamid}:`, e))
+      ));
+
+    } catch (apiErr) {
+      console.error("Failed to fetch missing profiles from Steam:", apiErr);
+    }
+  }
 
   const usernames = idsInOrder.map((id) =>
-    id ? byId.get(String(id))?.personaname || id : null
+    id ? dbMap.get(String(id))?.persona_name || id : null
   );
   const avatars = idsInOrder.map((id) =>
-    id ? byId.get(String(id))?.avatarfull || byId.get(String(id))?.avatar || null : null
+    id ? dbMap.get(String(id))?.avatar_url || null : null
   );
 
   return { usernames, avatars, ids: idsInOrder };
@@ -150,6 +208,7 @@ async function fetchProfiles(idsInOrder) {
 export async function POST(req) {
   try {
     const body = await req.json();
+    console.log("[API /compare] Request Body:", JSON.stringify(body));
 
     // Support both old {user1..4} and new {users: []} format
     let inputUsers = body.users || [body.user1, body.user2, body.user3, body.user4];
@@ -346,4 +405,3 @@ export async function POST(req) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-

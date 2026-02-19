@@ -37,7 +37,8 @@ function HomeContent() {
   const [authState, setAuthState] = useState({
     steamid: searchParams.get("steamid"),
     name: searchParams.get("name"),
-    avatar: searchParams.get("avatar")
+    avatar: searchParams.get("avatar"),
+    vanity: searchParams.get("vanity")
   });
 
   const [users, setUsers] = useState(["", "", "", ""]);
@@ -49,6 +50,7 @@ function HomeContent() {
     const urlId = searchParams.get("steamid");
     const urlName = searchParams.get("name");
     const urlAvatar = searchParams.get("avatar");
+    const urlVanity = searchParams.get("vanity");
     const multiIds = searchParams.getAll("steamid");
 
     if (urlId) {
@@ -56,8 +58,9 @@ function HomeContent() {
       sessionStorage.setItem("wb.steamid", urlId);
       if (urlName) sessionStorage.setItem("wb.username", urlName);
       if (urlAvatar) sessionStorage.setItem("wb.avatar", urlAvatar);
+      if (urlVanity) sessionStorage.setItem("wb.vanity", urlVanity);
 
-      setAuthState({ steamid: urlId, name: urlName, avatar: urlAvatar });
+      setAuthState({ steamid: urlId, name: urlName, avatar: urlAvatar, vanity: urlVanity });
 
       // Handle multi-ID population (for quick links)
       if (multiIds.length > 0) {
@@ -82,9 +85,10 @@ function HomeContent() {
       const sId = sessionStorage.getItem("wb.steamid");
       const sName = sessionStorage.getItem("wb.username");
       const sAvatar = sessionStorage.getItem("wb.avatar");
+      const sVanity = sessionStorage.getItem("wb.vanity");
 
       if (sId) {
-        setAuthState({ steamid: sId, name: sName, avatar: sAvatar });
+        setAuthState({ steamid: sId, name: sName, avatar: sAvatar, vanity: sVanity });
         // Ensure inputs are populated
         setUsers(prev => {
           if (prev[0]) return prev; // Don't overwrite if user typed something? 

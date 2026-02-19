@@ -3,33 +3,124 @@ import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+const STEAM_API_KEY = process.env.STEAM_API_KEY;
+
+// Helper to resolve vanity to numeric ID
+async function resolveSteamID(input) {
+    if (!input) return null;
+    const cleaned = input.trim();
+    if (/^\d{17}$/.test(cleaned)) return cleaned; // Already numeric
+
+    // 1. Try DB lookup for vanity_id
+    try {
+        const dbRes = await query(
+            "SELECT steam_id FROM users WHERE LOWER(vanity_id) = LOWER($1) OR LOWER(persona_name) = LOWER($1) LIMIT 1",
+            [cleaned]
+        );
+        if (dbRes.rows.length > 0) return dbRes.rows[0].steam_id;
+    } catch (e) {
+        console.error("DB vanity lookup failed:", e);
+    }
+
+    // 2. Try Steam API
+    if (STEAM_API_KEY) {
+        try {
+            const res = await fetch(
+                `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${STEAM_API_KEY}&vanityurl=${encodeURIComponent(cleaned)}`
+            );
+            const data = await res.json();
+            if (data?.response?.success === 1 && data.response.steamid) {
+                return data.response.steamid;
+            }
+        } catch (e) {
+            console.error("Steam API vanity resolution failed:", e);
+        }
+    }
+
+    return null; // Could not resolve
+}
+
 export async function GET(req) {
     const { searchParams } = new URL(req.url);
-    const steamId = searchParams.get("steamid");
+    const inputId = searchParams.get("steamid");
 
-    if (!steamId) {
+    if (!inputId) {
         return NextResponse.json({ error: "Missing steamid" }, { status: 400 });
     }
 
     try {
-        // Try exact Steam ID match first
-        let res = await query("SELECT * FROM users WHERE steam_id = $1", [steamId]);
+        // Resolve the ID first!
+        // This prevents "twojuice" from matching a bad record where steam_id='twojuice'
+        const resolvedId = await resolveSteamID(inputId);
 
-        // If not found, try vanity_id or persona_name match
-        if (res.rows.length === 0) {
-            res = await query(
-                "SELECT * FROM users WHERE LOWER(vanity_id) = LOWER($1) OR LOWER(persona_name) = LOWER($1) LIMIT 1",
-                [steamId]
-            );
+        // If we couldn't resolve it, we might still try to query DB with raw input just in case, 
+        // but strictly speaking, we want numeric IDs.
+        // However, if the user really HAS a record with steam_id='twojuice' (the bug), using resolvedId (which acts against Steam API) 
+        // might fix the view but leaves the bad record. 
+        // The resolvedId for 'twojuice' SHOULD be '7656...'
+
+        const targetId = resolvedId || inputId;
+
+        // Query by the TARGET ID (which should now be numeric '7656...')
+        let res = await query("SELECT * FROM users WHERE steam_id = $1", [targetId]);
+
+        let userRecord = res.rows[0];
+
+        // CHECK STALENESS / MISSING DATA
+        const STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+        const now = Date.now();
+
+        let needsRefresh = false;
+
+        const isNumericId = /^\d{17}$/.test(targetId);
+
+        if (!userRecord && isNumericId) {
+            needsRefresh = true;
+        } else if (userRecord) {
+            if (!userRecord.avatar_url || !userRecord.persona_name) needsRefresh = true;
+            else {
+                const lastUpdate = new Date(userRecord.updated_at).getTime();
+                if (isNaN(lastUpdate) || (now - lastUpdate > STALE_THRESHOLD)) needsRefresh = true;
+            }
         }
 
-        if (res.rows.length === 0) {
-            // If it looks like a steamID, return empty profile.
-            // If it's a vanity name and not in DB, it will be resolved by the compare API in the frontend.
+        if (needsRefresh && isNumericId && STEAM_API_KEY) {
+            try {
+                // Fetch from Steam
+                console.log(`[Profile] Refreshing stale/missing data for ${targetId}`);
+                const steamRes = await fetch(
+                    `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${STEAM_API_KEY}&steamids=${targetId}`
+                );
+                const steamData = await steamRes.json();
+                const player = steamData?.response?.players?.[0];
+
+                if (player) {
+                    const upsertRes = await query(
+                        `INSERT INTO users (steam_id, persona_name, avatar_url, updated_at)
+                         VALUES ($1, $2, $3, NOW())
+                         ON CONFLICT (steam_id)
+                         DO UPDATE SET
+                            persona_name = EXCLUDED.persona_name,
+                            avatar_url = EXCLUDED.avatar_url,
+                            updated_at = NOW()
+                         RETURNING *`,
+                        [player.steamid, player.personaname, player.avatarfull]
+                    );
+
+                    if (upsertRes.rows.length > 0) {
+                        userRecord = upsertRes.rows[0];
+                    }
+                }
+            } catch (err) {
+                console.error("[Profile] Failed to refresh from Steam:", err);
+            }
+        }
+
+        if (!userRecord) {
             return NextResponse.json({
                 found: false,
                 profile: {
-                    steam_id: steamId.match(/^\d{17}$/) ? steamId : "",
+                    steam_id: targetId.match(/^\d{17}$/) ? targetId : "",
                     discord_link: "",
                     twitter_link: "",
                     twitch_link: "",
@@ -47,7 +138,7 @@ export async function GET(req) {
             });
         }
 
-        return NextResponse.json({ found: true, profile: res.rows[0] });
+        return NextResponse.json({ found: true, profile: userRecord });
     } catch (error) {
         console.error("Error fetching profile:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -57,7 +148,6 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const body = await req.json();
-        console.log("POST /api/user/profile - Received body size:", JSON.stringify(body).length);
         const {
             steamId,
             discordLink,

@@ -84,7 +84,7 @@ export async function GET(req) {
   resCookies.set("steam_nonce", { value: "", httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
 
   // 6) Build profile object
-  const profile = { steamid, name, avatar };
+  const profile = { steamid, name, avatar, vanityId };
   const safeProfile = JSON.stringify(profile);
 
   // 7) Return HTML that handles both Popup (close & notify) and Redirect (go home)
@@ -115,6 +115,7 @@ export async function GET(req) {
           q.set("steamid", profile.steamid);
           if (profile.name) q.set("name", profile.name);
           if (profile.avatar) q.set("avatar", profile.avatar);
+          if (profile.vanityId) q.set("vanity", profile.vanityId);
           window.location.href = "/?" + q.toString();
         }
       })();

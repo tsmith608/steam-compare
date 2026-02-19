@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import CollectionModal from './CollectionModal';
+import BannerEditorModal from './BannerEditorModal';
 import { motion, useSpring, useMotionValue, useInView } from "framer-motion";
 
 const THEMES = {
@@ -195,41 +196,29 @@ export default function DashboardView({ overrideSteamId }) {
                         }
                     }
 
-                    // Self-healing: Update DB with name/vanity if this is the owner
+                    // Safe Vanity Sync: If owner, and DB lacks vanity, but Steam profile has it -> Update DB
                     // Re-evaluate isOwner here since we now have p.steamid
                     const currentLoggedInId = sessionStorage.getItem("wb.steamid");
                     const ownerCheck = (activeSteamId === currentLoggedInId) || (p.steamid && String(p.steamid) === String(currentLoggedInId));
 
-                    if (ownerCheck) {
-                        let vId = "";
-                        if (p.profileurl && p.profileurl.includes("/id/")) {
-                            const m = p.profileurl.match(/\/id\/([^\/?#]+)/);
-                            if (m) vId = m[1];
+                    // Use optional chaining for profData.profile just in case
+                    if (ownerCheck && !profData.profile?.vanity_id && p.profileurl && p.profileurl.includes('/id/')) {
+                        const m = p.profileurl.match(/\/id\/([^\/?#]+)/);
+                        if (m) {
+                            const newVanity = m[1];
+                            console.log("Syncing vanity ID to DB:", newVanity);
+                            fetch('/api/user/profile', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    steamId: p.steamid || activeSteamId,
+                                    vanityId: newVanity
+                                })
+                            }).then(() => {
+                                // optimistically update local state
+                                setProfile(prev => ({ ...prev, vanity_id: newVanity }));
+                            }).catch(e => console.error("Vanity sync failed:", e));
                         }
-
-                        fetch('/api/user/profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                steamId: p.steamid || activeSteamId,
-                                personaName: p.personaname || p.username,
-                                vanityId: vId,
-                                // Keep existing profile fields if we have them
-                                discordLink: profData.found ? profData.profile.discord_link : "",
-                                twitterLink: profData.found ? profData.profile.twitter_link : "",
-                                twitchLink: profData.found ? profData.profile.twitch_link : "",
-                                youtubeLink: profData.found ? profData.profile.youtube_link : "",
-                                bio: profData.found ? profData.profile.bio : "",
-                                pinnedGameIds: profData.found ? profData.profile.pinned_game_ids : [],
-                                customBanner: profData.found ? profData.profile.custom_banner : "",
-                                customLinks: profData.found ? profData.profile.custom_links : [],
-                                gamerTitle: profData.found ? profData.profile.gamer_title : "",
-                                featuredCollectionId: profData.found ? profData.profile.featured_collection_id : "",
-                                profileThemePreset: profData.found ? profData.profile.profile_theme_preset : "default",
-                                customPageBg: profData.found ? profData.profile.custom_page_bg : "",
-                                customBannerPos: profData.found ? profData.profile.custom_banner_pos : 50
-                            })
-                        }).catch(e => console.error("Self-healing sync failed:", e));
                     }
                 }
 
@@ -241,8 +230,15 @@ export default function DashboardView({ overrideSteamId }) {
                 if (library.length > 0) {
                     const totalGames = library.length;
                     let totalMinutes = 0;
+
+                    // DEBUG: Trace Stats Calculation
+                    console.log("[Dashboard] Stat Calc - ResolvedID:", resolvedNumericId);
+                    console.log("[Dashboard] Sample Game:", library[0].name, library[0].playtimes);
+
                     const sorted = library.map(g => {
-                        const pt = g.playtimes ? g.playtimes[resolvedNumericId] : g.playtime_forever;
+                        // Ensure we use the exact string key
+                        const key = String(resolvedNumericId);
+                        const pt = g.playtimes ? g.playtimes[key] : g.playtime_forever;
                         totalMinutes += pt || 0;
                         return { name: g.name, pt: pt || 0, appid: g.appid };
                     }).sort((a, b) => b.pt - a.pt);
@@ -309,8 +305,8 @@ export default function DashboardView({ overrideSteamId }) {
     const [shareProfileText, setShareProfileText] = useState("Share Profile");
 
     const handleShareProfile = () => {
-        // Prioritize vanity_id, then persona_name (sanitized), then numeric steam id
-        const shareId = profile.vanity_id || profile.persona_name || activeSteamId;
+        // Prioritize vanity_id, then numeric steam id. NEVER use persona_name (unsafe for URLs)
+        const shareId = profile.vanity_id || activeSteamId;
         const url = `${window.location.origin}/${shareId}`;
         navigator.clipboard.writeText(url);
         setShareProfileText("Link Copied!");
@@ -338,6 +334,8 @@ export default function DashboardView({ overrideSteamId }) {
     useEffect(() => {
         fetchCollections();
     }, [activeSteamId, fetchedUser?.steamid]);
+
+    const [bannerEditorImage, setBannerEditorImage] = useState(null);
 
     const handleOpenCollectionModal = (col = null, readOnly = false) => {
         setEditingCollection(col);
@@ -444,11 +442,28 @@ export default function DashboardView({ overrideSteamId }) {
                     />
                 )}
             </div>
-            {theme.overlay && <div className={`${theme.overlay} fixed -z-20`}></div>}
-            {theme.scanlines && (
-                <div className="fixed inset-0 -z-10 pointer-events-none opacity-[0.03]"
-                    style={{ background: "linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))", backgroundSize: "100% 2px, 3px 100%" }}></div>
+
+            {/* Banner Editor Modal */}
+            {bannerEditorImage && (
+                <BannerEditorModal
+                    initialImage={bannerEditorImage}
+                    onSave={(data) => {
+                        // data is { image, x, y, scale, stretch }
+                        // Store as JSON string in custom_banner
+                        setProfile({ ...profile, custom_banner: JSON.stringify(data) });
+                        setBannerEditorImage(null);
+                    }}
+                    onCancel={() => setBannerEditorImage(null)}
+                />
             )}
+
+            {theme.overlay && <div className={`${theme.overlay} fixed -z-20`}></div>}
+            {
+                theme.scanlines && (
+                    <div className="fixed inset-0 -z-10 pointer-events-none opacity-[0.03]"
+                        style={{ background: "linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))", backgroundSize: "100% 2px, 3px 100%" }}></div>
+                )
+            }
 
             <div className="max-w-6xl mx-auto px-6 py-12 w-full relative z-10">
                 <header className={`relative flex flex-col md:flex-row items-center gap-8 mb-16 p-8 ${theme.cardStyle || "rounded-3xl"} border ${theme.border} shadow-2xl backdrop-blur-sm overflow-hidden`}>
@@ -466,14 +481,40 @@ export default function DashboardView({ overrideSteamId }) {
                                 }}
                             />
                         ) : (
-                            <div
-                                className="w-full h-full"
-                                style={{
-                                    background: profile.custom_banner ? `url(${profile.custom_banner}) no-repeat` : "rgba(0,0,0,0.4)",
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: `center ${profile.custom_banner_pos}%`
-                                }}
-                            />
+                            (() => {
+                                // Logic to parse custom_banner (could be JSON or URL)
+                                let bannerUrl = profile.custom_banner || "";
+                                let bScale = 1;
+                                let bX = 50;
+                                let bY = profile.custom_banner_pos || 50;
+                                let bStretch = false;
+
+                                if (bannerUrl.startsWith('{')) {
+                                    try {
+                                        const parsed = JSON.parse(bannerUrl);
+                                        bannerUrl = parsed.image;
+                                        bScale = parsed.scale || 1;
+                                        bX = parsed.x !== undefined ? parsed.x : 50;
+                                        bY = parsed.y !== undefined ? parsed.y : 50;
+                                        bStretch = parsed.stretch || false;
+                                    } catch (e) {
+                                        console.error("Failed to parse banner JSON", e);
+                                    }
+                                }
+
+                                return (
+                                    <div
+                                        className="w-full h-full"
+                                        style={{
+                                            backgroundImage: bannerUrl ? `url(${bannerUrl})` : "none",
+                                            backgroundColor: !bannerUrl ? "rgba(0,0,0,0.4)" : "transparent",
+                                            backgroundSize: bStretch ? "100% 100%" : `${bScale * 100}%`,
+                                            backgroundPosition: bStretch ? "center" : `${bX}% ${bY}%`,
+                                            backgroundRepeat: "no-repeat"
+                                        }}
+                                    />
+                                );
+                            })()
                         )}
                     </div>
 
@@ -553,7 +594,13 @@ export default function DashboardView({ overrideSteamId }) {
                                                     }
                                                     const reader = new FileReader();
                                                     reader.onloadend = () => {
-                                                        setProfile({ ...profile, custom_banner: reader.result });
+                                                        // Check if video
+                                                        if (file.type.startsWith('video/')) {
+                                                            setProfile({ ...profile, custom_banner: reader.result });
+                                                        } else {
+                                                            // Open editor for images
+                                                            setBannerEditorImage(reader.result);
+                                                        }
                                                     };
                                                     reader.readAsDataURL(file);
                                                 }
@@ -566,16 +613,24 @@ export default function DashboardView({ overrideSteamId }) {
                                                     onClick={() => setProfile({ ...profile, custom_banner: "" })}
                                                     className="text-[10px] text-red-500 hover:text-red-400 font-bold uppercase tracking-widest text-left"
                                                 >Remove Header Banner</button>
-                                                <div className="mt-1">
-                                                    <label className="text-[9px] text-gray-500 font-bold uppercase block mb-1">Banner Position (Pan)</label>
-                                                    <input
-                                                        type="range"
-                                                        min="0" max="100"
-                                                        value={profile.custom_banner_pos}
-                                                        onChange={(e) => setProfile({ ...profile, custom_banner_pos: parseInt(e.target.value) })}
-                                                        className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                                                    />
-                                                </div>
+
+                                                {/* Only show "Edit Position" if it's an image */}
+                                                {!profile.custom_banner.startsWith('data:video') && !profile.custom_banner.endsWith('.mp4') && !profile.custom_banner.endsWith('.webm') && (
+                                                    <button
+                                                        onClick={() => {
+                                                            let validImg = profile.custom_banner;
+                                                            // If stored as JSON, extract image for editing
+                                                            if (profile.custom_banner.startsWith('{')) {
+                                                                try {
+                                                                    const parsed = JSON.parse(profile.custom_banner);
+                                                                    validImg = parsed.image;
+                                                                } catch (e) { }
+                                                            }
+                                                            setBannerEditorImage(validImg);
+                                                        }}
+                                                        className="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-widest text-left"
+                                                    >Adjust Position / Scale</button>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -1055,6 +1110,6 @@ export default function DashboardView({ overrideSteamId }) {
                     </div>
                 </footer>
             </div>
-        </div>
+        </div >
     );
 }
