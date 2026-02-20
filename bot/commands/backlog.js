@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-
-const API_BASE = 'https://webothplay.com';
+const { API_BASE, getLink } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,23 +12,15 @@ module.exports = {
 
         const targetUser = interaction.options.getUser('user') || interaction.user;
 
-        let steamId = null;
         // 0. Check Tier Access
         const access = await checkTierAccess(interaction, 'Pro');
         if (!access.allowed) {
             return interaction.editReply({ content: access.reason });
         }
 
-        try {
-            const res = await fetch(`${API_BASE}/api/discord/link?discord_id=${targetUser.id}`);
-            if (res.ok) {
-                const data = await res.json();
-                steamId = data.steamId;
-            }
-        } catch (e) { }
-
+        const steamId = await getLink(targetUser.id);
         if (!steamId) {
-            return interaction.editReply({ content: `❌ ${targetUser.username} hasn't linked their Steam account yet!` });
+            return interaction.editReply({ content: `❌ ${targetUser.id === interaction.user.id ? 'You haven\'t' : targetUser.username + " hasn't"} linked a Steam account yet! Run \`/link\` to connect.` });
         }
 
         try {
@@ -39,7 +30,10 @@ module.exports = {
                 body: JSON.stringify({ users: [steamId, steamId] })
             });
 
-            if (!compareRes.ok) throw new Error("API Error");
+            if (!compareRes.ok) {
+                const errorData = await compareRes.json().catch(() => ({}));
+                throw new Error(errorData.error || "API Error");
+            }
             const data = await compareRes.json();
 
             let library = data.shared || [];
@@ -47,11 +41,10 @@ module.exports = {
                 library = data.unique[steamId];
             }
 
-            // Filter for backlog: < 2 hours (120 mins) but > 0 (installed/opened once)
-            // Or maybe strictly 0? Let's do < 3 hours to be safe Pile of Shame.
+            // Filter for backlog: < 3 hours (180 mins)
             const backlog = library.filter(g => {
                 const pt = g.playtimes ? g.playtimes[steamId] : g.playtime_forever;
-                return pt < 180; // less than 3 hours
+                return pt < 180;
             });
 
             if (backlog.length === 0) {
@@ -65,13 +58,14 @@ module.exports = {
                 .setColor(0xE74C3C)
                 .setTitle('🛑 PILE OF SHAME DETECTED')
                 .setDescription(`You own **${pick.name}** but have only played it for **${pt} minutes**.\n\n*Go play it!*`)
-                .setFooter({ text: `Selected from ${backlog.length} unplayed games.` });
+                .setFooter({ text: `Selected from ${backlog.length} unplayed games.` })
+                .setTimestamp();
 
             await interaction.editReply({ embeds: [embed] });
 
         } catch (err) {
-            console.error(err);
-            await interaction.editReply({ content: '❌ Failed to check backlog.' });
+            console.error("Backlog error:", err);
+            await interaction.editReply({ content: `❌ Failed to check backlog: ${err.message}` });
         }
     },
 };

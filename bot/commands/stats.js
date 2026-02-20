@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-
-const API_BASE = 'https://webothplay.com';
+const { API_BASE, getLink } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,20 +12,16 @@ module.exports = {
 
         const targetUser = interaction.options.getUser('user') || interaction.user;
 
-        let steamId = null;
         // 0. Check Tier Access
         const access = await checkTierAccess(interaction, 'Pro');
         if (!access.allowed) {
             return interaction.editReply({ content: access.reason });
         }
 
-        try {
-            const res = await fetch(`${API_BASE}/api/discord/link?discord_id=${targetUser.id}`);
-            if (res.ok) {
-                const data = await res.json();
-                steamId = data.steamId;
-            }
-        } catch (e) { }
+        const steamId = await getLink(targetUser.id);
+        if (!steamId) {
+            return interaction.editReply({ content: `❌ ${targetUser.id === interaction.user.id ? 'You haven\'t' : targetUser.username + " hasn't"} linked a Steam account yet! Run \`/link\` to connect.` });
+        }
 
         try {
             // "Compare" single user to get their library
@@ -36,7 +31,10 @@ module.exports = {
                 body: JSON.stringify({ users: [steamId, steamId] }) // double ID trick just in case, or API handles single
             });
 
-            if (!compareRes.ok) throw new Error("API Error");
+            if (!compareRes.ok) {
+                const errorData = await compareRes.json().catch(() => ({}));
+                throw new Error(errorData.error || "API Error");
+            }
             const data = await compareRes.json();
 
             // Logic: API might return shared (if 2 ids) or unique. 
@@ -48,7 +46,7 @@ module.exports = {
             }
 
             if (library.length === 0) {
-                return interaction.editReply({ content: '❌ No games found.' });
+                return interaction.editReply({ content: '❌ No games found. Is your Steam profile private?' });
             }
 
             // Calc Stats
@@ -77,13 +75,14 @@ module.exports = {
                     { name: 'Total Playtime', value: `${totalHours} Hours (${days} Days)`, inline: true },
                     { name: 'Library Size', value: `${totalGames} Games`, inline: true },
                     { name: 'Most Played', value: top3 || 'None', inline: false }
-                );
+                )
+                .setTimestamp();
 
             await interaction.editReply({ embeds: [embed] });
 
         } catch (err) {
-            console.error(err);
-            await interaction.editReply({ content: '❌ Failed to generate stats.' });
+            console.error("Stats error:", err);
+            await interaction.editReply({ content: `❌ Failed to generate stats: ${err.message}` });
         }
     },
 };

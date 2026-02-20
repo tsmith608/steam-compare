@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-
-const API_BASE = 'https://webothplay.com';
+const { resolveSteamIds, getRankings } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -19,6 +18,10 @@ module.exports = {
         const category = interaction.options.getString('category') || 'playtime';
         const guild = interaction.guild;
 
+        if (!guild) {
+            return interaction.editReply({ content: "❌ This command can only be used in a server." });
+        }
+
         try {
             // 0. Check Tier Access
             const access = await checkTierAccess(interaction, 'Pro');
@@ -30,14 +33,7 @@ module.exports = {
             const members = await guild.members.fetch({ limit: 100 });
             const discordIds = members.filter(m => !m.user.bot).map(m => m.id);
 
-            const batchRes = await fetch(`${API_BASE}/api/discord/batch-links`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ discordIds })
-            });
-
-            if (!batchRes.ok) throw new Error("Batch API Error");
-            const { links } = await batchRes.json();
+            const links = await resolveSteamIds(discordIds);
             const steamIds = links.map(l => l.steamId);
 
             if (steamIds.length === 0) {
@@ -45,18 +41,12 @@ module.exports = {
             }
 
             // 2. Fetch Rankings in bulk
-            const rankingRes = await fetch(`${API_BASE}/api/user/rankings`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ steamIds })
-            });
-
-            if (!rankingRes.ok) throw new Error("Rankings API Error");
-            const { stats } = await rankingRes.json();
+            const stats = await getRankings(steamIds);
 
             // Map stats back to Discord users
             const rankData = stats.map(s => {
                 const link = links.find(l => l.steamId === s.steamid);
+                if (!link) return null;
                 const member = members.get(link.discordId);
                 return {
                     name: member ? member.displayName : 'Unknown User',
@@ -64,9 +54,12 @@ module.exports = {
                 };
             }).filter(Boolean);
 
+            if (rankData.length === 0) {
+                return interaction.editReply({ content: "❌ No ranking data available for linked members." });
+            }
+
             // 3. Sort and Format
             let title = "";
-            let medalEmoji = "🥇";
 
             if (category === 'playtime') {
                 rankData.sort((a, b) => b.recentMinutes - a.recentMinutes);

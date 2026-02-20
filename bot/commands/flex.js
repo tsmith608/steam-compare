@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-
-const API_BASE = 'https://webothplay.com';
+const { API_BASE, resolveSteamIds } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,31 +13,31 @@ module.exports = {
         const gameSearch = interaction.options.getString('game').toLowerCase();
         const targetUser = interaction.options.getUser('user');
 
+        // 0. Check Tier Access
+        const access = await checkTierAccess(interaction, 'Pro');
+        if (!access.allowed) {
+            return interaction.editReply({ content: access.reason });
+        }
+
+        const discordIds = [interaction.user.id];
+        if (targetUser) discordIds.push(targetUser.id);
+
+        const links = await resolveSteamIds(discordIds);
+        const execSteamId = links.find(l => l.discordId === interaction.user.id)?.steamId;
+
+        if (!execSteamId) {
+            return interaction.editReply({ content: "❌ You haven't linked your Steam account yet! Run `/link` first." });
+        }
+
+        let targetSteamId = null;
+        if (targetUser) {
+            targetSteamId = links.find(l => l.discordId === targetUser.id)?.steamId;
+            if (!targetSteamId) {
+                return interaction.editReply({ content: `❌ ${targetUser.username} hasn't linked their Steam account yet!` });
+            }
+        }
+
         try {
-            // 0. Check Tier Access
-            const access = await checkTierAccess(interaction, 'Pro');
-            if (!access.allowed) {
-                return interaction.editReply({ content: access.reason });
-            }
-
-            // 1. Resolve Steam IDs
-            const execRes = await fetch(`${API_BASE}/api/discord/link?discord_id=${interaction.user.id}`);
-            if (!execRes.ok) return interaction.editReply({ content: "❌ You haven't linked your Steam account yet! Run `/link` first." });
-            const { steamId: execSteamId } = await execRes.json();
-
-            let targetSteamId = null;
-            let targetDisplayName = targetUser ? targetUser.displayName : "Someone";
-
-            if (targetUser) {
-                const targetRes = await fetch(`${API_BASE}/api/discord/link?discord_id=${targetUser.id}`);
-                if (targetRes.ok) {
-                    const data = await targetRes.json();
-                    targetSteamId = data.steamId;
-                } else {
-                    return interaction.editReply(`❌ ${targetUser.username} hasn't linked their Steam account yet!`);
-                }
-            }
-
             // 2. Find the game AppID via comparison
             const compareRes = await fetch(`${API_BASE}/api/compare`, {
                 method: 'POST',
@@ -46,7 +45,10 @@ module.exports = {
                 body: JSON.stringify({ users: targetSteamId ? [execSteamId, targetSteamId] : [execSteamId, execSteamId] })
             });
 
-            if (!compareRes.ok) throw new Error("Compare API failed");
+            if (!compareRes.ok) {
+                const errorData = await compareRes.json().catch(() => ({}));
+                throw new Error(errorData.error || "Compare API Error");
+            }
             const compareData = await compareRes.json();
             const pool = targetSteamId ? (compareData.shared || []) : (compareData.unique[execSteamId] || []);
 
@@ -114,7 +116,7 @@ module.exports = {
 
         } catch (err) {
             console.error("Flex error:", err);
-            await interaction.editReply({ content: '❌ Failed to flex stats.' });
+            await interaction.editReply({ content: `❌ Failed to flex stats: ${err.message}` });
         }
     },
 };

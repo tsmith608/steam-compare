@@ -438,7 +438,7 @@ export default function DashboardView({ overrideSteamId }) {
                 ) : (
                     <div
                         className="w-full h-full"
-                        style={{ background: profile.custom_page_bg ? `url(${profile.custom_page_bg}) center/cover no-repeat fixed` : theme.bg }}
+                        style={{ background: profile.custom_page_bg ? `url("${profile.custom_page_bg}") center/cover no-repeat fixed` : theme.bg }}
                     />
                 )}
             </div>

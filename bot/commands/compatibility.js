@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-
-const API_BASE = 'https://webothplay.com';
+const { API_BASE, resolveSteamIds } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,31 +17,23 @@ module.exports = {
             return interaction.editReply({ content: "You are 100% compatible with yourself. Narcissist. 🪞" });
         }
 
-        // Resolve IDs
-        let id1, id2;
         // 0. Check Tier Access
         const access = await checkTierAccess(interaction, 'Pro');
         if (!access.allowed) {
             return interaction.editReply({ content: access.reason });
         }
 
-        const executorTier = access.currentTier;
+        const discordIds = [user1.id, user2.id];
+        const links = await resolveSteamIds(discordIds);
 
-        try {
-            const r1 = await fetch(`${API_BASE}/api/discord/link?discord_id=${user1.id}`);
-            const r2 = await fetch(`${API_BASE}/api/discord/link?discord_id=${user2.id}`);
-            if (r1.ok) {
-                const data1 = await r1.json();
-                id1 = data1.steamId;
-            }
-            if (r2.ok) {
-                const data2 = await r2.json();
-                id2 = data2.steamId;
-            }
-        } catch (e) { }
+        const id1 = links.find(l => l.discordId === user1.id)?.steamId;
+        const id2 = links.find(l => l.discordId === user2.id)?.steamId;
 
         if (!id1 || !id2) {
-            return interaction.editReply({ content: '❌ Both users must be linked to Steam!' });
+            let missing = [];
+            if (!id1) missing.push(user1.username);
+            if (!id2) missing.push(user2.username);
+            return interaction.editReply({ content: `❌ **Unlinked Accounts**: ${missing.join(' and ')} must be linked to Steam! Run \`/link\` to connect.` });
         }
 
         try {
@@ -52,29 +43,19 @@ module.exports = {
                 body: JSON.stringify({ users: [id1, id2] })
             });
 
-            if (!compareRes.ok) throw new Error("API Error");
+            if (!compareRes.ok) {
+                const errorData = await compareRes.json().catch(() => ({}));
+                throw new Error(errorData.error || "API Error");
+            }
             const data = await compareRes.json();
 
             const sharedCount = data.shared.length;
 
             // Total Unique games for User 1
             const u1Unique = data.unique[id1]?.length || 0;
-            // Total Games for User 1 = Shared + Unique
-            const u1Total = sharedCount + u1Unique;
-
-            // Simple Score: Shared / (Smaller Library) * 100
-            // This represents overlap relative to the person with fewer games
-            // Or Jaccard index: Intersection / Union
-
             const u2Unique = data.unique[id2]?.length || 0;
             const union = sharedCount + u1Unique + u2Unique;
 
-            let score = 0;
-            if (union > 0) {
-                score = Math.round((sharedCount / union) * 100);
-            }
-
-            // Jaccard is harsh, let's boost it a bit for fun
             // Adjusted Score: (Shared / Min(Lib1, Lib2)) * 100
             const minLib = Math.min(sharedCount + u1Unique, sharedCount + u2Unique);
             let funnyScore = 0;
@@ -95,13 +76,14 @@ module.exports = {
                 .addFields(
                     { name: 'Shared Games', value: `${sharedCount}`, inline: true },
                     { name: 'Unique Games', value: `${u1Unique + u2Unique}`, inline: true }
-                );
+                )
+                .setTimestamp();
 
             await interaction.editReply({ embeds: [embed] });
 
         } catch (err) {
-            console.error(err);
-            await interaction.editReply({ content: '❌ Failed to calculate compatibility.' });
+            console.error("Compatibility error:", err);
+            await interaction.editReply({ content: `❌ Failed to calculate compatibility: ${err.message}` });
         }
     },
 };

@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-
-const API_BASE = 'https://webothplay.com';
+const { API_BASE, resolveSteamIds } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,8 +16,12 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
-        // reuse logic from compare to get users... 
-        // ideally we'd refactor this into a helper, but for now copy-paste is safer for a quick implementation
+        // 0. Check Tier Access
+        const access = await checkTierAccess(interaction, 'Pro');
+        if (!access.allowed) {
+            return interaction.editReply({ content: access.reason });
+        }
+
         const targets = [interaction.user];
         const u1 = interaction.options.getUser('user1');
         const u2 = interaction.options.getUser('user2');
@@ -33,24 +36,13 @@ module.exports = {
         }
 
         const uniqueUsers = [...new Map(targets.map(u => [u.id, u])).values()];
+        const discordIds = uniqueUsers.map(u => u.id);
 
-        // 0. Check Tier Access
-        const access = await checkTierAccess(interaction, 'Pro');
-        if (!access.allowed) {
-            return interaction.editReply({ content: access.reason });
-        }
-
-        // Resolve Steam IDs (Simplified for brevity)
-        const resolved = [];
-        for (const user of uniqueUsers) {
-            try {
-                const res = await fetch(`${API_BASE}/api/discord/link?discord_id=${user.id}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.steamId) resolved.push({ user, steamId: data.steamId });
-                }
-            } catch (e) { }
-        }
+        const links = await resolveSteamIds(discordIds);
+        const resolved = links.map(l => ({
+            user: uniqueUsers.find(u => u.id === l.discordId),
+            steamId: l.steamId
+        })).filter(r => r.user);
 
         if (resolved.length < 1) { // Roulette can work for 1 person too!
             return interaction.editReply({ content: '❌ No linked users found! Use `/link` first.' });
@@ -63,7 +55,10 @@ module.exports = {
                 body: JSON.stringify({ users: resolved.map(r => r.steamId) })
             });
 
-            if (!compareRes.ok) throw new Error("API Error");
+            if (!compareRes.ok) {
+                const errorData = await compareRes.json().catch(() => ({}));
+                throw new Error(errorData.error || "API Error");
+            }
             const data = await compareRes.json();
 
             // Shared or Unique (if single user, we use their unique games as "shared" effectively)
@@ -71,11 +66,12 @@ module.exports = {
 
             // If checking single user, use their owned games
             if (resolved.length === 1 && data.unique && data.unique[resolved[0].steamId]) {
-                pool = data.unique[resolved[0].steamId];
+                targetPool = data.unique[resolved[0].steamId];
+                if (targetPool.length > 0) pool = targetPool;
             }
 
             if (pool.length === 0) {
-                return interaction.editReply({ content: '❌ No games found to pick from!' });
+                return interaction.editReply({ content: '❌ No games found to pick from! Is your Steam profile private?' });
             }
 
             // Pick Random
@@ -85,13 +81,14 @@ module.exports = {
                 .setColor(0xFFD700)
                 .setTitle('🎰 The Roulette Spun...')
                 .setDescription(`And landed on:\n# **${randomGame.name}**`)
-                .setFooter({ text: `Picked from ${pool.length} games.` });
+                .setFooter({ text: `Picked from ${pool.length} games.` })
+                .setTimestamp();
 
             await interaction.editReply({ embeds: [embed] });
 
         } catch (err) {
-            console.error(err);
-            await interaction.editReply({ content: '❌ Failed to spin the roulette.' });
+            console.error("Roulette error:", err);
+            await interaction.editReply({ content: `❌ Failed to spin the roulette: ${err.message}` });
         }
     },
 };

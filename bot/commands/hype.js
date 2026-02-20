@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-
-const API_BASE = 'https://webothplay.com';
+const { API_BASE, resolveSteamIds } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -26,14 +25,7 @@ module.exports = {
             const members = await guild.members.fetch({ limit: 100 });
             const discordIds = members.filter(m => !m.user.bot).map(m => m.id);
 
-            const batchRes = await fetch(`${API_BASE}/api/discord/batch-links`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ discordIds })
-            });
-
-            if (!batchRes.ok) throw new Error("Failed to resolve links");
-            const { links } = await batchRes.json();
+            const links = await resolveSteamIds(discordIds);
             const steamIds = links.map(l => l.steamId);
 
             if (steamIds.length < 2) {
@@ -64,7 +56,7 @@ module.exports = {
                 .setThumbnail(guild.iconURL())
                 .setTimestamp();
 
-            hotGames.forEach((game, i) => {
+            hotGames.slice(0, 10).forEach((game, i) => {
                 const hours = (game.totalRecentMinutes / 60).toFixed(1);
                 const playerNames = game.players.map(p => {
                     const link = links.find(l => l.steamId === p.steamid);
