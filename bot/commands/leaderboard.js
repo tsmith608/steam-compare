@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
 const { resolveSteamIds, getRankings } = require('../utils/api');
 
@@ -16,22 +16,43 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const category = interaction.options.getString('category') || 'playtime';
-        const guild = interaction.guild;
+
+        // 1. Robust Guild Resolution
+        let guild = interaction.guild;
+        if (!guild && interaction.guildId) {
+            try {
+                guild = await interaction.client.guilds.fetch(interaction.guildId);
+            } catch (e) {
+                console.error("Failed to fetch guild:", e);
+            }
+        }
 
         if (!guild) {
             return interaction.editReply({ content: "❌ This command can only be used in a server." });
         }
 
         try {
-            // 0. Check Tier Access
+            // 2. Check Tier Access
             const access = await checkTierAccess(interaction, 'Pro');
             if (!access.allowed) {
                 return interaction.editReply({ content: access.reason });
             }
 
-            // 1. Fetch linked members
-            const members = await guild.members.fetch({ limit: 100 });
+            // 3. Fetch linked members
+            // Ensure we have the latest members list
+            let members;
+            try {
+                members = await guild.members.fetch({ limit: 1000 }).catch(() => guild.members.cache);
+            } catch (err) {
+                console.warn("Member fetch failed, falling back to cache:", err);
+                members = guild.members.cache;
+            }
+
             const discordIds = members.filter(m => !m.user.bot).map(m => m.id);
+
+            if (discordIds.length === 0) {
+                return interaction.editReply({ content: "❌ No members found in this server. Make sure the 'Server Members Intent' is enabled in the Discord Developer Portal!" });
+            }
 
             const links = await resolveSteamIds(discordIds);
             const steamIds = links.map(l => l.steamId);
@@ -40,7 +61,7 @@ module.exports = {
                 return interaction.editReply({ content: "❌ No linked accounts found in this server. Use `/link` to connect!" });
             }
 
-            // 2. Fetch Rankings in bulk
+            // 4. Fetch Rankings in bulk
             const stats = await getRankings(steamIds);
 
             // Map stats back to Discord users
@@ -49,7 +70,7 @@ module.exports = {
                 if (!link) return null;
                 const member = members.get(link.discordId);
                 return {
-                    name: member ? member.displayName : 'Unknown User',
+                    name: member ? member.displayName : 'Linked User',
                     ...s
                 };
             }).filter(Boolean);
@@ -58,14 +79,13 @@ module.exports = {
                 return interaction.editReply({ content: "❌ No ranking data available for linked members." });
             }
 
-            // 3. Sort and Format
+            // 5. Sort and Format
             let title = "";
-
             if (category === 'playtime') {
-                rankData.sort((a, b) => b.recentMinutes - a.recentMinutes);
+                rankData.sort((a, b) => (b.recentMinutes || 0) - (a.recentMinutes || 0));
                 title = "⏳ Playtime Rankings (Last 2 Weeks)";
             } else {
-                rankData.sort((a, b) => b.librarySize - a.librarySize);
+                rankData.sort((a, b) => (b.librarySize || 0) - (a.librarySize || 0));
                 title = "📚 Library Size Rankings";
             }
 
@@ -78,7 +98,7 @@ module.exports = {
 
             const description = rankData.slice(0, 10).map((u, i) => {
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-                const val = category === 'playtime' ? `${(u.recentMinutes / 60).toFixed(1)}h` : `${u.librarySize} games`;
+                const val = category === 'playtime' ? `${((u.recentMinutes || 0) / 60).toFixed(1)}h` : `${u.librarySize || 0} games`;
                 return `${medal} **${u.name}**: ${val}`;
             }).join('\n');
 
@@ -87,8 +107,17 @@ module.exports = {
             await interaction.editReply({ embeds: [embed] });
 
         } catch (err) {
-            console.error("Leaderboard error:", err);
-            await interaction.editReply({ content: '❌ Failed to generate leaderboard.' });
+            console.error("Leaderboard error detail:", err);
+            try {
+                const msg = `❌ Failed to generate leaderboard: ${err.message}`;
+                if (interaction.deferred || interaction.replied) {
+                    await interaction.editReply({ content: msg });
+                } else {
+                    await interaction.reply({ content: msg, ephemeral: true });
+                }
+            } catch (replyErr) {
+                console.error("Failed to send error reply:", replyErr);
+            }
         }
     },
 };

@@ -1,0 +1,203 @@
+.compare_btn_wrapper {
+    --btn-scale: 1;
+
+    @media (max-width: 640px) {
+        --btn-scale: 0.7;
+    }
+
+    position: relative;
+
+    .button_spots {
+        position: absolute;
+        border-radius: 100px;
+        opacity: 0;
+        animation: opacity 1s;
+        pointer-events: none;
+        z-index: 10;
+
+        @for $i from 1 through 54 {
+            &:nth-of-type(#{$i}) {
+                transform-origin: center center;
+
+                /* Randomly pick between white and a shade of blue */
+                @if random(2)==1 {
+                    background: rgba(255, 255, 255, 0.9);
+                }
+
+                @else {
+                    background: hsla(210 + random(20), 80% + random(20), 60% + random(20), 0.9);
+                }
+
+                box-shadow: 0px 0px calc(8px * var(--btn-scale)) rgba(255, 255, 255, 0.3);
+                transition: all 1s+random(10)/10;
+
+                /* Liquid Distribution: Spreading across edges by percentage */
+                @if $i <=20 {
+                    padding: calc((#{random(3)} + 2) * 1px * var(--btn-scale));
+                    left: percentage($i / 20);
+                    top: 100%;
+                    margin-top: calc(2px * var(--btn-scale));
+                }
+
+                @else if $i <=40 {
+                    padding: calc((#{random(3)} + 2) * 1px * var(--btn-scale));
+                    left: percentage(($i - 20) / 20);
+                    top: 0%;
+                    margin-top: calc(-8px * var(--btn-scale));
+                }
+
+                @else if $i <=46 {
+                    padding: calc((#{random(3)} + 2) * 1px * var(--btn-scale));
+                    left: 100%;
+                    top: percentage(($i - 40) / 6);
+                    margin-left: calc(2px * var(--btn-scale));
+                }
+
+                @else {
+                    padding: calc((#{random(3)} + 2) * 1px * var(--btn-scale));
+                    left: 0%;
+                    top: percentage(($i - 46) / 8);
+                    margin-left: calc(-8px * var(--btn-scale));
+                }
+            }
+        }
+    }
+
+    &:hover .button_spots {
+        @for $i from 1 through 54 {
+            &:nth-of-type(#{$i}) {
+                animation: spot-#{$i} .7s .4/random(10)+random(10)/10+s linear infinite;
+            }
+        }
+    }
+
+    &.is_loading {
+        .button_spots {
+            opacity: 1;
+
+            @for $i from 1 through 54 {
+                &:nth-of-type(#{$i}) {
+                    top: 50% !important;
+                    left: 50% !important;
+                    opacity: 0;
+                    padding: calc((#{random(20)}/4 + 2) * 1px * var(--btn-scale)) !important;
+                    animation: spew 1s .3s forwards,
+                    rotate 4s+random(4)/10 .25s+random(12)/10 linear infinite,
+                    final .2s 4s forwards,
+                    spot-#{$i} .7s .4/random(10)+random(10)/10+10s linear infinite !important;
+                }
+            }
+        }
+    }
+}
+
+@for $i from 1 through 20 {
+    @keyframes spot-#{$i} {
+        0% {
+            opacity: 0;
+            transform: translateY(0px) translateX(0px);
+        }
+
+        50% {
+            opacity: 0.6;
+        }
+
+        100% {
+            transform: translateY(calc(15px * var(--btn-scale))) translateX(calc((-10 + #{$i}*1) * 1px * var(--btn-scale)));
+            opacity: 0;
+        }
+    }
+}
+
+@for $i from 20 through 40 {
+    @keyframes spot-#{$i} {
+        0% {
+            opacity: 0;
+            transform: translateY(0px) translateX(0px);
+        }
+
+        50% {
+            opacity: 0.6;
+        }
+
+        100% {
+            transform: translateY(calc(-15px * var(--btn-scale))) translateX(calc((-25 + (#{$i} - 20)*2) * 1px * var(--btn-scale)));
+            opacity: 0;
+        }
+    }
+}
+
+@for $i from 40 through 46 {
+    @keyframes spot-#{$i} {
+        0% {
+            opacity: 0;
+            transform: translateY(0px) translateX(0px);
+        }
+
+        50% {
+            opacity: 0.6;
+        }
+
+        100% {
+            transform: translateY(calc((-15 + (#{$i} - 40)*2) * 1px * var(--btn-scale))) translateX(calc(20px * var(--btn-scale)));
+            opacity: 0;
+        }
+    }
+}
+
+@for $i from 46 through 54 {
+    @keyframes spot-#{$i} {
+        0% {
+            opacity: 0;
+            transform: translateY(0px) translateX(0px);
+        }
+
+        50% {
+            opacity: 0.6;
+        }
+
+        100% {
+            transform: translateY(calc((-10 + (#{$i} - 46)*2) * 1px * var(--btn-scale))) translateX(calc(-20px * var(--btn-scale)));
+            opacity: 0;
+        }
+    }
+}
+
+@keyframes opacity {
+    from {}
+
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes rotate {
+    from {
+        opacity: .8;
+    }
+
+    to {
+        transform: rotate(360deg);
+        opacity: .8;
+    }
+}
+
+@keyframes spew {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 0.8;
+    }
+}
+
+@keyframes final {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import PresetManager from "./PresetManager";
+import "./compareButton.scss";
 
 /**
  * Basic sanitization to prevent XSS characters in manual entry.
@@ -168,12 +169,17 @@ export default function CleanDataEntryForm({
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full sm:w-auto min-w-[200px] px-8 py-3 rounded-xl font-bold text-white
+                        className={`compare_btn_wrapper w-full sm:w-auto min-w-[200px] px-8 py-3 rounded-xl font-bold text-white
                                    bg-gradient-to-r from-gray-700 to-gray-600 hover:from-blue-600 hover:to-blue-500
                                    border border-white/10 shadow-lg shadow-black/20
-                                   transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                   transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'is_loading' : ''}`}
                     >
-                        {loading ? "Analyzing Library..." : "Compare"}
+                        <span className="relative z-20 pointer-events-none">
+                            {loading ? "Analyzing Library..." : "Compare"}
+                        </span>
+                        {Array.from({ length: 54 }).map((_, i) => (
+                            <span key={i} className="button_spots"></span>
+                        ))}
                     </button>
 
                     <p className="text-xs text-stone-500">

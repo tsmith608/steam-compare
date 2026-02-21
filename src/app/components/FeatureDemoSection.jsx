@@ -136,8 +136,15 @@ export default function FeatureDemoSection() {
     return (
         <section
             id="features"
-            className="mt-20 sm:mt-24 px-3 sm:px-4 md:px-0 scroll-mt-32 sm:scroll-mt-40"
+            className="relative mt-20 sm:mt-24 pt-20 sm:pt-24 px-3 sm:px-4 md:px-0 scroll-mt-32 sm:scroll-mt-40"
         >
+            {/* Section Divider Line & Soft Top-Down Gradient */}
+            <div
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-[200vw] h-96
+                           border-t border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent
+                           pointer-events-none z-[-1]"
+                aria-hidden="true"
+            />
             {/* Section Header */}
             <motion.div
                 className="text-center mb-12 sm:mb-16"

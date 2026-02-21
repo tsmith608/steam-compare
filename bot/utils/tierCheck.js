@@ -1,4 +1,4 @@
-const API_BASE = 'https://webothplay.com';
+const { API_BASE } = require('./api');
 
 /**
  * Checks if a user has access to a specific tier (Pro/Hacker) 
@@ -34,7 +34,6 @@ async function checkTierAccess(interaction, requiredTier = 'Pro') {
     if (guild) {
         try {
             // map() might be slow for massive servers, but with intents enabled and cache populated it's decent.
-            // In very large servers, we might need a better strategy, but for most it works.
             const memberIds = guild.members.cache.map(m => m.id);
 
             const hackerRes = await fetch(`${API_BASE}/api/discord/server-hacker-check`, {
@@ -44,8 +43,8 @@ async function checkTierAccess(interaction, requiredTier = 'Pro') {
             });
 
             if (hackerRes.ok) {
-                const { hasHacker } = await hackerRes.json();
-                if (hasHacker) {
+                const data = await hackerRes.json();
+                if (data.hasHacker) {
                     return { allowed: true, isServerPerk: true, currentTier: 'Hacker' };
                 }
             }
