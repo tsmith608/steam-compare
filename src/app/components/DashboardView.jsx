@@ -262,12 +262,23 @@ export default function DashboardView({ overrideSteamId }) {
                 if (p) {
                     setFetchedUser(p);
 
-                    // Re-fetch profile if we didn't get it by vanity name initially
+                    // Re-fetch profile & premium if we didn't get them by vanity name initially
                     if (!profData.found && p.steamid) {
                         const profRes2 = await fetch(`/api/user/profile?steamid=${p.steamid}`);
                         const profData2 = await profRes2.json();
                         if (profData2.found) {
                             setProfile(profData2.profile);
+                        }
+                    }
+
+                    // Re-fetch premium if we used a vanity or didn't find premium status
+                    if (p.steamid && (p.steamid !== activeSteamId || !premData.isPremium)) {
+                        console.log("[Dashboard] Re-checking premium with numeric ID:", p.steamid);
+                        const premRes2 = await fetch(`/api/user/premium?steamid=${p.steamid}`);
+                        const premData2 = await premRes2.json();
+                        if (premData2.isPremium) {
+                            setIsPremium(true);
+                            setTier(premData2.tier || 'Noob');
                         }
                     }
 
