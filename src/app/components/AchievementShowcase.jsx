@@ -119,51 +119,53 @@ export default function AchievementShowcase({ stats, fullLibrary, steamId, minim
 
     return (
         <div className={containerClass}>
-            <div className="flex items-center justify-between mb-6">
-                <h3 className="text-white text-lg font-black uppercase tracking-widest flex items-center gap-3">
+            <div className={`flex items-center justify-between ${minimal ? 'mb-3' : 'mb-6'}`}>
+                <h3 className={`${minimal ? 'text-[10px]' : 'text-lg'} text-white font-black uppercase tracking-widest flex items-center gap-2`}>
                     <span className="text-amber-500">🏅</span> Achievements
                 </h3>
-                <span className="text-[10px] font-bold text-gray-500 bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">
-                    {unlockedCount}/{BADGES.length} UNLOCKED
+                <span className={`font-bold text-gray-500 bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm ${minimal ? 'text-[8px]' : 'text-[10px]'}`}>
+                    {unlockedCount}/{BADGES.length} <span className="hidden sm:inline">UNLOCKED</span>
                 </span>
             </div>
 
             <motion.div
-                className="flex flex-wrap gap-3"
+                className="flex-1 min-h-0 overflow-y-auto scrollbar-hide"
                 variants={badgeStagger}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-40px" }}
             >
-                {earned.map(b => (
-                    <motion.div
-                        key={b.id}
-                        variants={badgePop}
-                        className={`
-                            group relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all cursor-default
-                            ${b.unlocked
-                                ? `bg-gradient-to-r ${b.color} border-white/10 ${b.glow} hover:scale-105`
-                                : 'bg-white/[0.02] border-white/5 opacity-35 grayscale'
-                            }
-                        `}
-                        title={b.desc}
-                    >
-                        <span className={`text-xl ${b.unlocked ? '' : 'grayscale'}`}>{b.icon}</span>
-                        <div>
-                            <p className={`text-xs font-bold ${b.unlocked ? b.textColor : 'text-gray-600'}`}>
-                                {b.label}
-                            </p>
-                            <p className="text-[9px] text-gray-500 font-medium mt-0.5 hidden sm:block">
-                                {b.desc}
-                            </p>
-                        </div>
-                        {b.unlocked && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40">
-                                <span className="text-[8px] text-white font-black">✓</span>
+                <div className="flex flex-wrap gap-1.5 pb-2">
+                    {earned.map(b => (
+                        <motion.div
+                            key={b.id}
+                            variants={badgePop}
+                            className={`
+                                group relative flex items-center gap-2 px-2 py-1.5 rounded-xl border transition-all cursor-default
+                                ${b.unlocked
+                                    ? `bg-gradient-to-r ${b.color} border-white/10 ${b.glow} hover:scale-105`
+                                    : 'bg-white/[0.02] border-white/5 opacity-35 grayscale'
+                                }
+                            `}
+                            title={b.desc}
+                        >
+                            <span className={`text-base ${b.unlocked ? '' : 'grayscale'}`}>{b.icon}</span>
+                            <div>
+                                <p className={`text-[10px] font-bold ${b.unlocked ? b.textColor : 'text-gray-600'}`}>
+                                    {b.label}
+                                </p>
+                                <p className="text-[8px] text-gray-500 font-medium mt-0.5 hidden sm:block">
+                                    {b.desc}
+                                </p>
                             </div>
-                        )}
-                    </motion.div>
-                ))}
+                            {b.unlocked && (
+                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40">
+                                    <span className="text-[7px] text-white font-black">✓</span>
+                                </div>
+                            )}
+                        </motion.div>
+                    ))}
+                </div>
             </motion.div>
         </div>
     );

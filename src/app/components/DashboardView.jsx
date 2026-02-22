@@ -7,6 +7,7 @@ import BannerEditorModal from './BannerEditorModal';
 import AchievementShowcase from './AchievementShowcase';
 import StatRings from './StatRings';
 import ActivityHeatmap from './ActivityHeatmap';
+import GamePickerModal from './GamePickerModal';
 import { motion, useSpring, useMotionValue, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Responsive, WidthProvider } from "react-grid-layout/legacy";
 import "react-grid-layout/css/styles.css";
@@ -22,6 +23,8 @@ import CustomGifWidget from './widgets/CustomGifWidget';
 import CustomMusicWidget from './widgets/CustomMusicWidget';
 import CustomClockWidget from './widgets/CustomClockWidget';
 import CustomCountdownWidget from './widgets/CustomCountdownWidget';
+import CustomInventoryWidget from './widgets/CustomInventoryWidget';
+import CustomDiscordWidget from './widgets/CustomDiscordWidget';
 import { DEFAULT_LAYOUT, WIDGET_REGISTRY, generateWidgetId, getWidgetType } from './widgets/widgetRegistry';
 
 const THEMES = {
@@ -31,49 +34,103 @@ const THEMES = {
         accent: "text-blue-400",
         border: "border-white/5",
         cardBg: "bg-[#0e0e10]",
-        font: "font-sans"
+        font: "font-sans",
+        vibeId: "none"
     },
-    medieval: {
-        name: "Medieval Quest",
-        bg: "url('https://www.transparenttextures.com/patterns/natural-paper.png'), radial-gradient(circle at 50% 0%, #291a0c, #0d0905)",
-        accent: "text-amber-500",
-        border: "border-[#422006] shadow-[inset_0_0_20px_rgba(0,0,0,0.5),0_10px_30px_rgba(0,0,0,0.4)]",
-        cardBg: "bg-[#1c140d]/95",
-        font: "font-serif",
-        style: "sepia-[0.2] contrast-[1.1]",
-        cardStyle: "rounded-sm border-[3px] border-double",
-        overlay: "opacity-20 pointer-events-none absolute inset-0 mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/parchment.png')]",
-        decoration: "text-[#422006]"
-    },
-    future: {
-        name: "Cyberpunk Future",
-        bg: "radial-gradient(circle at 80% 20%, #1a0b2e, #050505)",
+    cyber_overdrive: {
+        name: "Cyber Overdrive",
+        bg: "radial-gradient(circle at 50% 50%, #1a0b2e, #050505)",
         accent: "text-pink-500",
-        border: "border-pink-500/40 shadow-[0_0_20px_rgba(236,72,153,0.3),inset_0_0_10px_rgba(236,72,153,0.1)]",
-        cardBg: "bg-black/95",
-        font: "font-mono font-bold uppercase tracking-tighter",
-        style: "hue-rotate-[15deg] brightness-[1.1]",
-        cardStyle: "rounded-none border-t-[6px] border-l-[6px]",
-        overlay: "opacity-[0.03] pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')] animate-pulse",
+        border: "border-pink-500/40 shadow-[0_0_15px_rgba(236,72,153,0.3)]",
+        cardBg: "bg-black/95 backdrop-blur-xl",
+        font: "font-mono font-bold uppercase",
+        vibeId: "matrix",
+        cardStyle: "rounded-none border-t-[4px] border-l-[4px] border-pink-500",
         scanlines: true
     },
-    black_blue: {
-        name: "Abyssal Blue",
-        bg: "linear-gradient(135deg, #000428 0%, #004e92 100%)",
-        accent: "text-cyan-400",
-        border: "border-cyan-500/30 shadow-[0_0_40px_rgba(0,163,255,0.2)]",
-        cardBg: "bg-[#000814]/80 backdrop-blur-md",
-        font: "font-sans",
-        style: "saturate-[1.2]"
+    abyssal_deep: {
+        name: "Abyssal Biolum",
+        bg: "linear-gradient(180deg, #001021 0%, #000408 100%)",
+        accent: "text-teal-400",
+        border: "border-teal-500/30 shadow-[0_0_20px_rgba(20,184,166,0.2)]",
+        cardBg: "bg-[#001021]/80 backdrop-blur-2xl",
+        font: "font-sans font-medium",
+        vibeId: "bubbles",
+        cardStyle: "rounded-[2rem] border-b-[2px] border-teal-500/50"
     },
-    red_white: {
-        name: "Blood & Bone",
+    royal_prestige: {
+        name: "Royal Gold",
+        bg: "radial-gradient(circle at center, #1c1917, #0c0a09)",
+        accent: "text-amber-500",
+        border: "border-amber-600/40 shadow-[0_10px_40px_rgba(245,158,11,0.1)]",
+        cardBg: "bg-stone-900",
+        font: "font-serif",
+        vibeId: "sparkles",
+        cardStyle: "rounded-sm border-double border-[3px] border-amber-600/50"
+    },
+    lava_hell: {
+        name: "Infernal Wrath",
         bg: "radial-gradient(circle at top, #450a0a, #000000)",
         accent: "text-red-600",
-        border: "border-red-900 shadow-[0_15px_40px_rgba(220,38,38,0.15)]",
-        cardBg: "bg-zinc-950",
+        border: "border-red-900 shadow-[0_0_30px_rgba(220,38,38,0.2)]",
+        cardBg: "bg-zinc-950/95",
         font: "font-black tracking-tight",
-        style: "contrast-[1.1]"
+        vibeId: "embers",
+        cardStyle: "rounded-md border-r-[5px] border-red-700"
+    },
+    nebula_dream: {
+        name: "Nebula Voyage",
+        bg: "radial-gradient(circle at 80% 20%, #2e1065, #000000)",
+        accent: "text-purple-400",
+        border: "border-purple-500/20 shadow-[0_0_40px_rgba(168,85,247,0.1)]",
+        cardBg: "bg-slate-950/70 backdrop-blur-3xl",
+        font: "font-sans font-black",
+        vibeId: "stars",
+        cardStyle: "rounded-3xl border-white/5",
+        overlay: "bg-[radial-gradient(circle_at_20%_80%,rgba(139,92,246,0.15),transparent_50%)] w-full h-full"
+    },
+    samurai_zen: {
+        name: "Zen Sakura",
+        bg: "linear-gradient(135deg, #fff1f2 0%, #ffffff 100%)",
+        accent: "text-rose-500",
+        border: "border-rose-200 shadow-sm",
+        cardBg: "bg-white/95 backdrop-blur-md",
+        font: "font-sans font-medium",
+        vibeId: "sakura",
+        cardStyle: "rounded-none border-l-[2px] border-rose-300",
+        themeMode: "light"
+    },
+    arctic_frost: {
+        name: "Arctic Frost",
+        bg: "radial-gradient(circle at top, #f0f9ff, #cbd5e1)",
+        accent: "text-blue-600",
+        border: "border-blue-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
+        cardBg: "bg-white/40 backdrop-blur-xl",
+        font: "font-sans tracking-tighter",
+        vibeId: "frost",
+        cardStyle: "rounded-2xl border-[1px] border-white/60 shadow-inner",
+        themeMode: "light"
+    },
+    steampunk_rev_v1: {
+        name: "Brass & Steam",
+        bg: "radial-gradient(circle at 50% 50%, #442b1a, #1a0f08)",
+        accent: "text-orange-400",
+        border: "border-orange-800 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]",
+        cardBg: "bg-[#2d1b0e]/95",
+        font: "font-serif font-black uppercase",
+        vibeId: "steam",
+        cardStyle: "rounded-none border-[4px] border-orange-950 p-[2px] outline outline-1 outline-orange-800",
+        scanlines: true
+    },
+    minimal_prism: {
+        name: "Void Prism",
+        bg: "#000000",
+        accent: "text-white",
+        border: "border-white/10",
+        cardBg: "bg-black/20 backdrop-blur-[40px]",
+        font: "font-sans font-thin tracking-[0.2em]",
+        vibeId: "iridescent",
+        cardStyle: "rounded-full border-[0.5px] border-white/5"
     }
 };
 
@@ -98,6 +155,73 @@ function Counter({ value }) {
     }, [springValue]);
 
     return <span ref={ref}>{displayValue}</span>;
+}
+/* ─── Global Vibe Layer ─── */
+function VibeLayer({ theme }) {
+    if (!theme || !theme.vibeId || theme.vibeId === 'none') return null;
+
+    const { vibeId } = theme;
+
+    switch (vibeId) {
+        case 'matrix':
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden opacity-30">
+                    <div className="matrix-rain h-full w-full" />
+                </div>
+            );
+        case 'embers':
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+                    <div className="embers-container h-full w-full" />
+                    <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-red-900/40 to-transparent" />
+                </div>
+            );
+        case 'stars':
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+                    <div className="stars-container h-full w-full" />
+                </div>
+            );
+        case 'bubbles':
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+                    <div className="bubbles-container h-full w-full" />
+                </div>
+            );
+        case 'sakura':
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+                    <div className="sakura-container h-full w-full" />
+                </div>
+            );
+        case 'frost':
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+                    <div className="frost-overlay h-full w-full opacity-40 mix-blend-overlay" />
+                    <div className="snow-container h-full w-full" />
+                </div>
+            );
+        case 'steam':
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden opacity-20">
+                    <div className="steam-container h-full w-full" />
+                </div>
+            );
+        case 'sparkles':
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+                    <div className="sparkles-container h-full w-full" />
+                </div>
+            );
+        case 'iridescent':
+            return (
+                <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+                    <div className="iridescent-bg h-full w-full opacity-20" />
+                </div>
+            );
+        default:
+            return null;
+    }
 }
 
 /* ─── 3D Tilt Card ─── */
@@ -159,6 +283,7 @@ export default function DashboardView({ overrideSteamId }) {
     const [showWidgetPicker, setShowWidgetPicker] = useState(false);
     const [dashboardLayout, setDashboardLayout] = useState(null);
     const [widgetConfigs, setWidgetConfigs] = useState({});
+    const [showPinModal, setShowPinModal] = useState(false);
 
     // Profile State
     const [profile, setProfile] = useState({
@@ -333,7 +458,7 @@ export default function DashboardView({ overrideSteamId }) {
                         totalGames,
                         totalHours: Math.round(totalMinutes / 60),
                         days: (totalMinutes / 60 / 24).toFixed(1),
-                        top3: sorted.slice(0, 3)
+                        topGames: sorted.slice(0, 10)
                     });
                 }
             } catch (err) {
@@ -496,7 +621,31 @@ export default function DashboardView({ overrideSteamId }) {
         setWidgetConfigs(prev => { const n = { ...prev }; delete n[id]; return n; });
     };
 
-    const renderWidget = (id) => {
+    const handleResizeWidget = (id, sizePreset) => {
+        const type = getWidgetType(id);
+        const meta = WIDGET_REGISTRY[type];
+        if (!meta || !meta.presets || !meta.presets[sizePreset]) return;
+
+        const { w, h } = meta.presets[sizePreset];
+
+        setDashboardLayout(prev => (prev || []).map(wgt => {
+            if (wgt.i === id) {
+                return { ...wgt, w, h };
+            }
+            return wgt;
+        }));
+    };
+
+    const handleSavePins = async (newIds) => {
+        setProfile(prev => ({ ...prev, pinned_game_ids: newIds }));
+        setShowPinModal(false);
+        // Trigger a background save
+        setTimeout(() => handleSaveProfile(), 100);
+    };
+
+    const renderWidget = (item) => {
+        const id = item.i;
+        const h = item.h;
         const type = id.includes('-') ? id.split('-')[0] : id;
 
         switch (type) {
@@ -506,72 +655,88 @@ export default function DashboardView({ overrideSteamId }) {
                         <h3 className="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 group-hover:text-blue-300 transition-colors">Playtime</h3>
                         <div className="flex items-baseline gap-1">
                             <span className="text-4xl font-black text-white tracking-tighter leading-none"><Counter value={stats?.totalHours || 0} /></span>
-                            <span className="text-base text-gray-500 font-bold">h</span>
+                            <span className="text-sm text-white-500 font-bold">h</span>
                         </div>
-                        <p className="text-[10px] text-white-600 mt-2 font-mono bg-white/5 px-2 py-0.5 rounded-full">{stats?.days || 0} days of life</p>
+                        <p className="text-[9px] text-white/40 mt-3 font-mono bg-white/5 px-2 py-0.5 rounded-full border border-white/5 group-hover:bg-white/10 transition-colors">{stats?.days || 0} days of life</p>
                     </div>
                 );
             case 'library':
                 return (
                     <div className="flex flex-col items-center justify-center text-center group h-full">
                         <h3 className="text-purple-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 group-hover:text-purple-300 transition-colors">Library</h3>
-                        <span className="text-4xl font-black text-white tracking-tighter leading-none"><Counter value={stats?.totalGames || 0} /></span>
-                        <p className="text-[10px] text-white-600 mt-2 font-mono bg-white/5 px-2 py-0.5 rounded-full">Games</p>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-4xl font-black text-white tracking-tighter leading-none"><Counter value={stats?.totalGames || 0} /></span>
+                        </div>
+                        <p className="text-[9px] text-white/40 mt-3 font-mono bg-white/5 px-2 py-0.5 rounded-full border border-white/5 group-hover:bg-white/10 transition-colors">Games Owned</p>
                     </div>
                 );
             case 'socials':
                 return (
-                    <div className="h-full flex flex-col">
-                        <h3 className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Connections</h3>
-                        <div className="flex flex-wrap gap-2.5">
+                    <div className="h-full flex flex-col justify-center">
+                        <h3 className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 text-center">Connections</h3>
+                        <div className="flex flex-wrap gap-2 justify-center items-center">
                             {profile.discord_link && (
-                                <div className="px-3.5 py-2 bg-[#5865F2]/10 border border-[#5865F2]/20 rounded-xl flex items-center gap-2 backdrop-blur-md">
+                                <div className="px-3 py-1.5 bg-[#5865F2]/10 border border-[#5865F2]/20 rounded-lg flex items-center gap-2 backdrop-blur-md">
                                     <span className="text-[#5865F2] text-xs">🎮</span>
-                                    <span className="text-[11px] font-bold text-gray-200">{profile.discord_link}</span>
+                                    <span className="text-[10px] font-bold text-gray-200">{profile.discord_link}</span>
                                 </div>
                             )}
                             {profile.twitter_link && (
-                                <a href={profile.twitter_link} target="_blank" className="px-3.5 py-2 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center gap-2 hover:bg-blue-500/20 transition-all backdrop-blur-md">
+                                <a href={profile.twitter_link} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center gap-2 hover:bg-blue-500/20 transition-all backdrop-blur-md">
                                     <span className="text-blue-400 text-xs">🐦</span>
-                                    <span className="text-[11px] font-bold text-gray-200">Twitter</span>
+                                    <span className="text-[10px] font-bold text-gray-200">Twitter</span>
                                 </a>
                             )}
                             {profile.twitch_link && (
-                                <a href={profile.twitch_link} target="_blank" className="px-3.5 py-2 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center gap-2 hover:bg-purple-500/20 transition-all backdrop-blur-md">
+                                <a href={profile.twitch_link} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg flex items-center gap-2 hover:bg-purple-500/20 transition-all backdrop-blur-md">
                                     <span className="text-purple-400 text-xs">📺</span>
-                                    <span className="text-[11px] font-bold text-gray-200">Twitch</span>
+                                    <span className="text-[10px] font-bold text-gray-200">Twitch</span>
                                 </a>
                             )}
                             {profile.custom_links.map((link, idx) => (
-                                <a key={idx} href={link.url} target="_blank" className="px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl flex items-center gap-2 hover:bg-white/10 transition-all backdrop-blur-md">
+                                <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg flex items-center gap-2 hover:bg-white/10 transition-all backdrop-blur-md">
                                     <span className={`${theme.accent} text-xs`}>🔗</span>
-                                    <span className="text-[11px] font-bold text-gray-200">{link.label}</span>
+                                    <span className="text-[10px] font-bold text-gray-200">{link.label}</span>
                                 </a>
                             ))}
-                            {!profile.discord_link && !profile.twitter_link && !profile.twitch_link && profile.custom_links.length === 0 && (
-                                <span className="text-xs text-gray-500 italic mt-2">No connections yet.</span>
-                            )}
                         </div>
                     </div>
                 );
             case 'mostPlayed':
                 return (
-                    <div className="h-full overflow-hidden flex flex-col">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2 text-white">
-                            <span className="text-amber-500">🏆</span> Most Played
-                        </h3>
-                        <div className="flex-1 min-h-0 space-y-2.5">
-                            {stats?.top3?.map((g, i) => (
-                                <div key={g.appid} className="group/game cursor-default">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-[11px] font-black w-5 flex-shrink-0 ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : 'text-amber-700'}`}>#{i + 1}</span>
-                                            <span className="text-[11px] font-bold text-gray-100 truncate max-w-[140px] group-hover/game:text-white transition-colors">{g.name}</span>
+                    <div className="h-full overflow-hidden flex flex-col justify-center">
+                        <div className="flex flex-col items-center justify-center mb-3">
+                            <h3 className="text-amber-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                                <span>🏆</span> Most Played
+                            </h3>
+                            <span className="text-[8px] font-bold text-amber-500/40 uppercase tracking-tighter mt-0.5">
+                                Lifetime hours
+                            </span>
+                        </div>
+                        <div className="flex flex-col space-y-2 flex-1 justify-center max-w-[280px] mx-auto w-full">
+                            {stats?.topGames?.slice(0, Math.min(10, h * 2)).map((g, i) => (
+                                <div key={g.appid} className="group/game cursor-default w-full">
+                                    <div className="flex items-center gap-2.5">
+                                        <span className={`text-[10px] font-black w-4 flex-shrink-0 ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : 'text-amber-700'}`}>#{i + 1}</span>
+                                        <img
+                                            src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_sm_120.jpg`}
+                                            className="w-8 h-8 rounded-lg object-cover flex-shrink-0 shadow-lg border border-white/5"
+                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-[10px] font-bold text-gray-100 truncate mr-1 group-hover:text-white transition-colors uppercase tracking-tight font-sans">{g.name}</span>
+                                                <span className="text-[9px] font-mono text-gray-500 font-bold">{Math.round(g.pt / 60)}h</span>
+                                            </div>
+                                            <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${(g.pt / (stats.topGames[0]?.pt || 1)) * 100}%` }}
+                                                    transition={{ duration: 1.2, delay: 0.5 + i * 0.1, ease: "easeOut" }}
+                                                    className={`h-full rounded-full ${i === 0 ? 'bg-amber-500' : i === 1 ? 'bg-gray-400' : 'bg-amber-800'}`}
+                                                />
+                                            </div>
                                         </div>
-                                        <span className="text-[10px] font-mono text-gray-500">{Math.round(g.pt / 60)}h</span>
-                                    </div>
-                                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                        <motion.div initial={{ width: 0 }} animate={{ width: `${(g.pt / (stats.top3[0]?.pt || 1)) * 100}%` }} transition={{ duration: 1, delay: 0.5 + i * 0.1 }} className={`h-full rounded-full ${i === 0 ? 'bg-gradient-to-r from-amber-500 to-orange-400' : i === 1 ? 'bg-gray-400' : 'bg-amber-800'}`} />
                                     </div>
                                 </div>
                             ))}
@@ -580,18 +745,32 @@ export default function DashboardView({ overrideSteamId }) {
                 );
             case 'favorites':
                 return (
-                    <div className="h-full overflow-hidden flex flex-col">
-                        <h3 className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-4">Pinned Shelf</h3>
-                        <div className="grid grid-cols-4 gap-3 flex-1 min-h-0">
-                            {profile.pinned_game_ids.length > 0 ? profile.pinned_game_ids.slice(0, 4).map(id => (
-                                <div key={id} className="relative aspect-[2/3] group/item overflow-hidden rounded-xl border border-white/5 shadow-xl">
-                                    <img src={`https://cdn.akamai.steamstatic.com/steam/apps/${id}/library_600x900.jpg`} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-700" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity flex items-end p-2">
-                                        <span className="text-[8px] font-black text-white uppercase tracking-tighter">View Build</span>
-                                    </div>
+                    <div className="h-full overflow-hidden flex flex-col justify-center relative group/shelf">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-blue-400 text-[10px] font-black uppercase tracking-widest text-center flex-1 ml-6">Pinned Shelf</h3>
+                            {isOwner && (
+                                <button
+                                    onClick={() => setShowPinModal(true)}
+                                    className="p-1 px-2 rounded-lg bg-white/5 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 text-[8px] font-black uppercase tracking-widest transition-all opacity-0 group-hover/shelf:opacity-100 border border-white/5"
+                                >
+                                    Edit
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex-1 min-h-0">
+                            {profile.pinned_game_ids.length > 0 ? (
+                                <div className={`${h >= 4 ? 'grid grid-cols-4' : 'flex flex-row justify-center'} items-center gap-2.5 h-full max-h-full py-1`}>
+                                    {profile.pinned_game_ids.slice(0, h >= 4 ? 8 : 4).map(id => (
+                                        <div key={id} className="relative aspect-[2/3] h-full w-auto group/item overflow-hidden rounded-xl border border-white/10 shadow-xl bg-zinc-900 mx-auto max-h-[160px]">
+                                            <img
+                                                src={`https://cdn.akamai.steamstatic.com/steam/apps/${id}/library_600x900.jpg`}
+                                                className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-700"
+                                            />
+                                        </div>
+                                    ))}
                                 </div>
-                            )) : (
-                                <div className="col-span-4 flex items-center justify-center p-4 border border-dashed border-white/10 rounded-2xl text-[10px] text-gray-600 font-black uppercase tracking-widest h-full">
+                            ) : (
+                                <div className="flex items-center justify-center p-3 border border-dashed border-white/10 rounded-xl text-[9px] text-gray-600 font-black uppercase tracking-widest h-full">
                                     Shelf is empty
                                 </div>
                             )}
@@ -603,49 +782,69 @@ export default function DashboardView({ overrideSteamId }) {
             case 'collections':
                 return (
                     <div className="h-full flex flex-col group/col">
-                        <h3 className="text-amber-400 text-[10px] font-black uppercase tracking-widest mb-4 flex items-center justify-between">
-                            <span>Featured Collection</span>
-                            <span className="text-[9px] text-amber-500/40 group-hover/col:text-amber-500 transition-colors">Open →</span>
+                        <h3 className="text-amber-400 text-[10px] font-black uppercase tracking-widest mb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span>Featured Collection</span>
+                                {isOwner && (
+                                    <button
+                                        onClick={() => handleOpenCollectionModal()}
+                                        className="w-4 h-4 flex items-center justify-center rounded-full bg-white/10 hover:bg-amber-500 text-white text-[10px] transition-all"
+                                        title="New Collection"
+                                    >
+                                        +
+                                    </button>
+                                )}
+                            </div>
+                            <span
+                                onClick={() => collections.length > 0 && handleOpenCollectionModal(collections[0], !isOwner)}
+                                className="text-[8px] text-amber-500/40 group-hover/col:text-amber-500 transition-colors uppercase cursor-pointer"
+                            >
+                                All →
+                            </span>
                         </h3>
                         {profile.featured_collection_id ? (
                             (() => {
                                 const col = collections.find(c => c.id === profile.featured_collection_id);
-                                if (!col) return <div className="text-[10px] text-gray-600 italic mt-2">Collection not found.</div>;
+                                if (!col) return <div className="text-[10px] text-gray-600 italic">Not found.</div>;
                                 return (
                                     <div
-                                        className="flex-1 flex flex-col gap-3 cursor-pointer group/card"
+                                        className="flex-1 flex flex-col gap-3 cursor-pointer group/card justify-center"
                                         onClick={() => handleOpenCollectionModal(col, !isOwner)}
                                     >
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-black text-white group-hover/card:text-amber-400 transition-colors uppercase tracking-tight">{col.title}</span>
-                                            <span className="text-[10px] font-mono text-gray-500 bg-white/5 px-2 py-0.5 rounded-full">{col.game_ids?.length || 0} games</span>
+                                            <span className="text-[11px] font-black text-white group-hover/card:text-amber-400 transition-colors uppercase tracking-tight font-sans">{col.title}</span>
+                                            <span className="text-[9px] font-mono text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{col.game_ids?.length || 0}</span>
                                         </div>
-                                        <div className="flex -space-x-4 overflow-visible pt-2">
+                                        <div className="flex -space-x-4 overflow-visible px-1 justify-center">
                                             {col.game_ids?.slice(0, 4).map((gid, idx) => (
                                                 <motion.div
                                                     key={idx}
-                                                    whileHover={{ y: -8, scale: 1.1, zIndex: 10 }}
-                                                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                                                    className="relative shadow-2xl"
+                                                    whileHover={{ y: -6, scale: 1.1, zIndex: 10 }}
+                                                    className="relative shadow-xl"
                                                 >
                                                     <img
                                                         src={`https://cdn.akamai.steamstatic.com/steam/apps/${typeof gid === 'object' ? gid.appid : gid}/capsule_184x69.jpg`}
-                                                        className="w-24 h-10 object-cover rounded-md border border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.5)] bg-zinc-900"
+                                                        className="w-20 h-9 object-cover rounded-md border border-white/10 shadow-lg bg-zinc-900"
                                                     />
                                                 </motion.div>
                                             ))}
-                                            {col.game_ids?.length > 4 && (
-                                                <div className="w-12 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-gray-400 flex-shrink-0 z-0 shadow-xl backdrop-blur-sm -ml-2">
-                                                    +{col.game_ids.length - 4}
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 );
                             })()
                         ) : (
-                            <div className="flex-1 flex items-center justify-center border border-dashed border-white/10 rounded-xl text-[10px] text-gray-600 font-bold uppercase tracking-widest h-full">
-                                None selected
+                            <div className="flex-1 flex items-center justify-center border border-dashed border-white/10 rounded-xl h-full group/empty relative">
+                                {isOwner ? (
+                                    <button
+                                        onClick={() => handleOpenCollectionModal()}
+                                        className="flex flex-col items-center gap-1.5 text-[9px] text-gray-500 group-hover/empty:text-amber-500 font-black uppercase tracking-widest transition-all"
+                                    >
+                                        <span className="text-xl group-hover/empty:scale-110 transition-transform">➕</span>
+                                        Create Collection
+                                    </button>
+                                ) : (
+                                    <span className="text-[9px] text-gray-600 font-bold uppercase tracking-widest italic">None selected</span>
+                                )}
                             </div>
                         )}
                     </div>
@@ -653,17 +852,19 @@ export default function DashboardView({ overrideSteamId }) {
             case 'statRings':
                 return <StatRings stats={stats} fullLibrary={fullLibrary} steamId={activeSteamId} minimal={true} />;
             case 'heatmap':
-                return <ActivityHeatmap fullLibrary={fullLibrary} steamId={activeSteamId} minimal={true} />;
+                return <ActivityHeatmap fullLibrary={fullLibrary} steamId={activeSteamId} minimal={true} height={h} />;
             case 'quickNav':
                 return (
-                    <div className="h-full flex flex-col justify-between">
-                        <h3 className="text-purple-400 text-[10px] font-black uppercase tracking-widest mb-4">Quick Access</h3>
-                        <div className="grid grid-cols-1 gap-2.5 flex-1">
-                            <Link href="/" className="flex items-center justify-center p-3 bg-white/5 hover:bg-blue-500/10 border border-white/5 hover:border-blue-500/20 rounded-xl text-[11px] font-black text-gray-300 hover:text-white transition-all uppercase tracking-widest">
-                                ⚔️ Compare
+                    <div className="h-full flex flex-col justify-center">
+                        <h3 className="text-purple-400 text-[10px] font-black uppercase tracking-widest mb-3 text-center">Quick Access</h3>
+                        <div className="grid grid-cols-2 gap-2.5 flex-1 items-center">
+                            <Link href="/" className="flex flex-col items-center justify-center p-3.5 bg-white/5 hover:bg-blue-500/10 border border-white/5 hover:border-blue-500/20 rounded-xl text-[9px] font-black text-gray-300 hover:text-white transition-all uppercase tracking-widest group/btn h-[75px]">
+                                <span className="text-xl mb-1.5 group-hover/btn:scale-110 transition-transform">⚔️</span>
+                                Compare
                             </Link>
-                            <button onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })} className="flex items-center justify-center p-3 bg-white/5 hover:bg-purple-500/10 border border-white/5 hover:border-purple-500/20 rounded-xl text-[11px] font-black text-gray-300 hover:text-white transition-all uppercase tracking-widest">
-                                📚 Library
+                            <button onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })} className="flex flex-col items-center justify-center p-3.5 bg-white/5 hover:bg-purple-500/10 border border-white/5 hover:border-purple-500/20 rounded-xl text-[9px] font-black text-gray-300 hover:text-white transition-all uppercase tracking-widest group/btn h-[75px]">
+                                <span className="text-xl mb-1.5 group-hover/btn:scale-110 transition-transform">📚</span>
+                                Library
                             </button>
                         </div>
                     </div>
@@ -682,6 +883,10 @@ export default function DashboardView({ overrideSteamId }) {
                 return <CustomClockWidget config={widgetConfigs[id]} isEditing={isCustomizing} onConfigChange={(newCfg) => setWidgetConfigs(prev => ({ ...prev, [id]: newCfg }))} />;
             case 'customCountdown':
                 return <CustomCountdownWidget config={widgetConfigs[id]} isEditing={isCustomizing} onConfigChange={(newCfg) => setWidgetConfigs(prev => ({ ...prev, [id]: newCfg }))} />;
+            case 'customInventory':
+                return <CustomInventoryWidget config={widgetConfigs[id]} isEditing={isCustomizing} onConfigChange={(newCfg) => setWidgetConfigs(prev => ({ ...prev, [id]: newCfg }))} />;
+            case 'customDiscord':
+                return <CustomDiscordWidget config={widgetConfigs[id]} isEditing={isCustomizing} onConfigChange={(newCfg) => setWidgetConfigs(prev => ({ ...prev, [id]: newCfg }))} />;
             default:
                 return null;
         }
@@ -781,8 +986,6 @@ export default function DashboardView({ overrideSteamId }) {
         );
     }
 
-    const theme = THEMES[profile.profile_theme_preset] || THEMES.default;
-
     // Premium tier color mapping
     const premiumColorClass = isPremium
         ? tier === 'Pro' ? 'blue' : tier === 'Hacker' ? 'purple' : 'gold'
@@ -813,21 +1016,31 @@ export default function DashboardView({ overrideSteamId }) {
         visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 200, damping: 20 } }
     };
 
-    const collectionStagger = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.12, delayChildren: 0.1 }
-        }
-    };
+    // Theme resolution
+    const theme = THEMES[profile.profile_theme_preset] || THEMES.default;
 
     return (
-        <div className={`min-h-screen relative w-full ${theme.font} ${theme.style || ""}`}>
-            <div className="fixed inset-0 -z-30 transition-all duration-1000">
-                {profile.custom_page_bg && (profile.custom_page_bg.startsWith('data:video') || profile.custom_page_bg.endsWith('.mp4') || profile.custom_page_bg.endsWith('.webm')) ? (
-                    <video src={profile.custom_page_bg} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                ) : (
-                    <div className="w-full h-full" style={{ background: profile.custom_page_bg ? `url("${profile.custom_page_bg}") center/cover no-repeat fixed` : theme.bg }} />
+        <div className={`min-h-screen relative w-full ${theme.font} ${theme.style || ""} ${theme.themeMode === 'light' ? 'light-mode' : ''}`}>
+            <VibeLayer theme={theme} />
+            {/* ─── BACKGROUND LAYERS (z-0 to z-5) ─── */}
+            <div className="fixed inset-0 z-0 transition-all duration-1000 overflow-hidden pointer-events-none">
+                {/* 1. Base Theme Gradient */}
+                <div className="absolute inset-0 w-full h-full" style={{ background: theme.bg }} />
+
+                {/* 2. Custom Page Background (Layered over theme base) */}
+                {profile.custom_page_bg && (
+                    <div className="absolute inset-0 w-full h-full">
+                        {(profile.custom_page_bg.startsWith('data:video') || profile.custom_page_bg.endsWith('.mp4') || profile.custom_page_bg.endsWith('.webm')) ? (
+                            <video src={profile.custom_page_bg} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full" style={{
+                                backgroundImage: `url("${profile.custom_page_bg}")`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                backgroundRepeat: 'no-repeat'
+                            }} />
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -839,14 +1052,17 @@ export default function DashboardView({ overrideSteamId }) {
                 />
             )}
 
-            {theme.overlay && <div className={`${theme.overlay} fixed -z-20`}></div>}
+            {/* 3. Theme Overlay (z-1) */}
+            {theme.overlay && <div className={`${theme.overlay} fixed inset-0 z-[2] pointer-events-none`}></div>}
+
+            {/* 4. Theme Scanlines (z-2) */}
             {theme.scanlines && (
-                <div className="fixed inset-0 -z-10 pointer-events-none opacity-[0.03]"
+                <div className="fixed inset-0 z-[3] pointer-events-none opacity-[0.03]"
                     style={{ background: "linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))", backgroundSize: "100% 2px, 3px 100%" }}></div>
             )}
 
             <motion.div
-                className="max-w-[1400px] mx-auto px-4 pt-4 pb-6 w-full relative z-10 min-h-[calc(100vh-64px)] flex flex-col gap-2.5"
+                className="max-w-[1400px] mx-auto px-4 pt-4 pb-12 w-full relative z-10 flex flex-col gap-5"
                 variants={stagger}
                 initial="hidden"
                 animate="visible"
@@ -1021,28 +1237,46 @@ export default function DashboardView({ overrideSteamId }) {
                     ═══════════════════════════════════════ */}
                 {dashboardLayout && (
                     <ResponsiveGridLayout
-                        className="layout flex-1"
+                        className="layout"
                         layouts={{ lg: dashboardLayout, md: dashboardLayout, sm: dashboardLayout }}
                         breakpoints={{ lg: 1200, md: 768, sm: 480 }}
                         cols={{ lg: 12, md: 8, sm: 4 }}
-                        rowHeight={180}
+                        rowHeight={110}
                         isDraggable={isCustomizing && isOwner}
                         isResizable={isCustomizing && isOwner}
                         draggableHandle=".drag-handle"
                         onLayoutChange={(layout) => setDashboardLayout(layout)}
                         margin={[16, 16]}
                     >
-                        {dashboardLayout.map(item => (
-                            <div key={item.i}>
-                                <WidgetWrapper
-                                    widgetId={item.i}
-                                    isCustomizing={isCustomizing}
-                                    onRemove={() => handleRemoveWidget(item.i)}
-                                >
-                                    {renderWidget(item.i)}
-                                </WidgetWrapper>
-                            </div>
-                        ))}
+                        {dashboardLayout.map(item => {
+                            const type = getWidgetType(item.i);
+                            const meta = WIDGET_REGISTRY[type];
+                            const isFullBleed = ['customMusic', 'customImage', 'customGif', 'customEmbed'].includes(type);
+                            const isCompact = ['favorites', 'achievements'].includes(type);
+
+                            // Determine current size preset based on dimensions
+                            let currentSizeBadge = 'M';
+                            if (meta?.presets) {
+                                if (item.w === meta.presets.S?.w && item.h === meta.presets.S?.h) currentSizeBadge = 'S';
+                                else if (item.w === meta.presets.L?.w && item.h === meta.presets.L?.h) currentSizeBadge = 'L';
+                            }
+
+                            return (
+                                <div key={item.i}>
+                                    <WidgetWrapper
+                                        widgetId={item.i}
+                                        isCustomizing={isCustomizing}
+                                        onRemove={() => handleRemoveWidget(item.i)}
+                                        onSizeChange={(sz) => handleResizeWidget(item.i, sz)}
+                                        currentSize={currentSizeBadge}
+                                        noPadding={isFullBleed}
+                                        compact={isCompact}
+                                    >
+                                        {renderWidget(item)}
+                                    </WidgetWrapper>
+                                </div>
+                            );
+                        })}
                     </ResponsiveGridLayout>
                 )}
 
@@ -1064,6 +1298,16 @@ export default function DashboardView({ overrideSteamId }) {
                         onSave={handleSaveCollection}
                         readOnly={viewOnly}
                         onShare={handleShareCollection}
+                    />
+                )}
+
+                {showPinModal && (
+                    <GamePickerModal
+                        isOpen={showPinModal}
+                        onClose={() => setShowPinModal(false)}
+                        fullLibrary={fullLibrary}
+                        initialSelected={profile.pinned_game_ids}
+                        onSave={handleSavePins}
                     />
                 )}
             </motion.div>
