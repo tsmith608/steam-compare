@@ -1,8 +1,16 @@
 import { Suspense } from "react";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import Script from "next/script";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
 
 export const metadata = {
   title: "We Both Play - Steam Library Comparison Tool",
@@ -69,7 +77,7 @@ export default function RootLayout({ children }) {
           `}
         </Script>
       </head>
-      <body className="antialiased" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <Suspense fallback={<div className="h-16 bg-black w-full" />}>
           <SiteHeader />
         </Suspense>

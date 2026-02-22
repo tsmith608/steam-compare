@@ -300,10 +300,21 @@ export async function POST(req) {
         playtimes[id] = maps[idx].get(appid)?.playtime_forever || 0;
       });
 
+      // Use the most recent rtime_last_played across all users
+      let rtime = 0;
+      maps.forEach(m => {
+        const g = m.get(appid);
+        if (g?.rtime_last_played && g.rtime_last_played > rtime) {
+          rtime = g.rtime_last_played;
+        }
+      });
+
       return {
         appid,
         name: gameData.name,
-        playtimes
+        playtimes,
+        rtime_last_played: rtime || undefined,
+        playtime_2weeks: maps[0].get(appid)?.playtime_2weeks || 0
       };
     });
 

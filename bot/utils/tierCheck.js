@@ -1,3 +1,4 @@
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { API_BASE } = require('./api');
 
 /**
@@ -6,7 +7,7 @@ const { API_BASE } = require('./api');
  * 
  * @param {import('discord.js').Interaction} interaction 
  * @param {string} requiredTier - 'Pro' or 'Hacker'
- * @returns {Promise<{allowed: boolean, reason?: string, currentTier: string}>}
+ * @returns {Promise<{allowed: boolean, reason?: string, components?: Array, currentTier: string}>}
  */
 async function checkTierAccess(interaction, requiredTier = 'Pro') {
     const userId = interaction.user.id;
@@ -30,10 +31,8 @@ async function checkTierAccess(interaction, requiredTier = 'Pro') {
     if (requiredTier === 'Pro' && userTier === 'Pro') return { allowed: true, currentTier: userTier };
 
     // 2. Hacker Server Perk
-    // Check if any member in the server is a Hacker
     if (guild) {
         try {
-            // map() might be slow for massive servers, but with intents enabled and cache populated it's decent.
             const memberIds = guild.members.cache.map(m => m.id);
 
             const hackerRes = await fetch(`${API_BASE}/api/discord/server-hacker-check`, {
@@ -53,10 +52,19 @@ async function checkTierAccess(interaction, requiredTier = 'Pro') {
         }
     }
 
+    const upgradeRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setLabel('🚀 Upgrade Now')
+                .setStyle(ButtonStyle.Link)
+                .setURL(`${API_BASE}/upgrade`)
+        );
+
     return {
         allowed: false,
         currentTier: userTier,
-        reason: `❌ This is a **${requiredTier}** feature.\n\nType \`/upgrade\` to unlock it, or have a **Hacker** tier member join your server!`
+        reason: `❌ This is a **${requiredTier}** feature.\n\nUpgrade to unlock it, or have a **Hacker** tier member join your server!`,
+        components: [upgradeRow]
     };
 }
 

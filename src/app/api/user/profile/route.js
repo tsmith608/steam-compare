@@ -133,7 +133,8 @@ export async function GET(req) {
                     featured_collection_id: "",
                     profile_theme_preset: "default",
                     custom_page_bg: "",
-                    custom_banner_pos: 50
+                    custom_banner_pos: 50,
+                    dashboard_layout: null
                 }
             });
         }
@@ -164,7 +165,8 @@ export async function POST(req) {
             featuredCollectionId,
             profileThemePreset,
             customPageBg,
-            customBannerPos
+            customBannerPos,
+            dashboardLayout
         } = body;
 
         if (!steamId) {
@@ -175,8 +177,8 @@ export async function POST(req) {
         await query(
             `INSERT INTO users (
                 steam_id, discord_link, twitter_link, twitch_link, youtube_link, bio, pinned_game_ids, 
-                persona_name, vanity_id, custom_banner, custom_links, gamer_title, featured_collection_id, profile_theme_preset, custom_page_bg, custom_banner_pos, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
+                persona_name, vanity_id, custom_banner, custom_links, gamer_title, featured_collection_id, profile_theme_preset, custom_page_bg, custom_banner_pos, dashboard_layout, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
             ON CONFLICT (steam_id) 
             DO UPDATE SET 
                 discord_link = COALESCE($2, users.discord_link), 
@@ -194,6 +196,7 @@ export async function POST(req) {
                 profile_theme_preset = COALESCE($14, users.profile_theme_preset),
                 custom_page_bg = COALESCE($15, users.custom_page_bg),
                 custom_banner_pos = COALESCE($16, users.custom_banner_pos),
+                dashboard_layout = COALESCE($17, users.dashboard_layout),
                 updated_at = NOW()`,
             [
                 steamId,
@@ -211,7 +214,8 @@ export async function POST(req) {
                 featuredCollectionId !== undefined ? featuredCollectionId : null,
                 profileThemePreset !== undefined ? profileThemePreset : null,
                 customPageBg !== undefined ? customPageBg : null,
-                customBannerPos !== undefined ? customBannerPos : null
+                customBannerPos !== undefined ? customBannerPos : null,
+                dashboardLayout !== undefined ? JSON.stringify(dashboardLayout) : null
             ]
         );
 

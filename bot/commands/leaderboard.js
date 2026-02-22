@@ -1,6 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
 const { resolveSteamIds, getRankings } = require('../utils/api');
+
+const PAGE_SIZE = 10;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,11 +37,10 @@ module.exports = {
             // 2. Check Tier Access
             const access = await checkTierAccess(interaction, 'Pro');
             if (!access.allowed) {
-                return interaction.editReply({ content: access.reason });
+                return interaction.editReply({ content: access.reason, components: access.components || [] });
             }
 
             // 3. Fetch linked members
-            // Ensure we have the latest members list
             let members;
             try {
                 members = await guild.members.fetch({ limit: 1000 }).catch(() => guild.members.cache);
@@ -51,7 +52,7 @@ module.exports = {
             const discordIds = members.filter(m => !m.user.bot).map(m => m.id);
 
             if (discordIds.length === 0) {
-                return interaction.editReply({ content: "❌ No members found in this server. Make sure the 'Server Members Intent' is enabled in the Discord Developer Portal!" });
+                return interaction.editReply({ content: "❌ No members found in this server." });
             }
 
             const links = await resolveSteamIds(discordIds);
@@ -61,7 +62,7 @@ module.exports = {
                 return interaction.editReply({ content: "❌ No linked accounts found in this server. Use `/link` to connect!" });
             }
 
-            // 4. Fetch Rankings in bulk
+            // 4. Fetch Rankings
             const stats = await getRankings(steamIds);
 
             // Map stats back to Discord users
@@ -79,32 +80,22 @@ module.exports = {
                 return interaction.editReply({ content: "❌ No ranking data available for linked members." });
             }
 
-            // 5. Sort and Format
-            let title = "";
+            // Sort
             if (category === 'playtime') {
                 rankData.sort((a, b) => (b.recentMinutes || 0) - (a.recentMinutes || 0));
-                title = "⏳ Playtime Rankings (Last 2 Weeks)";
             } else {
                 rankData.sort((a, b) => (b.librarySize || 0) - (a.librarySize || 0));
-                title = "📚 Library Size Rankings";
             }
 
-            const embed = new EmbedBuilder()
-                .setColor(0xFFD700)
-                .setTitle(`🏆 Server Leaderboard: ${guild.name}`)
-                .setDescription(`**${title}**\n*Showing rankings for linked members*`)
-                .setThumbnail(guild.iconURL())
-                .setTimestamp();
+            // Build page 0
+            const embed = this._buildPageEmbed(rankData, category, guild, 0);
+            const row = this._buildPageRow(rankData.length, category, 0);
+            const selectRow = this._buildCategorySelect(category);
 
-            const description = rankData.slice(0, 10).map((u, i) => {
-                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-                const val = category === 'playtime' ? `${((u.recentMinutes || 0) / 60).toFixed(1)}h` : `${u.librarySize || 0} games`;
-                return `${medal} **${u.name}**: ${val}`;
-            }).join('\n');
+            const components = [selectRow];
+            if (row) components.push(row);
 
-            embed.addFields({ name: 'Rankings', value: description || "No data available." });
-
-            await interaction.editReply({ embeds: [embed] });
+            await interaction.editReply({ embeds: [embed], components });
 
         } catch (err) {
             console.error("Leaderboard error detail:", err);
@@ -117,6 +108,166 @@ module.exports = {
                 }
             } catch (replyErr) {
                 console.error("Failed to send error reply:", replyErr);
+            }
+        }
+    },
+
+    _buildPageEmbed(rankData, category, guild, page) {
+        const start = page * PAGE_SIZE;
+        const pageData = rankData.slice(start, start + PAGE_SIZE);
+        const totalPages = Math.ceil(rankData.length / PAGE_SIZE);
+
+        const title = category === 'playtime' ? '⏳ Playtime Rankings (Last 2 Weeks)' : '📚 Library Size Rankings';
+
+        const embed = new EmbedBuilder()
+            .setColor(0xFFD700)
+            .setTitle(`🏆 Server Leaderboard: ${guild.name}`)
+            .setDescription(`**${title}**\n*Showing ${rankData.length} linked members*`)
+            .setThumbnail(guild.iconURL())
+            .setTimestamp();
+
+        const description = pageData.map((u, i) => {
+            const rank = start + i;
+            const medal = rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : `${rank + 1}.`;
+            const val = category === 'playtime'
+                ? `${((u.recentMinutes || 0) / 60).toFixed(1)}h`
+                : `${u.librarySize || 0} games`;
+            return `${medal} **${u.name}**: ${val}`;
+        }).join('\n');
+
+        embed.addFields({ name: 'Rankings', value: description || "No data available." });
+
+        if (totalPages > 1) {
+            embed.setFooter({ text: `Page ${page + 1} of ${totalPages}` });
+        }
+
+        return embed;
+    },
+
+    _buildPageRow(totalItems, category, page) {
+        const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+        if (totalPages <= 1) return null;
+
+        return new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`leaderboard:prev:${category}:${page}`)
+                    .setLabel('⬅️ Prev')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(page === 0),
+                new ButtonBuilder()
+                    .setCustomId(`leaderboard:next:${category}:${page}`)
+                    .setLabel('➡️ Next')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(page >= totalPages - 1)
+            );
+    },
+
+    _buildCategorySelect(currentCategory) {
+        return new ActionRowBuilder()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId('leaderboard:category')
+                    .setPlaceholder('Change ranking category...')
+                    .addOptions(
+                        { label: 'Playtime (2 Weeks)', value: 'playtime', emoji: '⏳', default: currentCategory === 'playtime' },
+                        { label: 'Library Size', value: 'library', emoji: '📚', default: currentCategory === 'library' }
+                    )
+            );
+    },
+
+    async handleButton(interaction, action) {
+        const [actionName, category, pageStr] = action.split(':');
+        const currentPage = parseInt(pageStr);
+
+        const newPage = actionName === 'next' ? currentPage + 1 : currentPage - 1;
+
+        await interaction.deferUpdate();
+
+        // Re-fetch data
+        const guild = interaction.guild;
+        if (!guild) return;
+
+        try {
+            let members;
+            try {
+                members = await guild.members.fetch({ limit: 1000 }).catch(() => guild.members.cache);
+            } catch { members = guild.members.cache; }
+
+            const discordIds = members.filter(m => !m.user.bot).map(m => m.id);
+            const links = await resolveSteamIds(discordIds);
+            const steamIds = links.map(l => l.steamId);
+            const stats = await getRankings(steamIds);
+
+            const rankData = stats.map(s => {
+                const link = links.find(l => l.steamId === s.steamid);
+                if (!link) return null;
+                const member = members.get(link.discordId);
+                return { name: member ? member.displayName : 'Linked User', ...s };
+            }).filter(Boolean);
+
+            if (category === 'playtime') {
+                rankData.sort((a, b) => (b.recentMinutes || 0) - (a.recentMinutes || 0));
+            } else {
+                rankData.sort((a, b) => (b.librarySize || 0) - (a.librarySize || 0));
+            }
+
+            const embed = this._buildPageEmbed(rankData, category, guild, newPage);
+            const row = this._buildPageRow(rankData.length, category, newPage);
+            const selectRow = this._buildCategorySelect(category);
+
+            const components = [selectRow];
+            if (row) components.push(row);
+
+            await interaction.editReply({ embeds: [embed], components });
+
+        } catch (err) {
+            console.error("Leaderboard pagination error:", err);
+        }
+    },
+
+    async handleSelect(interaction, action) {
+        if (action === 'category') {
+            await interaction.deferUpdate();
+            const newCategory = interaction.values[0];
+            const guild = interaction.guild;
+            if (!guild) return;
+
+            try {
+                let members;
+                try {
+                    members = await guild.members.fetch({ limit: 1000 }).catch(() => guild.members.cache);
+                } catch { members = guild.members.cache; }
+
+                const discordIds = members.filter(m => !m.user.bot).map(m => m.id);
+                const links = await resolveSteamIds(discordIds);
+                const steamIds = links.map(l => l.steamId);
+                const stats = await getRankings(steamIds);
+
+                const rankData = stats.map(s => {
+                    const link = links.find(l => l.steamId === s.steamid);
+                    if (!link) return null;
+                    const member = members.get(link.discordId);
+                    return { name: member ? member.displayName : 'Linked User', ...s };
+                }).filter(Boolean);
+
+                if (newCategory === 'playtime') {
+                    rankData.sort((a, b) => (b.recentMinutes || 0) - (a.recentMinutes || 0));
+                } else {
+                    rankData.sort((a, b) => (b.librarySize || 0) - (a.librarySize || 0));
+                }
+
+                const embed = this._buildPageEmbed(rankData, newCategory, guild, 0);
+                const row = this._buildPageRow(rankData.length, newCategory, 0);
+                const selectRow = this._buildCategorySelect(newCategory);
+
+                const components = [selectRow];
+                if (row) components.push(row);
+
+                await interaction.editReply({ embeds: [embed], components });
+
+            } catch (err) {
+                console.error("Leaderboard category switch error:", err);
             }
         }
     },

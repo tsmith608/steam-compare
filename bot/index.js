@@ -60,24 +60,65 @@ I'm here to help you and your friends find games to play together.
 });
 
 client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isChatInputCommand()) return;
-
-    const command = interaction.client.commands.get(interaction.commandName);
-
-    if (!command) {
-        console.error(`No command matching ${interaction.commandName} was found.`);
+    // --- Slash Commands ---
+    if (interaction.isChatInputCommand()) {
+        const command = interaction.client.commands.get(interaction.commandName);
+        if (!command) {
+            console.error(`No command matching ${interaction.commandName} was found.`);
+            return;
+        }
+        try {
+            await command.execute(interaction);
+        } catch (error) {
+            console.error(error);
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+            } else {
+                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+            }
+        }
         return;
     }
 
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(error);
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
-        } else {
-            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+    // --- Autocomplete ---
+    if (interaction.isAutocomplete()) {
+        const command = interaction.client.commands.get(interaction.commandName);
+        if (command && command.autocomplete) {
+            try {
+                await command.autocomplete(interaction);
+            } catch (error) {
+                console.error(`Autocomplete error for ${interaction.commandName}:`, error);
+            }
         }
+        return;
+    }
+
+    // --- Buttons & Select Menus ---
+    if (interaction.isButton() || interaction.isStringSelectMenu()) {
+        // Custom ID format: "commandName:action:extraData"
+        const [commandName, ...rest] = interaction.customId.split(':');
+        const command = interaction.client.commands.get(commandName);
+
+        if (!command) return;
+
+        try {
+            if (interaction.isButton() && command.handleButton) {
+                await command.handleButton(interaction, rest.join(':'));
+            } else if (interaction.isStringSelectMenu() && command.handleSelect) {
+                await command.handleSelect(interaction, rest.join(':'));
+            }
+        } catch (error) {
+            console.error(`Component interaction error (${commandName}):`, error);
+            try {
+                const msg = '❌ Something went wrong with that interaction!';
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({ content: msg, ephemeral: true });
+                } else {
+                    await interaction.reply({ content: msg, ephemeral: true });
+                }
+            } catch (e) { /* interaction expired */ }
+        }
+        return;
     }
 });
 

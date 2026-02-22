@@ -18,7 +18,7 @@ module.exports = {
             // 0. Check Tier Access
             const access = await checkTierAccess(interaction, 'Pro');
             if (!access.allowed) {
-                return interaction.editReply({ content: access.reason });
+                return interaction.editReply({ content: access.reason, components: access.components || [] });
             }
 
             // 1. Fetch linked members using batch API

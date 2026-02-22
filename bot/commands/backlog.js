@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
 const { API_BASE, getLink } = require('../utils/api');
 
@@ -15,7 +15,7 @@ module.exports = {
         // 0. Check Tier Access
         const access = await checkTierAccess(interaction, 'Pro');
         if (!access.allowed) {
-            return interaction.editReply({ content: access.reason });
+            return interaction.editReply({ content: access.reason, components: access.components || [] });
         }
 
         const steamId = await getLink(targetUser.id);
@@ -23,6 +23,10 @@ module.exports = {
             return interaction.editReply({ content: `❌ ${targetUser.id === interaction.user.id ? 'You haven\'t' : targetUser.username + " hasn't"} linked a Steam account yet! Run \`/link\` to connect.` });
         }
 
+        await this._pickAndReply(interaction, steamId, targetUser.username, false);
+    },
+
+    async _pickAndReply(interaction, steamId, username, isUpdate) {
         try {
             const compareRes = await fetch(`${API_BASE}/api/compare`, {
                 method: 'POST',
@@ -30,10 +34,7 @@ module.exports = {
                 body: JSON.stringify({ users: [steamId, steamId] })
             });
 
-            if (!compareRes.ok) {
-                const errorData = await compareRes.json().catch(() => ({}));
-                throw new Error(errorData.error || "API Error");
-            }
+            if (!compareRes.ok) throw new Error("API Error");
             const data = await compareRes.json();
 
             let library = data.shared || [];
@@ -48,7 +49,8 @@ module.exports = {
             });
 
             if (backlog.length === 0) {
-                return interaction.editReply({ content: '🎉 Amazing! You have no backlog! You play everything you buy.' });
+                const msg = '🎉 Amazing! No backlog! You play everything you buy.';
+                return isUpdate ? interaction.update({ content: msg, embeds: [], components: [] }) : interaction.editReply({ content: msg });
             }
 
             const pick = backlog[Math.floor(Math.random() * backlog.length)];
@@ -57,15 +59,47 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor(0xE74C3C)
                 .setTitle('🛑 PILE OF SHAME DETECTED')
-                .setDescription(`You own **${pick.name}** but have only played it for **${pt} minutes**.\n\n*Go play it!*`)
-                .setFooter({ text: `Selected from ${backlog.length} unplayed games.` })
+                .setDescription(`**${username}** owns **${pick.name}** but has only played it for **${pt} minutes**.\n\n*Go play it!*`)
+                .setImage(`https://cdn.cloudflare.steamstatic.com/steam/apps/${pick.appid}/header.jpg`)
+                .addFields({ name: '📊 Backlog Stats', value: `**${backlog.length}** unplayed games in library`, inline: true })
+                .setFooter({ text: `That's ${((backlog.length / library.length) * 100).toFixed(0)}% of your library collecting dust.` })
                 .setTimestamp();
 
-            await interaction.editReply({ embeds: [embed] });
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`backlog:next:${steamId}:${username}`)
+                        .setLabel('🔄 Another One')
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setLabel('🚀 Launch in Steam')
+                        .setStyle(ButtonStyle.Link)
+                        .setURL(`steam://run/${pick.appid}`)
+                );
+
+            if (isUpdate) {
+                await interaction.update({ embeds: [embed], components: [row] });
+            } else {
+                await interaction.editReply({ embeds: [embed], components: [row] });
+            }
 
         } catch (err) {
             console.error("Backlog error:", err);
-            await interaction.editReply({ content: `❌ Failed to check backlog: ${err.message}` });
+            const msg = `❌ Failed to check backlog: ${err.message}`;
+            if (isUpdate) {
+                await interaction.reply({ content: msg, ephemeral: true });
+            } else {
+                await interaction.editReply({ content: msg });
+            }
+        }
+    },
+
+    async handleButton(interaction, action) {
+        const parts = action.split(':');
+        if (parts[0] === 'next') {
+            const steamId = parts[1];
+            const username = parts.slice(2).join(':');
+            await this._pickAndReply(interaction, steamId, username, true);
         }
     },
 };

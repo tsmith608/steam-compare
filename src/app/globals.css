@@ -22,6 +22,103 @@ button {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
+/* ============================================
+   2026 DASHBOARD DESIGN SYSTEM
+   ============================================ */
+
+/* --- Glassmorphism Card --- */
+.glass-card {
+  position: relative;
+  background: rgba(0, 0, 0, 0.70);
+  backdrop-filter: blur(32px) saturate(1.2);
+  -webkit-backdrop-filter: blur(32px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 8px 40px -12px rgba(0, 0, 0, 0.6);
+}
+
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.glass-card>* {
+  position: relative;
+  z-index: 1;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 12px 48px -12px rgba(0, 0, 0, 0.6);
+  transform: translateY(-1px);
+}
+
+/* --- Skeleton Shimmer --- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0.75rem;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.04) 40%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.04) 60%,
+      transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* --- Parallax Banner --- */
+.parallax-banner {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* --- Bento Grid --- */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 0.625rem;
+}
+
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
+}
+
+/* --- Breathing Animation --- */
 @keyframes breathing {
   0% {
     -webkit-transform: scale(0.9);
@@ -45,4 +142,280 @@ button {
 .animate-breathing {
   animation: breathing 3.5s ease-in-out infinite normal;
   -webkit-animation: breathing 3.5s ease-in-out infinite normal;
+}
+
+/* ============================================
+   PREMIUM VISUAL HIERARCHY
+   ============================================ */
+
+/* --- Animated Gradient Username Glow --- */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.premium-username-glow {
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 4s ease infinite;
+}
+
+.premium-glow-gold {
+  background-image: linear-gradient(90deg, #f59e0b, #fbbf24, #f97316, #fbbf24, #f59e0b);
+}
+
+.premium-glow-blue {
+  background-image: linear-gradient(90deg, #3b82f6, #06b6d4, #8b5cf6, #06b6d4, #3b82f6);
+}
+
+.premium-glow-purple {
+  background-image: linear-gradient(90deg, #a855f7, #ec4899, #6366f1, #ec4899, #a855f7);
+}
+
+/* --- Shimmer Border --- */
+@keyframes shimmer-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.premium-shimmer-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-shimmer-border::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  animation: shimmer-rotate 4s linear infinite;
+}
+
+.shimmer-gold::before {
+  background: conic-gradient(from 0deg,
+      transparent 0%,
+      #f59e0b 10%,
+      transparent 20%,
+      transparent 100%);
+}
+
+.shimmer-blue::before {
+  background: conic-gradient(from 0deg,
+      transparent 0%,
+      #3b82f6 10%,
+      transparent 20%,
+      transparent 100%);
+}
+
+.shimmer-purple::before {
+  background: conic-gradient(from 0deg,
+      transparent 0%,
+      #a855f7 10%,
+      transparent 20%,
+      transparent 100%);
+}
+
+/* --- Floating Particles --- */
+@keyframes float-particle {
+
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  25% {
+    transform: translateY(-30px) translateX(10px) scale(1.2);
+  }
+
+  50% {
+    transform: translateY(-60px) translateX(-5px) scale(0.8);
+  }
+
+  75% {
+    transform: translateY(-40px) translateX(15px) scale(1.1);
+  }
+}
+
+.premium-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float-particle 5s ease-in-out infinite;
+}
+
+.premium-particle:nth-child(1) {
+  left: 10%;
+  bottom: 20%;
+  animation-delay: 0s;
+  animation-duration: 4.5s;
+}
+
+.premium-particle:nth-child(2) {
+  left: 25%;
+  bottom: 10%;
+  animation-delay: 0.8s;
+  animation-duration: 5.2s;
+}
+
+.premium-particle:nth-child(3) {
+  left: 40%;
+  bottom: 30%;
+  animation-delay: 1.6s;
+  animation-duration: 4.8s;
+}
+
+.premium-particle:nth-child(4) {
+  left: 55%;
+  bottom: 15%;
+  animation-delay: 2.4s;
+  animation-duration: 5.5s;
+}
+
+.premium-particle:nth-child(5) {
+  left: 70%;
+  bottom: 25%;
+  animation-delay: 3.2s;
+  animation-duration: 4.2s;
+}
+
+.premium-particle:nth-child(6) {
+  left: 85%;
+  bottom: 18%;
+  animation-delay: 4.0s;
+  animation-duration: 5.8s;
+}
+
+.premium-particle:nth-child(7) {
+  left: 15%;
+  bottom: 35%;
+  animation-delay: 1.2s;
+  animation-duration: 5.0s;
+}
+
+.premium-particle:nth-child(8) {
+  left: 60%;
+  bottom: 40%;
+  animation-delay: 2.8s;
+  animation-duration: 4.6s;
+}
+
+/* ============================================
+   ANIMATED GLOW BORDER SYSTEM
+   ============================================ */
+
+@property --glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.glow-border {
+  position: relative;
+  z-index: 0;
+}
+
+.glow-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--glow-angle),
+      transparent 0%,
+      rgba(99, 102, 241, 0.5) 10%,
+      rgba(168, 85, 247, 0.6) 20%,
+      rgba(59, 130, 246, 0.5) 30%,
+      transparent 40%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.glow-border:hover::before {
+  opacity: 1;
+  animation: spin-glow 3s linear infinite;
+}
+
+@keyframes spin-glow {
+  0% {
+    --glow-angle: 0deg;
+  }
+
+  100% {
+    --glow-angle: 360deg;
+  }
+}
+
+/* ============================================
+   3D TILT CARD
+   ============================================ */
+
+.tilt-card {
+  perspective: 800px;
+  transform-style: preserve-3d;
+}
+
+.tilt-card-inner {
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+.tilt-card-inner .tilt-parallax-layer {
+  transform: translateZ(30px) scale(0.94);
+  transition: transform 0.3s ease-out;
+}
+
+/* ============================================
+   MICRO-INTERACTION UTILITIES
+   ============================================ */
+
+.press {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.press:active {
+  transform: scale(0.95);
+}
+
+.icon-bounce {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.icon-bounce:hover {
+  transform: scale(1.25) rotate(-5deg);
 }

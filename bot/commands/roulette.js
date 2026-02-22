@@ -19,7 +19,7 @@ module.exports = {
         // 0. Check Tier Access
         const access = await checkTierAccess(interaction, 'Pro');
         if (!access.allowed) {
-            return interaction.editReply({ content: access.reason });
+            return interaction.editReply({ content: access.reason, components: access.components || [] });
         }
 
         const targets = [interaction.user];
@@ -44,51 +44,83 @@ module.exports = {
             steamId: l.steamId
         })).filter(r => r.user);
 
-        if (resolved.length < 1) { // Roulette can work for 1 person too!
+        if (resolved.length < 1) {
             return interaction.editReply({ content: '❌ No linked users found! Use `/link` first.' });
         }
 
+        const steamIds = resolved.map(r => r.steamId);
+        await this._spinAndReply(interaction, steamIds, false);
+    },
+
+    // Shared spin logic for both initial command and button re-spins
+    async _spinAndReply(interaction, steamIds, isUpdate) {
         try {
             const compareRes = await fetch(`${API_BASE}/api/compare`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ users: resolved.map(r => r.steamId) })
+                body: JSON.stringify({ users: steamIds })
             });
 
-            if (!compareRes.ok) {
-                const errorData = await compareRes.json().catch(() => ({}));
-                throw new Error(errorData.error || "API Error");
-            }
+            if (!compareRes.ok) throw new Error("API Error");
             const data = await compareRes.json();
 
-            // Shared or Unique (if single user, we use their unique games as "shared" effectively)
             let pool = data.shared || [];
 
-            // If checking single user, use their owned games
-            if (resolved.length === 1 && data.unique && data.unique[resolved[0].steamId]) {
-                targetPool = data.unique[resolved[0].steamId];
-                if (targetPool.length > 0) pool = targetPool;
+            // If single user, use their owned games
+            if (steamIds.length === 1 && data.unique && data.unique[steamIds[0]]) {
+                const userPool = data.unique[steamIds[0]];
+                if (userPool.length > 0) pool = userPool;
             }
 
             if (pool.length === 0) {
-                return interaction.editReply({ content: '❌ No games found to pick from! Is your Steam profile private?' });
+                const msg = '❌ No games found to pick from! Is your Steam profile private?';
+                return isUpdate ? interaction.editReply({ content: msg }) : interaction.editReply({ content: msg });
             }
 
-            // Pick Random
             const randomGame = pool[Math.floor(Math.random() * pool.length)];
 
             const embed = new EmbedBuilder()
                 .setColor(0xFFD700)
                 .setTitle('🎰 The Roulette Spun...')
                 .setDescription(`And landed on:\n# **${randomGame.name}**`)
+                .setImage(`https://cdn.cloudflare.steamstatic.com/steam/apps/${randomGame.appid}/header.jpg`)
                 .setFooter({ text: `Picked from ${pool.length} games.` })
                 .setTimestamp();
 
-            await interaction.editReply({ embeds: [embed] });
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`roulette:spin:${steamIds.join(',')}`)
+                        .setLabel('🔄 Spin Again')
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setLabel('🚀 Launch in Steam')
+                        .setStyle(ButtonStyle.Link)
+                        .setURL(`steam://run/${randomGame.appid}`)
+                );
+
+            if (isUpdate) {
+                await interaction.update({ embeds: [embed], components: [row] });
+            } else {
+                await interaction.editReply({ embeds: [embed], components: [row] });
+            }
 
         } catch (err) {
             console.error("Roulette error:", err);
-            await interaction.editReply({ content: `❌ Failed to spin the roulette: ${err.message}` });
+            const msg = `❌ Failed to spin the roulette: ${err.message}`;
+            if (isUpdate) {
+                await interaction.reply({ content: msg, ephemeral: true });
+            } else {
+                await interaction.editReply({ content: msg });
+            }
+        }
+    },
+
+    async handleButton(interaction, action) {
+        const [actionName, steamIdsStr] = action.split(':');
+        if (actionName === 'spin') {
+            const steamIds = steamIdsStr.split(',');
+            await this._spinAndReply(interaction, steamIds, true);
         }
     },
 };
