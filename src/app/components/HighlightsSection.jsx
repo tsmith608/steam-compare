@@ -75,7 +75,7 @@ export default function HighlightsSection() {
                         key={it.k}
                         variants={itemVariants}
                         whileHover={{ y: -2, scale: 1.01 }}
-                        className="group relative rounded-2xl border border-white/10 bg-white/5 p-5 text-left overflow-hidden transition-colors hover:bg-white/[0.08]"
+                        className="group relative rounded-2xl border border-white/10 bg-[#111114] p-5 text-left overflow-hidden transition-colors hover:bg-[#161619]"
                     >
                         <div className="flex items-start gap-4">
                             <div className="flex-shrink-0 mt-0.5 text-blue-400 opacity-80 group-hover:opacity-100 transition-opacity">

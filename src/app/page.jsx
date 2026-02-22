@@ -418,11 +418,28 @@ function HomeContent() {
         <>
           <FeatureDemoSection />
 
-          <div className="w-full max-w-6xl mx-auto px-6 text-center relative z-10 flex flex-col items-center">
-            <HighlightsSection />
-          </div>
+          <div
+            className="relative"
+            style={{
+              backgroundColor: '#000000',
+              backgroundImage: 'linear-gradient(30deg, #060606 12%, transparent 12.5%, transparent 87%, #060606 87.5%, #060606), linear-gradient(150deg, #060606 12%, transparent 12.5%, transparent 87%, #060606 87.5%, #060606), linear-gradient(30deg, #060606 12%, transparent 12.5%, transparent 87%, #060606 87.5%, #060606), linear-gradient(150deg, #060606 12%, transparent 12.5%, transparent 87%, #060606 87.5%, #060606), linear-gradient(60deg, #06060677 25%, transparent 25.5%, transparent 75%, #06060677 75%, #06060677), linear-gradient(60deg, #06060677 25%, transparent 25.5%, transparent 75%, #06060677 75%, #06060677)',
+              backgroundSize: '22px 39px',
+              backgroundPosition: '0 0, 0 0, 11px 19px, 11px 19px, 0 0, 11px 19px',
+            }}
+          >
+            <div className="w-full max-w-6xl mx-auto px-6 text-center relative z-10 flex flex-col items-center">
+              <HighlightsSection />
+            </div>
 
-          <TestimonialsSection />
+            <TestimonialsSection />
+
+            {/* Fade-out overlay at the bottom */}
+            <div
+              aria-hidden
+              className="absolute bottom-0 left-0 right-0 h-80 z-[1] pointer-events-none"
+              style={{ background: 'linear-gradient(to top, #000000 0%, transparent 100%)' }}
+            />
+          </div>
 
           <div className="w-full max-w-6xl mx-auto px-6 py-20 text-center relative z-10 flex flex-col items-center">
             <ModernFAQSection />
