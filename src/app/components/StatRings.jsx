@@ -42,6 +42,7 @@ function AnimatedRing({ percent, color, trailColor = "rgba(255,255,255,0.05)", s
                         initial={{ strokeDashoffset: circ }}
                         animate={inView ? { strokeDashoffset: offset } : { strokeDashoffset: circ }}
                         transition={{ duration: 1.4, delay, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ filter: `drop-shadow(0 0 6px ${color}80)` }}
                     />
                 </svg>
                 {/* Center text */}
@@ -139,7 +140,7 @@ export default function StatRings({ stats, fullLibrary, steamId, minimal = false
             <h3 className={`${minimal ? 'text-[10px]' : 'text-lg'} text-white font-black uppercase tracking-widest ${minimal ? 'mb-2' : 'mb-4'} flex items-center gap-2`}>
                 <span className="text-cyan-500">📊</span> Stat Breakdown
             </h3>
-            <div className={`flex items-center justify-around flex-wrap gap-x-4 gap-y-6 flex-1 ${minimal ? 'py-2' : 'py-4'}`}>
+            <div className={`flex items-center justify-around flex-nowrap gap-x-2 flex-1 ${minimal ? 'py-1' : 'py-4'}`}>
                 <AnimatedRing
                     percent={computed.completionRate}
                     color="#10b981"
@@ -147,7 +148,7 @@ export default function StatRings({ stats, fullLibrary, steamId, minimal = false
                     value={`${computed.completionRate}%`}
                     sublabel={`${computed.playedCount} of ${stats?.totalGames || 0} games`}
                     delay={0}
-                    size={minimal ? 80 : 100}
+                    size={minimal ? 72 : 100}
                 />
                 <AnimatedRing
                     percent={computed.dedicationPercent}
@@ -156,7 +157,7 @@ export default function StatRings({ stats, fullLibrary, steamId, minimal = false
                     value={`${computed.dedicationPercent}%`}
                     sublabel="Top 10 concentration"
                     delay={0.15}
-                    size={minimal ? 80 : 100}
+                    size={minimal ? 72 : 100}
                 />
                 <AnimatedRing
                     percent={computed.tierProgress}
@@ -165,7 +166,7 @@ export default function StatRings({ stats, fullLibrary, steamId, minimal = false
                     value={`${computed.tierProgress}%`}
                     sublabel={computed.nextMilestone ? `→ ${computed.nextMilestone.label} (${computed.nextMilestone.threshold.toLocaleString()}h)` : 'Max tier reached!'}
                     delay={0.3}
-                    size={minimal ? 80 : 100}
+                    size={minimal ? 72 : 100}
                 />
             </div>
         </div>

@@ -77,7 +77,7 @@ const JUNK_APP_IDS = new Set([
 async function fetchLibrary(steamid) {
   if (!steamid) return [];
   const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${API_KEY}&steamid=${steamid}&include_appinfo=true&format=json`;
-  const r = await fetch(url);
+  const r = await fetch(url, { cache: 'no-store' });
   if (!r.ok) throw new Error(`Steam API error (${r.status}) for ${steamid}`);
   const j = await r.json();
   if (!j || !j.response) {
@@ -94,6 +94,20 @@ async function fetchLibrary(steamid) {
     if (g.name && g.name.includes("Public Test")) return false;
     return true;
   });
+}
+
+// Fetch recently played games (to catch shared/borrowed titles)
+async function fetchRecentGames(steamid) {
+  if (!steamid) return [];
+  const url = `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${API_KEY}&steamid=${steamid}&count=10&format=json`;
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) return [];
+    const j = await r.json();
+    return (j.response?.games || []).filter(g => !JUNK_APP_IDS.has(g.appid));
+  } catch (e) {
+    return [];
+  }
 }
 
 // Fetch wishlist (returns object keyed by appid)
@@ -269,10 +283,11 @@ export async function POST(req) {
     // Fetch Profiles
     const { usernames, avatars, ids } = await fetchProfiles(validIds);
 
-    // Fetch Libraries + Wishlists
-    const [libraries, wishlists] = await Promise.all([
+    // Fetch Libraries + Wishlists + Recent (Recent covers shared games)
+    const [libraries, wishlists, recents] = await Promise.all([
       Promise.all(validIds.map(id => fetchLibrary(id))),
-      Promise.all(validIds.map(id => fetchWishlist(id)))
+      Promise.all(validIds.map(id => fetchWishlist(id))),
+      Promise.all(validIds.map(id => fetchRecentGames(id)))
     ]);
 
     // Create maps for libraries
@@ -281,10 +296,33 @@ export async function POST(req) {
     const wishlistSets = wishlists.map(w => new Set(Object.keys(w).map(Number)));
 
     // Calculate Shared Games
-    // Start with the first user's games, then intersect with everyone else
+    // Start with the first user's games + recent, then intersect with everyone else
     if (maps.length === 0) return NextResponse.json({ shared: [], unique: {}, profiles: [] });
 
-    const appidSets = maps.map(m => new Set(m.keys()));
+    // Important: We only want to include RECENT games in the union if they aren't owned,
+    // as they won't show up in the shared list otherwise.
+    const appidSets = maps.map((m, idx) => {
+      const set = new Set(m.keys());
+      recents[idx]?.forEach(g => set.add(g.appid));
+      return set;
+    });
+
+    // For shared games, we also need to merge recent metadata into the maps
+    recents.forEach((list, idx) => {
+      list.forEach(g => {
+        if (!maps[idx].has(g.appid)) {
+          maps[idx].set(g.appid, {
+            ...g,
+            playtime_forever: g.playtime_forever || 0,
+            playtime_2weeks: g.playtime_2weeks || 0
+          });
+        } else {
+          // Update playtime_2weeks even if owned
+          const owned = maps[idx].get(g.appid);
+          owned.playtime_2weeks = g.playtime_2weeks;
+        }
+      });
+    });
     let sharedSet = appidSets[0];
     for (let i = 1; i < appidSets.length; i++) {
       sharedSet = intersectSets(sharedSet, appidSets[i]);

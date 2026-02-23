@@ -7,6 +7,7 @@ import BannerEditorModal from './BannerEditorModal';
 import AchievementShowcase from './AchievementShowcase';
 import StatRings from './StatRings';
 import ActivityHeatmap from './ActivityHeatmap';
+import SocialsWidget from './widgets/SocialsWidget';
 import GamePickerModal from './GamePickerModal';
 import { motion, useSpring, useMotionValue, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Responsive, WidthProvider } from "react-grid-layout/legacy";
@@ -672,35 +673,12 @@ export default function DashboardView({ overrideSteamId }) {
                 );
             case 'socials':
                 return (
-                    <div className="h-full flex flex-col justify-center">
-                        <h3 className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 text-center">Connections</h3>
-                        <div className="flex flex-wrap gap-2 justify-center items-center">
-                            {profile.discord_link && (
-                                <div className="px-3 py-1.5 bg-[#5865F2]/10 border border-[#5865F2]/20 rounded-lg flex items-center gap-2 backdrop-blur-md">
-                                    <span className="text-[#5865F2] text-xs">🎮</span>
-                                    <span className="text-[10px] font-bold text-gray-200">{profile.discord_link}</span>
-                                </div>
-                            )}
-                            {profile.twitter_link && (
-                                <a href={profile.twitter_link} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center gap-2 hover:bg-blue-500/20 transition-all backdrop-blur-md">
-                                    <span className="text-blue-400 text-xs">🐦</span>
-                                    <span className="text-[10px] font-bold text-gray-200">Twitter</span>
-                                </a>
-                            )}
-                            {profile.twitch_link && (
-                                <a href={profile.twitch_link} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg flex items-center gap-2 hover:bg-purple-500/20 transition-all backdrop-blur-md">
-                                    <span className="text-purple-400 text-xs">📺</span>
-                                    <span className="text-[10px] font-bold text-gray-200">Twitch</span>
-                                </a>
-                            )}
-                            {profile.custom_links.map((link, idx) => (
-                                <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg flex items-center gap-2 hover:bg-white/10 transition-all backdrop-blur-md">
-                                    <span className={`${theme.accent} text-xs`}>🔗</span>
-                                    <span className="text-[10px] font-bold text-gray-200">{link.label}</span>
-                                </a>
-                            ))}
-                        </div>
-                    </div>
+                    <SocialsWidget
+                        profile={profile}
+                        isCustomizing={isCustomizing}
+                        setProfile={setProfile}
+                        theme={theme}
+                    />
                 );
             case 'mostPlayed':
                 return (
@@ -759,9 +737,9 @@ export default function DashboardView({ overrideSteamId }) {
                         </div>
                         <div className="flex-1 min-h-0">
                             {profile.pinned_game_ids.length > 0 ? (
-                                <div className={`${h >= 4 ? 'grid grid-cols-4' : 'flex flex-row justify-center'} items-center gap-2.5 h-full max-h-full py-1`}>
+                                <div className="grid grid-cols-4 items-center gap-2 h-full py-1">
                                     {profile.pinned_game_ids.slice(0, h >= 4 ? 8 : 4).map(id => (
-                                        <div key={id} className="relative aspect-[2/3] h-full w-auto group/item overflow-hidden rounded-xl border border-white/10 shadow-xl bg-zinc-900 mx-auto max-h-[160px]">
+                                        <div key={id} className="relative aspect-[2/3] w-full group/item overflow-hidden rounded-xl border border-white/10 shadow-xl bg-zinc-900 mx-auto">
                                             <img
                                                 src={`https://cdn.akamai.steamstatic.com/steam/apps/${id}/library_600x900.jpg`}
                                                 className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-700"
@@ -1208,12 +1186,6 @@ export default function DashboardView({ overrideSteamId }) {
                                         <option value="" className="bg-[#1a1a1d]">None</option>
                                         {collections.map(c => <option key={c.id} value={c.id} className="bg-[#1a1a1d]">{c.title}</option>)}
                                     </select>
-                                </div>
-                                {/* Socials row */}
-                                <div className="col-span-2 md:col-span-4 grid grid-cols-3 gap-3 pt-2 border-t border-white/5">
-                                    <div><label className="text-[9px] text-gray-500 font-bold block mb-1">DISCORD</label><input value={profile.discord_link} onChange={e => setProfile({ ...profile, discord_link: e.target.value })} className="w-full bg-black/20 border border-white/5 rounded p-1.5 text-xs text-white focus:outline-none" placeholder="username" /></div>
-                                    <div><label className="text-[9px] text-gray-500 font-bold block mb-1">TWITTER</label><input value={profile.twitter_link} onChange={e => setProfile({ ...profile, twitter_link: e.target.value })} className="w-full bg-black/20 border border-white/5 rounded p-1.5 text-xs text-white focus:outline-none" placeholder="URL" /></div>
-                                    <div><label className="text-[9px] text-gray-500 font-bold block mb-1">TWITCH</label><input value={profile.twitch_link} onChange={e => setProfile({ ...profile, twitch_link: e.target.value })} className="w-full bg-black/20 border border-white/5 rounded p-1.5 text-xs text-white focus:outline-none" placeholder="URL" /></div>
                                 </div>
                                 {profile.custom_banner && (
                                     <div className="col-span-2 md:col-span-4 flex gap-3">

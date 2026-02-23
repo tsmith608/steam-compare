@@ -107,7 +107,7 @@ export default function WidgetWrapper({
             )}
 
             {/* ── Widget Content ────────────────────────────────── */}
-            <div className={`relative z-1 h-full flex flex-col ${noPadding ? 'p-0' : compact ? (isCustomizing ? 'p-6' : 'p-3') : isCustomizing ? 'p-8' : 'p-4'}`}>
+            <div className={`relative z-1 h-full flex flex-col ${noPadding ? 'p-0' : compact ? (isCustomizing ? 'px-3 pb-3 pt-0' : 'p-3') : isCustomizing ? 'px-4 pb-4 pt-0' : 'p-4'}`}>
                 {children}
             </div>
         </div>
