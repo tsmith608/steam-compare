@@ -45,7 +45,7 @@ export default function FriendPicker({ onClose, onConfirm, already = [], slots =
       footer={
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm text-ink-3">{picked.length} selected</span>
-          <button type="button" className="btn btn-primary" disabled={!picked.length} onClick={() => onConfirm(picked)}>
+          <button type="button" className="btn btn-primary" disabled={!picked.length} onClick={() => onConfirm(picked.map((id) => friends.find((f) => f.steamid === id)).filter(Boolean))}>
             Add {picked.length || ""} to group
           </button>
         </div>
@@ -88,7 +88,9 @@ export default function FriendPicker({ onClose, onConfirm, already = [], slots =
                       {f.avatar ? (
                         <img src={f.avatar} alt="" width={36} height={36} loading="lazy" className="h-9 w-9 rounded-full" />
                       ) : (
-                        <span className="h-9 w-9 rounded-full bg-surface-3" />
+                        <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full bg-surface-3 text-sm font-semibold text-ink-2">
+                          {(f.personaname || "").match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase() || "?"}
+                        </span>
                       )}
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium">{f.personaname}</span>

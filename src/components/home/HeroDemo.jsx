@@ -45,7 +45,7 @@ export default function HeroDemo({ demo }) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex -space-x-2">
             {demo.players.map((p, i) => (
-              <Avatar key={p.name} name={p.name} index={i} size={34} />
+              <Avatar key={p.name} src={p.avatar} name={p.name} index={i} size={34} />
             ))}
           </div>
           <span className="tag !bg-surface-3">Example group</span>

@@ -48,7 +48,7 @@ function buildDemo() {
     unionCount: r.stats.unionCount,
     nearMiss: r.nearMisses[0],
     backlogCount: r.stats.backlogCount,
-    players: DEMO_STEAM_IDS.map((id) => ({ name: DEMO_PROFILES[id].personaname, count: r.stats.libraryCounts[id] })),
+    players: DEMO_STEAM_IDS.map((id) => ({ name: DEMO_PROFILES[id].personaname, avatar: DEMO_PROFILES[id].avatar, count: r.stats.libraryCounts[id] })),
     picks,
   };
 }

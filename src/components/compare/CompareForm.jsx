@@ -79,7 +79,7 @@ export default function CompareForm({ initial = [], autoPick = false, compact = 
 
   function setValue(i, value) {
     setFormError("");
-    setRows((prev) => prev.map((r, j) => (j === i ? { ...r, value } : r)));
+    setRows((prev) => prev.map((r, j) => (j === i ? { ...r, value, label: undefined } : r)));
   }
 
   function onBlur(i) {
@@ -125,11 +125,13 @@ export default function CompareForm({ initial = [], autoPick = false, compact = 
     if (i === 0) setSelfName(null);
   }
 
-  function addFriends(ids) {
+  function addFriends(friends) {
     setRows((prev) => {
       const existing = new Set(prev.map((r) => normalize(r.value)).filter(Boolean));
       const next = prev.filter((r) => r.value.trim());
-      for (const id of ids) if (!existing.has(id) && next.length < HARD_MAX) next.push({ value: id, touched: true });
+      for (const f of friends) {
+        if (!existing.has(f.steamid) && next.length < HARD_MAX) next.push({ value: f.steamid, label: f.personaname, touched: true });
+      }
       while (next.length < 2) next.push({ value: "", touched: false });
       return next;
     });
@@ -180,12 +182,20 @@ export default function CompareForm({ initial = [], autoPick = false, compact = 
                   <label htmlFor={`${formId}-p${i}`} className="sr-only">
                     {i === 0 ? "Your Steam profile" : `Friend ${i}'s Steam profile`}
                   </label>
-                  {isSelf ? (
+                  {isSelf || row.label ? (
                     <div className="field flex items-center justify-between !bg-surface-1">
                       <span className="truncate">
-                        <span className="font-semibold">{selfName}</span> <span className="text-ink-3">· you</span>
+                        <span className="font-semibold">{isSelf ? selfName : row.label}</span> <span className="text-ink-3">· {isSelf ? "you" : "friend"}</span>
                       </span>
-                      <button type="button" className="text-xs text-ink-3 underline hover:text-ink-1" onClick={() => { setSelfName(null); setValue(i, ""); }}>
+                      <button
+                        type="button"
+                        className="text-xs text-ink-3 underline hover:text-ink-1"
+                        aria-label={`Change player ${i + 1}`}
+                        onClick={() => {
+                          if (isSelf) setSelfName(null);
+                          setValue(i, "");
+                        }}
+                      >
                         change
                       </button>
                     </div>
@@ -314,8 +324,8 @@ export default function CompareForm({ initial = [], autoPick = false, compact = 
       {pickerOpen && (
         <FriendPicker
           onClose={() => setPickerOpen(false)}
-          onConfirm={(ids) => {
-            addFriends(ids);
+          onConfirm={(friends) => {
+            addFriends(friends);
             setPickerOpen(false);
           }}
           already={rows.map((r) => normalize(r.value)).filter(Boolean)}

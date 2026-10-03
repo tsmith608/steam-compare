@@ -144,7 +144,7 @@ export async function getPlayerSummaries(ids) {
   for (const id of wanted) {
     if (fromFixtures(id)) {
       const p = fx.DEMO_PROFILES[id] || (id === DEMO_PRIVATE_ID ? { personaname: "Demo · Private" } : null);
-      if (p) out.set(id, { steamid: id, personaname: p.personaname, avatar: null, profileurl: null, visibility: id === DEMO_PRIVATE_ID ? 1 : 3 });
+      if (p) out.set(id, { steamid: id, personaname: p.personaname, avatar: p.avatar || null, profileurl: null, visibility: id === DEMO_PRIVATE_ID ? 1 : 3 });
       continue;
     }
     const cached = cacheGet(`summary:${id}`);

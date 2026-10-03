@@ -7,11 +7,12 @@ import { DEMO_STEAM_IDS } from "@/lib/demo-ids";
 
 export { DEMO_STEAM_IDS };
 
+// Avatars are the site's own profile pictures (public/pfp/).
 export const DEMO_PROFILES = {
-  "76561190000000001": { personaname: "Demo · Nova", vanity: "demo-nova" },
-  "76561190000000002": { personaname: "Demo · Bram", vanity: "demo-bram" },
-  "76561190000000003": { personaname: "Demo · Kit", vanity: "demo-kit" },
-  "76561190000000004": { personaname: "Demo · Juno", vanity: "demo-juno" },
+  "76561190000000001": { personaname: "Demo · Nova", vanity: "demo-nova", avatar: "/pfp/pfp3.jpg" },
+  "76561190000000002": { personaname: "Demo · Bram", vanity: "demo-bram", avatar: "/pfp/pfp2.jpg" },
+  "76561190000000003": { personaname: "Demo · Kit", vanity: "demo-kit", avatar: "/pfp/pfp4.jpg" },
+  "76561190000000004": { personaname: "Demo · Juno", vanity: "demo-juno", avatar: "/pfp/pfp7.jpg" },
 };
 
 // Category descriptions mirror the Steam store's wording.

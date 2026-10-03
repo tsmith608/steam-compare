@@ -4,25 +4,31 @@ Made with the [/brag](https://github.com/latent-spaces/brag) skill (brag-slim wo
 
 | File | What |
 |---|---|
-| `brag.mp4` | 20 s vertical launch video, 1080×1920, 30 fps. Original music + sound effects, poster baked in as frame 0 |
+| `brag.mp4` | 21 s vertical launch video, 1080×1920, 30 fps. Original dark-phonk track + sound effects, poster baked in as frame 0 |
 | `brag.jpg` | Poster / thumbnail (the "39 games you all own" frame) |
 | `share-copy.txt` | Caption, ready to paste |
 | `brag-plan.md` | Angle, answers and the scene-by-scene storyboard |
 
-Every number on screen comes from the site's labelled example group (fictional players, real games). Game covers show the app's own title tiles, so no third-party game art.
+The flow is the real one: Steam sign-in, the friend picker, then results. Every number on screen comes from the site's labelled example group (fictional players, real games). Game covers show the app's own title tiles, so no third-party game art.
 
 ## Re-render
 
 From the repo root, with Postgres running and a production build (`npm run build`):
 
 ```bash
-STEAM_MOCK=1 STEAM_API_KEY=x SESSION_SECRET=$(openssl rand -hex 32) DATABASE_URL=… npx next start -p 3100 &
+export SESSION_SECRET=$(openssl rand -hex 32)
+STEAM_MOCK=1 STEAM_API_KEY=x DATABASE_URL=… npx next start -p 3100 &
 node brag-output/work/capture.mjs                  # real UI fragments from the running app
+node brag-output/work/capture-signin.mjs           # signed-in flow: picker + group (needs the same SESSION_SECRET)
 mkdir -p public/brag && cp brag-output/work/composition/* brag-output/work/fragments.json public/brag/
 # restart the server so it serves public/brag, then:
-node brag-output/work/frames.mjs --all             # 600 frames
-node brag-output/work/soundtrack.mjs               # original track, deterministic
-# encode: see the ffmpeg line in the commit that added this folder
+node brag-output/work/frames.mjs --all --duration 21   # 630 frames → work/frames/
+node brag-output/work/soundtrack.mjs                   # original track, deterministic → work/music.wav
+cd brag-output/work
+cp frames/f_00252.png poster.png && cp poster.png frames/f_00000.png   # poster ("39 games you all own") as frame 0
+ffmpeg -framerate 30 -i frames/f_%05d.png -i music.wav -map 0:v -map 1:a -c:v libx264 -preset slow -crf 17 \
+  -pix_fmt yuv420p -profile:v high -level 4.1 -r 30 -c:a aac -b:a 192k -ar 48000 -movflags +faststart -shortest ../brag.mp4
+ffmpeg -i poster.png -q:v 2 ../brag.jpg
 ```
 
 `public/brag/` is gitignored; delete it after rendering.

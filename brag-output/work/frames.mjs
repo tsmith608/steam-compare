@@ -9,7 +9,7 @@ const args = process.argv.slice(2);
 const opt = (k, d) => (args.includes(k) ? args[args.indexOf(k) + 1] : d);
 const URL_ = opt("--url", "http://localhost:3100/brag/index.html");
 const FPS = Number(opt("--fps", 30));
-const DUR = Number(opt("--duration", 20));
+const DUR = Number(opt("--duration", 21));
 const browser = await chromium.launch();
 const page = await (await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3 })).newPage();
 page.on("pageerror", (e) => console.error("PAGEERROR", e.message));

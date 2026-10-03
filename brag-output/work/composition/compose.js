@@ -29,7 +29,7 @@
   stage.appendChild(glow);
   const html = (s) => {
     const t = document.createElement("template");
-    t.innerHTML = s.trim();
+    t.innerHTML = s.trim().replace(/\sloading="lazy"/g, "");
     return t.content.firstElementChild;
   };
   const place = (node, { x = SX, y, w = SW, h, parent }) => {
@@ -65,9 +65,9 @@
     d.style.left = `${x}px`;
     d.style.top = `${y}px`;
     parent.appendChild(d);
-    return (t, t0) => {
+    return (t, t0, k = 1) => { // k fades the ripple out with what it tapped
       const p = seg(t, t0, t0 + 0.42);
-      d.style.opacity = p > 0 && p < 1 ? String((1 - p) * 0.9) : "0";
+      d.style.opacity = p > 0 && p < 1 ? String((1 - p) * 0.9 * k) : "0";
       d.style.transform = `scale(${(0.35 + 1.15 * eo(p)).toFixed(3)})`;
     };
   };
@@ -77,13 +77,16 @@
   };
   const coverTile = (name) => `<div class="grid place-items-center bg-gradient-to-br from-surface-3 to-surface-1 p-3 text-center"><span class="display line-clamp-2 text-sm text-ink-2">${name}</span></div>`;
   const P = (i) => `var(--p${i + 1})`;
+  // The site's own profile pictures (public/pfp/): the demo players' avatars,
+  // as in src/lib/steam-fixtures.js, plus Mae (the extra friend in the picker).
+  const PFP = { Nova: "/pfp/pfp3.jpg", Bram: "/pfp/pfp2.jpg", Kit: "/pfp/pfp4.jpg", Juno: "/pfp/pfp7.jpg", Mae: "/pfp/pfp8.jpg" };
   const scenes = [];
 
   // ------------------------------------------------- 1 · Hook (0.0–2.5)
   {
     const s = scene();
-    const people = [["Nova", "N"], ["Bram", "B"], ["Kit", "K"], ["Juno", "J"]];
-    const chat = place(html(`<div class="chat"><div class="chat-head"><div class="chat-avs">${people.map((p, i) => `<span style="background:${P(i)}">${p[1]}</span>`).join("")}</div><div><p class="chat-title">game night</p><p class="chat-meta">4 friends · Fri 9:12 PM</p></div></div></div>`), { y: 128, parent: s });
+    const people = ["Nova", "Bram", "Kit", "Juno"];
+    const chat = place(html(`<div class="chat"><div class="chat-head"><div class="chat-avs">${people.map((p) => `<img src="${PFP[p]}" alt="">`).join("")}</div><div><p class="chat-title">game night</p><p class="chat-meta">4 friends · Fri 9:12 PM</p></div></div></div>`), { y: 128, parent: s });
     const lines = [
       { who: 0, text: "what are we playing tonight?", t0: 0.1, big: true },
       { who: 1, text: "idk", t0: 0.62 },
@@ -91,7 +94,7 @@
       { who: 3, typing: true, t0: 1.52 },
     ];
     const msgs = lines.map((m) => {
-      const n = html(`<div class="msg"><span class="av" style="background:${P(m.who)}">${people[m.who][1]}</span><div><p class="msg-name">${people[m.who][0]}</p>${m.typing ? `<span class="dots"><i></i><i></i><i></i></span>` : `<p class="msg-bubble${m.big ? " big" : ""}">${m.text}</p>`}</div></div>`);
+      const n = html(`<div class="msg"><img class="av" src="${PFP[people[m.who]]}" alt=""><div><p class="msg-name">${people[m.who]}</p>${m.typing ? `<span class="dots"><i></i><i></i><i></i></span>` : `<p class="msg-bubble${m.big ? " big" : ""}">${m.text}</p>`}</div></div>`);
       chat.appendChild(n);
       return n;
     });
@@ -108,42 +111,89 @@
     });
   }
 
-  // ------------------------------------------------- 2 · Paste (2.5–5.0)
+  // ------------------------------------- 2 · Sign in + pick friends (2.5–6.0)
   {
     const s = scene();
-    const hl = place(html(`<h2 class="hl" style="font-size:27px">Paste your group's<br><span style="color:var(--accent-hi)">Steam profiles.</span></h2>`), { y: 62, parent: s });
-    const form = place(html(`<div class="frag-form">${f.form}</div>`), { y: 140, parent: s });
-    const inputs = [...form.querySelectorAll("input.field")];
-    const counter = [...form.querySelectorAll("span")].find((x) => /\/8 players/.test(x.textContent));
-    const button = [...form.querySelectorAll("button")].find((b) => /Compare libraries/.test(b.textContent));
-    const values = ["steamcommunity.com/id/demo-nova", "steamcommunity.com/id/demo-bram", "steamcommunity.com/id/demo-kit", "steamcommunity.com/id/demo-juno"];
-    const pasteAt = [2.95, 3.3, 3.65, 4.0];
-    const btnText = button.innerHTML;
-    const b = rel(button, s);
-    const tapBtn = tap(s, b.x, b.y);
+    const clean = (h) => h.replace(/Demo · /g, "").replace(/Steam user/g, "Nova");
+    const mae = [...html(`<div>${clean(f.picker[0])}</div>`).querySelectorAll("ul > li")].find((li) => li.querySelector('button[aria-pressed="false"]')).cloneNode(true);
+    mae.querySelector(".block.truncate").textContent = "Mae";
+    mae.querySelector("img").setAttribute("src", PFP.Mae);
+    // Signed-out form: the "Sign in to pick friends" link is the way in.
+    const hl = place(html(`<h2 class="hl" style="font-size:27px">Sign in with<br><span style="color:var(--accent-hi)">Steam.</span></h2>`), { y: 62, parent: s });
+    const formOut = place(html(`<div class="frag-form">${clean(f.formSignedOut)}</div>`), { y: 140, parent: s });
+    const signIn = [...formOut.querySelectorAll("a")].find((a) => /Sign in to pick friends/.test(a.textContent));
+    const si = rel(signIn, s);
+    const tapSignIn = tap(s, si.x, si.y);
+    // Back from Steam: the picker opens over the signed-in form.
+    const formIn = place(html(`<div class="frag-form">${clean(f.formSignedIn)}</div>`), { y: 62, parent: s });
+    const rowsIn = [...formIn.querySelectorAll("ol > li")];
+    const counter = [...formIn.querySelectorAll("span")].find((x) => /\/8 players/.test(x.textContent));
+    const compareBtn = [...formIn.querySelectorAll("button")].find((b) => /Compare libraries/.test(b.textContent));
+    const cb = rel(compareBtn, s);
+    const tapCompare = tap(s, cb.x, cb.y);
+    const compareText = compareBtn.innerHTML;
+    const shade = place(html(`<div style="background:rgba(3,4,6,0.72)"></div>`), { x: 0, y: 0, w: W, h: 640, parent: s });
+    const states = f.picker.map((h) => {
+      const d = place(html(`<div class="pick">${clean(h)}</div>`), { y: 112, parent: s });
+      // One more (unticked) friend so the list reads like a real friends list.
+      d.querySelector("ul").appendChild(mae.cloneNode(true));
+      return d;
+    });
+    const rowBtn = (name) => [...states[0].querySelectorAll("button[aria-pressed]")].find((b) => b.textContent.includes(name));
+    const pickTaps = ["Bram", "Kit", "Juno"].map((name, k) => {
+      const r = rel(rowBtn(name), s);
+      return { t0: 3.85 + k * 0.35, fx: tap(s, r.x, r.y) };
+    });
+    const addBtn = [...states[3].querySelectorAll("button")].find((b) => /Add 3 to group/.test(b.textContent));
+    const ab = rel(addBtn, s);
+    const tapAdd = tap(s, ab.x, ab.y);
     scenes.push({
-      start: 2.5, end: 5.0, node: s,
+      start: 2.5, end: 6.0, node: s,
       update(t) {
-        show(hl, seg(t, 2.5, 2.85));
-        show(form, seg(t, 2.6, 2.95), 18);
-        let n = 0;
-        inputs.forEach((inp, i) => {
-          const on = t >= pasteAt[i];
-          if (on) n++;
-          inp.value = on ? values[i] : "";
-          inp.scrollLeft = on ? inp.scrollWidth : 0;
-          const flash = on ? 1 - seg(t, pasteAt[i], pasteAt[i] + 0.35) : 0;
-          inp.style.boxShadow = flash > 0 ? `0 0 0 ${(2 * flash).toFixed(2)}px rgba(96,165,250,${(0.9 * flash).toFixed(2)})` : "";
-        });
-        if (counter) counter.textContent = `${n}/8 players`;
-        const press = seg(t, 4.42, 4.52) - seg(t, 4.55, 4.7);
-        button.style.transform = `scale(${(1 - 0.035 * press).toFixed(4)})`;
-        button.innerHTML = t >= 4.56 ? "Opening results…" : btnText;
-        tapBtn(t, 4.42);
-        if (t > 4.78) {
-          out(hl, seg(t, 4.78, 5.0));
-          out(form, seg(t, 4.8, 5.0), -20);
+        // Part 1: sign in
+        const p1 = t < 3.3;
+        hl.style.visibility = formOut.style.visibility = p1 ? "visible" : "hidden";
+        show(hl, seg(t, 2.5, 2.82));
+        show(formOut, seg(t, 2.56, 2.9), 18);
+        tapSignIn(t, 2.98, 1 - seg(t, 3.14, 3.3));
+        // Focus ring (the app's accent) to lead the eye to the sign-in link.
+        const ring = seg(t, 2.72, 2.9) * (1 - seg(t, 3.14, 3.3));
+        signIn.style.boxShadow = ring ? `0 0 0 2px rgba(96, 165, 250, ${(0.9 * ring).toFixed(3)}), 0 0 18px rgba(96, 165, 250, ${(0.35 * ring).toFixed(3)})` : "none";
+        signIn.style.transform = `scale(${(1 - 0.04 * (seg(t, 2.98, 3.06) - seg(t, 3.08, 3.2))).toFixed(4)})`;
+        if (t > 3.14 && p1) {
+          out(hl, seg(t, 3.14, 3.3));
+          out(formOut, seg(t, 3.14, 3.3), -18);
         }
+        // Part 2: picker over the signed-in form
+        formIn.style.visibility = t >= 3.3 ? "visible" : "hidden";
+        const added = t >= 5.1;
+        rowsIn.forEach((li, i) => {
+          if (i === 0) return show(li, seg(t, 3.3, 3.5), 0);
+          li.style.display = added ? "" : "none";
+          show(li, seg(t, 5.12 + (i - 1) * 0.07, 5.38 + (i - 1) * 0.07), 10);
+        });
+        if (counter) counter.textContent = added ? "4/8 players" : "1/8 players";
+        show(formIn, seg(t, 3.3, 3.5), 0);
+        const shadeOn = seg(t, 3.3, 3.4) - seg(t, 5.04, 5.18);
+        shade.style.opacity = String(shadeOn);
+        // The dialog stays opaque (no see-through frames): it pops in with a
+        // small scale + rise, and is dismissed by sliding down off the stage.
+        const open = eo(seg(t, 3.32, 3.56)), close = Math.pow(seg(t, 5.0, 5.2), 2);
+        const stateIdx = t < 3.9 ? 0 : t < 4.25 ? 1 : t < 4.6 ? 2 : 3;
+        states.forEach((d, k) => {
+          const on = k === stateIdx && t >= 3.32 && t < 5.2;
+          d.style.visibility = on ? "visible" : "hidden";
+          d.style.opacity = on ? "1" : "0";
+          d.style.transform = `translateY(${((1 - open) * 36 + close * 560).toFixed(2)}px) scale(${(0.96 + 0.04 * open).toFixed(4)})`;
+        });
+        pickTaps.forEach(({ t0, fx }) => fx(t, t0));
+        tapAdd(t, 4.95, 1 - seg(t, 5.0, 5.06));
+        addBtn.style.transform = `scale(${(1 - 0.04 * (seg(t, 4.95, 5.03) - seg(t, 5.05, 5.15))).toFixed(4)})`;
+        // Part 3: compare
+        tapCompare(t, 5.6);
+        compareBtn.style.transform = `scale(${(1 - 0.035 * (seg(t, 5.6, 5.68) - seg(t, 5.7, 5.82))).toFixed(4)})`;
+        compareBtn.innerHTML = t >= 5.72 ? "Opening results…" : compareText;
+        if (t > 5.8) out(formIn, seg(t, 5.8, 6.0), -20);
       },
     });
   }
@@ -172,7 +222,7 @@
     const fact = place(html(`<div class="fact"></div>`), { y: 408, parent: s });
     fact.innerHTML = factLi ? factLi.innerHTML : "Everyone owns it, nobody's launched it: <strong>Bloons TD 6</strong>";
     scenes.push({
-      start: 5.0, end: 8.5, node: s,
+      start: 6.0, end: 9.5, offset: 1.0, node: s,
       update(t) {
         show(pill, seg(t, 5.0, 5.3), 8);
         show(avatars, seg(t, 5.05, 5.4), 10);
@@ -211,7 +261,7 @@
     const tapChip = tap(s, c.x, c.y);
     const TAP = 9.25;
     scenes.push({
-      start: 8.5, end: 11.0, node: s,
+      start: 9.5, end: 12.0, offset: 1.0, node: s,
       update(t) {
         const drift = -46 * eio(seg(t, 9.75, 11.0));
         // Before the tap: everything (A). After: B's toolbar/count, cards re-flow.
@@ -255,7 +305,7 @@
     const lr = launch ? rel(launch, s) : null;
     const tapLaunch = lr ? tap(s, lr.x, lr.y) : null;
     scenes.push({
-      start: 11.0, end: 14.5, node: s,
+      start: 12.0, end: 15.5, offset: 1.0, node: s,
       update(t) {
         show(hl, seg(t, 11.0, 11.35));
         show(reel, seg(t, 11.05, 11.35), 14);
@@ -302,7 +352,7 @@
     });
     const lead = place(html(`<div>${(f.pollResults.match(/<div class="mt-6 rounded-lg border border-accent[\s\S]*?<\/div>/) || [""])[0].replace("mt-6 ", "")}</div>`), { y: 392, parent: s });
     scenes.push({
-      start: 14.5, end: 17.0, node: s,
+      start: 15.5, end: 18.0, offset: 1.0, node: s,
       update(t) {
         show(label, seg(t, 14.5, 14.8), 8);
         show(hl, seg(t, 14.55, 14.88));
@@ -334,7 +384,7 @@
     const cta = place(html(`<div class="center-x"><span class="btn btn-primary btn-lg" style="pointer-events:none">webothplay.com</span></div>`), { x: 0, w: W, y: 396, parent: s });
     const fine = place(html(`<p class="sub" style="text-align:center">Free for groups of up to 8 · Powered by Steam</p>`), { x: 0, w: W, y: 452, parent: s });
     scenes.push({
-      start: 17.0, end: 20.0, node: s, fadeOut: false,
+      start: 18.0, end: 21.0, offset: 1.0, node: s, fadeOut: false,
       update(t) {
         const m = eio(seg(t, 17.0, 17.7));
         setRings(svg, 150 - 102 * m, 0.25 + 0.6 * m + 0.15 * Math.sin((t - 17) * 2.2));
@@ -359,12 +409,13 @@
       const o = visible ? Math.min(fin, fout) : 0;
       sc.node.style.opacity = String(o);
       sc.node.style.visibility = o > 0 ? "visible" : "hidden";
-      if (o > 0) sc.update(t);
+      if (o > 0) sc.update(t - (sc.offset || 0));
     }
   };
 
   await document.fonts.ready;
   await Promise.all([...document.images].map((img) => (img.complete ? null : new Promise((r) => { img.onload = img.onerror = r; }))));
+  await Promise.all([...document.images].map((img) => img.decode().catch(() => {})));
   window.seek(0);
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   window.__ready = true;
