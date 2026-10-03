@@ -1,0 +1,1096 @@
+[
+  {
+    "id": "W01-MON",
+    "template": "overlap-reveal",
+    "data": {
+      "demo": true,
+      "hook": "4 friends. 1,300 games. Nothing to play?",
+      "players": [
+        {
+          "name": "Nova",
+          "count": 412
+        },
+        {
+          "name": "Bram",
+          "count": 377
+        },
+        {
+          "name": "Kit",
+          "count": 298
+        },
+        {
+          "name": "Juno",
+          "count": 221
+        }
+      ],
+      "shared": 64,
+      "union": 1308,
+      "punchline": "64 games they could launch tonight.",
+      "funFact": "Most played together: Deep Rock Galactic"
+    }
+  },
+  {
+    "id": "W01-TUE",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "9:02 PM",
+        "Me:: what do you guys wanna play",
+        "Everyone:: idk whatever",
+        "Me:: ok so... nothing again"
+      ]
+    }
+  },
+  {
+    "id": "W01-WED",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Stop asking what everyone owns",
+      "demo": true
+    }
+  },
+  {
+    "id": "W01-THU",
+    "template": "stat-card",
+    "data": {
+      "demo": true,
+      "hook": "Nova carries this game alone.",
+      "value": 36,
+      "suffix": "h",
+      "label": "Nova in Marvel Rivals",
+      "sub": "Bram, Kit & Juno: 0 hours combined"
+    }
+  },
+  {
+    "id": "W01-FRI",
+    "template": "roulette",
+    "data": {
+      "demo": true,
+      "hook": "Can't decide? Spin it.",
+      "titles": [
+        "Deep Rock Galactic",
+        "Lethal Company",
+        "Valheim",
+        "Left 4 Dead 2",
+        "Terraria",
+        "R.E.P.O.",
+        "Phasmophobia",
+        "Risk of Rain 2"
+      ],
+      "winner": "Left 4 Dead 2",
+      "reason": "All 4 own it · 147h together"
+    }
+  },
+  {
+    "id": "W01-SUN",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Every group has a fallback game.",
+        "The one you play when nobody can decide.",
+        "What's yours?"
+      ]
+    }
+  },
+  {
+    "id": "W02-MON",
+    "template": "nobody-played",
+    "data": {
+      "demo": true,
+      "players": 4,
+      "game": "Bloons TD 6",
+      "punchline": "Nobody has ever launched it."
+    }
+  },
+  {
+    "id": "W02-TUE",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Free co-op demos to try with friends"
+    }
+  },
+  {
+    "id": "W02-WED",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Your friend's games won't show up?"
+    }
+  },
+  {
+    "id": "W02-THU",
+    "template": "top-five",
+    "data": {
+      "hook": "5 co-op games your group probably already owns",
+      "items": [
+        {
+          "name": "Left 4 Dead 2",
+          "why": "4-player co-op classic"
+        },
+        {
+          "name": "Portal 2",
+          "why": "Short, clever 2-player campaign"
+        },
+        {
+          "name": "Terraria",
+          "why": "Endless co-op building and bosses"
+        },
+        {
+          "name": "Risk of Rain 2",
+          "why": "Fast roguelike runs, up to 4"
+        },
+        {
+          "name": "Don't Starve Together",
+          "why": "Survival chaos for the whole group"
+        }
+      ]
+    }
+  },
+  {
+    "id": "W02-FRI",
+    "template": "overlap-reveal",
+    "data": {
+      "demo": true,
+      "hook": "We had 39 games in common??",
+      "players": [
+        {
+          "name": "Nova",
+          "count": 65
+        },
+        {
+          "name": "Bram",
+          "count": 58
+        },
+        {
+          "name": "Kit",
+          "count": 52
+        },
+        {
+          "name": "Juno",
+          "count": 49
+        }
+      ],
+      "shared": 39,
+      "union": 70,
+      "punchline": "80% overlap. 39 options.",
+      "funFact": "Everyone owns Bloons TD 6. Nobody has launched it."
+    }
+  },
+  {
+    "id": "W02-SUN",
+    "template": "roulette",
+    "data": {
+      "demo": true,
+      "hook": "Horror night. Let the wheel pick.",
+      "titles": [
+        "Phasmophobia",
+        "Lethal Company",
+        "R.E.P.O.",
+        "Content Warning",
+        "The Forest",
+        "Dead by Daylight"
+      ],
+      "winner": "Lethal Company",
+      "reason": "All 4 own it · 116h together"
+    }
+  },
+  {
+    "id": "W03-MON",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Everyone owns it except Juno",
+      "demo": true
+    }
+  },
+  {
+    "id": "W03-TUE",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "You:: you pick",
+        "Friend:: no you pick",
+        "40 minutes later",
+        "Everyone:: ...we should just go to bed"
+      ]
+    }
+  },
+  {
+    "id": "W03-WED",
+    "template": "hook-overlay",
+    "data": {
+      "text": "One veto each. No more arguing."
+    }
+  },
+  {
+    "id": "W03-THU",
+    "template": "stat-card",
+    "data": {
+      "hook": "Only ONE of you needs to own it.",
+      "value": 1,
+      "suffix": " copy",
+      "label": "Remote Play Together",
+      "sub": "The host owns it; friends join through Steam (in supported games)"
+    }
+  },
+  {
+    "id": "W03-FRI",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Checking 4 libraries by hand? 😩"
+    }
+  },
+  {
+    "id": "W03-SUN",
+    "template": "stat-card",
+    "data": {
+      "demo": true,
+      "hook": "4 friends. Shared games only.",
+      "value": 5383,
+      "suffix": "h",
+      "label": "played together (and apart)",
+      "sub": "Most of it in Counter-Strike 2"
+    }
+  },
+  {
+    "id": "W04-MON",
+    "template": "top-five",
+    "data": {
+      "hook": "Co-op horror games your group might already own",
+      "items": [
+        {
+          "name": "Phasmophobia",
+          "why": "Ghost hunting for up to 4"
+        },
+        {
+          "name": "Lethal Company",
+          "why": "Scrap, scream, repeat"
+        },
+        {
+          "name": "R.E.P.O.",
+          "why": "Physics-chaos horror heists"
+        },
+        {
+          "name": "Content Warning",
+          "why": "Film the horror, go viral"
+        },
+        {
+          "name": "Dead by Daylight",
+          "why": "4 vs 1 classic"
+        }
+      ]
+    }
+  },
+  {
+    "id": "W04-TUE",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Scream Fest co-op picks"
+    }
+  },
+  {
+    "id": "W04-WED",
+    "template": "roulette",
+    "data": {
+      "demo": true,
+      "hook": "Spin for tonight's scare.",
+      "titles": [
+        "Phasmophobia",
+        "R.E.P.O.",
+        "Content Warning",
+        "Lethal Company",
+        "The Forest",
+        "Sons Of The Forest"
+      ],
+      "winner": "R.E.P.O.",
+      "reason": "All 4 own it · played this week"
+    }
+  },
+  {
+    "id": "W04-THU",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Us:: horror night!!",
+        "That one friend:: I'll just watch",
+        "Also that friend:: *screams first*"
+      ]
+    }
+  },
+  {
+    "id": "W04-FRI",
+    "template": "nobody-played",
+    "data": {
+      "demo": true,
+      "players": 4,
+      "game": "Sons Of The Forest",
+      "punchline": "Halloween is the excuse."
+    }
+  },
+  {
+    "id": "W04-SUN",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Halloween's over.",
+        "But be honest:",
+        "What's the scariest game your group has played together?"
+      ]
+    }
+  },
+  {
+    "id": "W05-MON",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Send this to your group chat"
+    }
+  },
+  {
+    "id": "W05-TUE",
+    "template": "stat-card",
+    "data": {
+      "hook": "My Steam library vs. what I actually play",
+      "value": 412,
+      "label": "games owned",
+      "sub": "Played this year: the same 3."
+    }
+  },
+  {
+    "id": "W05-WED",
+    "template": "hook-overlay",
+    "data": {
+      "text": "3 taps to tonight's game",
+      "demo": true
+    }
+  },
+  {
+    "id": "W05-THU",
+    "template": "overlap-reveal",
+    "data": {
+      "demo": true,
+      "hook": "Who has the biggest Steam library?",
+      "players": [
+        {
+          "name": "Ash",
+          "count": 1204
+        },
+        {
+          "name": "Remy",
+          "count": 311
+        },
+        {
+          "name": "Ola",
+          "count": 96
+        }
+      ],
+      "shared": 58,
+      "union": 1460,
+      "punchline": "Ash owns 1,204 games. They share 58.",
+      "funFact": "Ola owns 96 — and 58 of them overlap."
+    }
+  },
+  {
+    "id": "W05-FRI",
+    "template": "top-five",
+    "data": {
+      "hook": "Big group? Games that fit more than 4",
+      "items": [
+        {
+          "name": "Valheim",
+          "why": "Up to 10 per server"
+        },
+        {
+          "name": "Among Us",
+          "why": "Social deduction for big groups"
+        },
+        {
+          "name": "Garry's Mod",
+          "why": "Sandbox chaos, big lobbies"
+        },
+        {
+          "name": "Project Zomboid",
+          "why": "Survive together, many players"
+        },
+        {
+          "name": "Golf With Your Friends",
+          "why": "Party golf, up to 12"
+        }
+      ]
+    }
+  },
+  {
+    "id": "W05-SUN",
+    "template": "roulette",
+    "data": {
+      "demo": true,
+      "hook": "New rule: the wheel decides.",
+      "titles": [
+        "Stardew Valley",
+        "Terraria",
+        "Deep Rock Galactic",
+        "Portal 2",
+        "Golf With Your Friends",
+        "Overcooked! 2"
+      ],
+      "winner": "Overcooked! 2",
+      "reason": "All 4 own it · friendship test"
+    }
+  },
+  {
+    "id": "W06-MON",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Type /compare in voice"
+    }
+  },
+  {
+    "id": "W06-TUE",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "10:00 PM:: one game",
+        "11:30 PM:: ok one more",
+        "2:14 AM:: last one fr",
+        "Work tomorrow:: 💀"
+      ]
+    }
+  },
+  {
+    "id": "W06-WED",
+    "template": "nobody-played",
+    "data": {
+      "demo": true,
+      "players": 4,
+      "game": "Party Animals",
+      "punchline": "Tonight's the night."
+    }
+  },
+  {
+    "id": "W06-THU",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Pick friends straight from Steam"
+    }
+  },
+  {
+    "id": "W06-FRI",
+    "template": "stat-card",
+    "data": {
+      "hook": "Time spent deciding vs. playing",
+      "value": 23,
+      "suffix": " min",
+      "label": "deciding what to play",
+      "sub": "Time playing before someone had to leave: 15 min"
+    }
+  },
+  {
+    "id": "W06-SUN",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Quick poll:",
+        "How many games are in your Steam library?",
+        "Under 50 · 50–200 · 200–500 · 500+"
+      ]
+    }
+  },
+  {
+    "id": "W07-MON",
+    "template": "top-five",
+    "data": {
+      "hook": "Co-op games for when you only have an hour",
+      "items": [
+        {
+          "name": "Risk of Rain 2",
+          "why": "One run ≈ 30–45 min"
+        },
+        {
+          "name": "Deep Rock Galactic",
+          "why": "Missions fit a lunch break"
+        },
+        {
+          "name": "Golf With Your Friends",
+          "why": "18 holes of chaos"
+        },
+        {
+          "name": "Vampire Survivors",
+          "why": "30-minute couch co-op runs"
+        },
+        {
+          "name": "Overcooked! 2",
+          "why": "Short levels, loud friends"
+        }
+      ]
+    }
+  },
+  {
+    "id": "W07-TUE",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Why we made it free for 8 friends"
+    }
+  },
+  {
+    "id": "W07-WED",
+    "template": "overlap-reveal",
+    "data": {
+      "demo": true,
+      "hook": "3 friends. 900 games.",
+      "players": [
+        {
+          "name": "Theo",
+          "count": 402
+        },
+        {
+          "name": "Mae",
+          "count": 288
+        },
+        {
+          "name": "Rin",
+          "count": 214
+        }
+      ],
+      "shared": 31,
+      "union": 812,
+      "punchline": "31 games all three can play tonight.",
+      "funFact": "Rin is one copy away from 12 more."
+    }
+  },
+  {
+    "id": "W07-THU",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Friend with 800 Steam games:",
+        "*doesn't own the one game we want*",
+        "'I'll get it on sale'",
+        "(they will not)"
+      ]
+    }
+  },
+  {
+    "id": "W07-FRI",
+    "template": "hook-overlay",
+    "data": {
+      "text": "0 → launched in 30 seconds",
+      "demo": true
+    }
+  },
+  {
+    "id": "W07-SUN",
+    "template": "roulette",
+    "data": {
+      "demo": true,
+      "hook": "3 vetoes later. Spin the survivors.",
+      "titles": [
+        "Valheim",
+        "Terraria",
+        "Deep Rock Galactic",
+        "Stardew Valley"
+      ],
+      "winner": "Valheim",
+      "reason": "Survived the vote · 2 yes votes"
+    }
+  },
+  {
+    "id": "W08-MON",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Before you buy anything on sale…",
+      "demo": true
+    }
+  },
+  {
+    "id": "W08-TUE",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Co-op picks under $10 (this sale)"
+    }
+  },
+  {
+    "id": "W08-WED",
+    "template": "top-five",
+    "data": {
+      "hook": "Couch co-op for when the family's home",
+      "items": [
+        {
+          "name": "Overcooked! 2",
+          "why": "Chaos in the kitchen, up to 4"
+        },
+        {
+          "name": "It Takes Two",
+          "why": "2-player, one copy via Friend's Pass"
+        },
+        {
+          "name": "Stardew Valley",
+          "why": "Cozy split-screen farming"
+        },
+        {
+          "name": "Castle Crashers",
+          "why": "4-player couch brawler"
+        },
+        {
+          "name": "Vampire Survivors",
+          "why": "Local co-op, easy to learn"
+        }
+      ]
+    }
+  },
+  {
+    "id": "W08-THU",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Thankful for:",
+        "friends who game",
+        "39 games in common",
+        "and the wheel that decides for us"
+      ]
+    }
+  },
+  {
+    "id": "W08-FRI",
+    "template": "stat-card",
+    "data": {
+      "demo": true,
+      "hook": "Juno buys ONE game…",
+      "value": 13,
+      "label": "games the group is one copy away from",
+      "sub": "Best buy: Baldur's Gate 3 (everyone else owns it)"
+    }
+  },
+  {
+    "id": "W08-SUN",
+    "template": "nobody-played",
+    "data": {
+      "demo": true,
+      "players": 4,
+      "game": "Destiny 2",
+      "punchline": "Play the backlog before the next sale."
+    }
+  },
+  {
+    "id": "W09-MON",
+    "template": "hook-overlay",
+    "data": {
+      "text": "The game you ALL wishlisted",
+      "demo": true
+    }
+  },
+  {
+    "id": "W09-TUE",
+    "template": "stat-card",
+    "data": {
+      "hook": "My Steam wishlist vs. my wallet",
+      "value": 214,
+      "label": "games wishlisted",
+      "sub": "Bought this sale: 0. Waiting for -90%."
+    }
+  },
+  {
+    "id": "W09-WED",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Gift idea trick for gamer friends",
+      "demo": true
+    }
+  },
+  {
+    "id": "W09-THU",
+    "template": "top-five",
+    "data": {
+      "hook": "Zero games in common? Free fallbacks",
+      "items": [
+        {
+          "name": "Team Fortress 2",
+          "why": "Classic, free, still chaotic"
+        },
+        {
+          "name": "Warframe",
+          "why": "Free co-op looter"
+        },
+        {
+          "name": "Brawlhalla",
+          "why": "Free platform fighter"
+        },
+        {
+          "name": "THE FINALS",
+          "why": "Free team shooter"
+        },
+        {
+          "name": "Dota 2",
+          "why": "Free, if you dare"
+        }
+      ]
+    }
+  },
+  {
+    "id": "W09-FRI",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Us:: what games do you have",
+        "Friend:: idk just check my steam",
+        "Their profile:: 🔒 Game details private",
+        "Us:: 😐"
+      ]
+    }
+  },
+  {
+    "id": "W09-SUN",
+    "template": "stat-card",
+    "data": {
+      "demo": true,
+      "hook": "Our most-played shared game:",
+      "value": 1685,
+      "suffix": "h",
+      "label": "Counter-Strike 2",
+      "sub": "Juno's share: 42 minutes"
+    }
+  },
+  {
+    "id": "W10-MON",
+    "template": "top-five",
+    "data": {
+      "hook": "Co-op gems you probably got in a bundle",
+      "items": [
+        {
+          "name": "Warhammer: Vermintide 2",
+          "why": "4-player melee horde co-op"
+        },
+        {
+          "name": "PAYDAY 2",
+          "why": "Heists for 4"
+        },
+        {
+          "name": "Don't Starve Together",
+          "why": "Survive (badly) together"
+        },
+        {
+          "name": "Tabletop Simulator",
+          "why": "Any board game, online"
+        },
+        {
+          "name": "Portal 2",
+          "why": "The co-op campaign holds up"
+        }
+      ]
+    }
+  },
+  {
+    "id": "W10-TUE",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Game Awards: co-op picks"
+    }
+  },
+  {
+    "id": "W10-WED",
+    "template": "roulette",
+    "data": {
+      "demo": true,
+      "hook": "Cozy night. Spin.",
+      "titles": [
+        "Stardew Valley",
+        "Don't Starve Together",
+        "Terraria",
+        "Golf With Your Friends",
+        "Bloons TD 6",
+        "Overcooked! 2"
+      ],
+      "winner": "Stardew Valley",
+      "reason": "All 4 own it · 385h together"
+    }
+  },
+  {
+    "id": "W10-THU",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Group chat:: what are we playing",
+        "Me:: *sends vote link*",
+        "Everyone:: *votes in 30 seconds*",
+        "Me:: why didn't we do this years ago"
+      ]
+    }
+  },
+  {
+    "id": "W10-FRI",
+    "template": "hook-overlay",
+    "data": {
+      "text": "8 friends. 1 comparison.",
+      "demo": true
+    }
+  },
+  {
+    "id": "W10-SUN",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "You can make your friends play ONE game together.",
+        "No complaints allowed.",
+        "What is it?"
+      ]
+    }
+  },
+  {
+    "id": "W11-MON",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Winter Sale plan for your group",
+      "demo": true
+    }
+  },
+  {
+    "id": "W11-TUE",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Winter Sale: buy these as a group"
+    }
+  },
+  {
+    "id": "W11-WED",
+    "template": "stat-card",
+    "data": {
+      "demo": true,
+      "hook": "Holiday challenge: play the backlog",
+      "value": 13,
+      "label": "games all 4 own, nobody's really played",
+      "sub": "One per night until New Year?"
+    }
+  },
+  {
+    "id": "W11-THU",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Me before the sale:: I'm not buying anything",
+        "Me 4 minutes in:: *6 games in cart*",
+        "My backlog:: 👁️👄👁️"
+      ]
+    }
+  },
+  {
+    "id": "W11-FRI",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Your squad, one tap away"
+    }
+  },
+  {
+    "id": "W11-SUN",
+    "template": "top-five",
+    "data": {
+      "hook": "Co-op gifts that come with a game night",
+      "items": [
+        {
+          "name": "It Takes Two",
+          "why": "Friend's Pass: one copy, two players"
+        },
+        {
+          "name": "Split Fiction",
+          "why": "2-player co-op adventure"
+        },
+        {
+          "name": "Deep Rock Galactic",
+          "why": "Rock and stone, up to 4"
+        },
+        {
+          "name": "Valheim",
+          "why": "Viking survival with friends"
+        },
+        {
+          "name": "R.E.P.O.",
+          "why": "Cheap, loud, hilarious"
+        }
+      ]
+    }
+  },
+  {
+    "id": "W12-MON",
+    "template": "overlap-reveal",
+    "data": {
+      "demo": true,
+      "hook": "5 cousins compared Steam libraries",
+      "players": [
+        {
+          "name": "Sam",
+          "count": 260
+        },
+        {
+          "name": "Lea",
+          "count": 184
+        },
+        {
+          "name": "Ivo",
+          "count": 141
+        },
+        {
+          "name": "Pia",
+          "count": 77
+        },
+        {
+          "name": "Dan",
+          "count": 59
+        }
+      ],
+      "shared": 14,
+      "union": 536,
+      "punchline": "14 games all five can play.",
+      "funFact": "Everyone owns Rocket League. Of course."
+    }
+  },
+  {
+    "id": "W12-TUE",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "Christmas:: everyone got new games",
+        "Group chat:: so what are we playing",
+        "Also group chat:: the same 3 games"
+      ]
+    }
+  },
+  {
+    "id": "W12-WED",
+    "template": "roulette",
+    "data": {
+      "demo": true,
+      "hook": "Family's here. Spin it.",
+      "titles": [
+        "Overcooked! 2",
+        "Golf With Your Friends",
+        "Stardew Valley",
+        "Vampire Survivors",
+        "Party Animals"
+      ],
+      "winner": "Golf With Your Friends",
+      "reason": "Everyone owns it · even Grandma"
+    }
+  },
+  {
+    "id": "W12-THU",
+    "template": "hook-overlay",
+    "data": {
+      "text": "Works on your phone too",
+      "demo": true
+    }
+  },
+  {
+    "id": "W12-FRI",
+    "template": "overlap-reveal",
+    "data": {
+      "demo": true,
+      "hook": "'We have nothing to play.'",
+      "players": [
+        {
+          "name": "Nova",
+          "count": 65
+        },
+        {
+          "name": "Bram",
+          "count": 58
+        },
+        {
+          "name": "Kit",
+          "count": 52
+        },
+        {
+          "name": "Juno",
+          "count": 49
+        }
+      ],
+      "shared": 39,
+      "union": 70,
+      "punchline": "You have 39. Merry Christmas.",
+      "funFact": "Everyone owns Bloons TD 6. Nobody has launched it."
+    }
+  },
+  {
+    "id": "W12-SUN",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "2026 is almost over.",
+        "Best game your group played together this year?",
+        "Go."
+      ]
+    }
+  },
+  {
+    "id": "W13-MON",
+    "template": "stat-card",
+    "data": {
+      "demo": true,
+      "hook": "Our group's year in shared games",
+      "value": 39,
+      "label": "games all four of us own",
+      "sub": "Most played: Counter-Strike 2 · forgotten: Bloons TD 6"
+    }
+  },
+  {
+    "id": "W13-TUE",
+    "template": "hook-overlay",
+    "data": {
+      "text": "3 months of game nights taught us…"
+    }
+  },
+  {
+    "id": "W13-WED",
+    "template": "nobody-played",
+    "data": {
+      "demo": true,
+      "players": 4,
+      "game": "PUBG: BATTLEGROUNDS",
+      "punchline": "Resolution: launch it once."
+    }
+  },
+  {
+    "id": "W13-THU",
+    "template": "meme-card",
+    "data": {
+      "lines": [
+        "11:58 PM:: one more game",
+        "12:00 AM:: happy new year!! ok one more",
+        "3:00 AM:: 2027 is off to a great start"
+      ]
+    }
+  },
+  {
+    "id": "W13-FRI",
+    "template": "hook-overlay",
+    "data": {
+      "text": "First game night of 2027?",
+      "demo": true
+    }
+  },
+  {
+    "id": "W13-SUN",
+    "template": "roulette",
+    "data": {
+      "demo": true,
+      "hook": "2027 rule: the wheel decides.",
+      "titles": [
+        "Deep Rock Galactic",
+        "Valheim",
+        "Risk of Rain 2",
+        "Terraria",
+        "Lethal Company",
+        "R.E.P.O."
+      ],
+      "winner": "Deep Rock Galactic",
+      "reason": "All 4 own it · rock and stone"
+    }
+  },
+  {
+    "id": "END-SITE",
+    "template": "end-card",
+    "data": {}
+  },
+  {
+    "id": "END-DISCORD",
+    "template": "end-card",
+    "data": {
+      "cta": "Add the WeBothPlay bot to your server",
+      "sub": "free · webothplay.com/discord"
+    }
+  }
+]
