@@ -1,64 +1,65 @@
-# We Both Play 🎮
+# WeBothPlay
 
-**We Both Play** is a modern web application that allows you to instantly compare Steam libraries with your friends. Find shared games, uncover unique titles, and plan your next co-op adventure in seconds.
+**What are we playing tonight?** Paste your friends' Steam profiles and see every game your whole group already owns. Then decide: filter by co-op or couch play, spin the roulette, or send a vote link where everyone gets one veto.
 
-## ✨ Features
+Live at [webothplay.com](https://webothplay.com). Free for groups of up to 8; Premium adds bigger groups, saved groups and Discord bot extras.
 
-- **Multi-User Comparison**: Compare libraries for up to 4 players simultaneously.
-- **Instant Insights**: See "Shared Games", "Only You", and unique games for each friend.
-- **Smart Parsing**: Supports Steam64 IDs, profile URLs, and vanity URLs.
-- **Privacy Handling**: Gracefully handles private profiles or missing data.
-- **Polished UI**: Built with a dark, modern aesthetic using Tailwind CSS and Framer Motion.
+## Features
 
-## 🚀 Getting Started
+- Compare 2–16 Steam libraries from profile links, SteamID64s or custom URL names (several pasted at once), or pick friends after signing in through Steam.
+- Results at a shareable URL: everyone owns · one copy away · nobody's played · only one owns · shared wishlists.
+- Search, "best for tonight" sort, and filters built on Steam's own tags (co-op, online co-op, couch / Remote Play, PvP, controller, free).
+- Roulette, a shortlist that becomes a group vote (one veto each), share pages with rendered preview cards, and `steam://run` launch.
+- Private-profile handling: everyone else's results still show, with a fix message to send.
+- Discord bot (`bot/`): `/compare`, `/link` and Premium commands.
 
-### Prerequisites
+## Stack
 
-- Node.js 18+
-- A valid [Steam Web API Key](https://steamcommunity.com/dev/apikey)
+Next.js 16 (App Router) · React 19 · Tailwind CSS 3 · PostgreSQL (`pg`) · Stripe · Steam Web API + OpenID · Vercel (hosting + cron) · Vitest · Playwright + axe-core · Satori/resvg (OG images and the social renderer).
 
-### Installation
+## Run it locally
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/yourusername/steam-compare.git
-    cd steam-compare
-    ```
+```bash
+npm ci
+cp .env.example .env.local          # fill DATABASE_URL at minimum
+npm run db:migrate                  # creates/updates the schema (additive, idempotent)
+npm run dev:mock                    # fixture libraries, no Steam key needed
+# or: npm run dev                   # real Steam data (needs STEAM_API_KEY)
+```
 
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
+Open <http://localhost:3000> and try **See an example first**. In mock mode, the demo players `76561190000000001`–`…004` (and `…005`, a private profile) work as inputs.
 
-3.  Configure Environment:
-    Create a `.env.local` file in the root directory and add your Steam API Key:
-    ```bash
-    STEAM_API_KEY=your_steam_api_key_here
-    ```
+## Scripts
 
-4.  Run the development server:
-    ```bash
-    npm run dev
-    ```
+| Command | What it does |
+|---|---|
+| `npm run dev` / `dev:mock` | Development server (mock mode uses fixture libraries) |
+| `npm run build` / `start` | Production build / server |
+| `npm run lint` | ESLint (Next.js core-web-vitals config) |
+| `npm test` | Unit tests; DB integration tests also run when `TEST_DATABASE_URL` is set |
+| `npm run test:e2e` | Playwright end-to-end + accessibility tests (after `npm run build`; needs Postgres, see `playwright.config.mjs`) |
+| `npm run db:migrate` | Apply `db/migrations/*.sql` (rollback script in `db/rollback/`) |
+| `npm run social:calendar` | Rebuild the 90-day TikTok calendar and renderer data |
+| `npm run social:render` | Render TikTok videos, covers and carousels (`marketing/renderer/README.md`) |
 
-    Open [http://localhost:3000](http://localhost:3000) with your browser.
+CI (`.github/workflows/ci.yml`) runs lint, migrations, unit + DB tests, build and E2E on every pull request.
 
-## 🛠️ Tech Stack
+## Configuration
 
--   **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
--   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
--   **Animations**: [Framer Motion](https://www.framer.com/motion/)
--   **API**: [Steam Web API](https://partner.steamgames.com/doc/webapi_overview)
+Every environment variable is listed with comments in [`.env.example`](.env.example) (and [`bot/.env.example`](bot/.env.example) for the bot). Secrets stay server-side; only `NEXT_PUBLIC_*` values reach the browser.
 
-## 📦 Deployment
+## Docs
 
-This project is optimized for deployment on [Vercel](https://vercel.com).
+| | |
+|---|---|
+| Running the business (≈30 min/week + TikTok) | [docs/retrofit/OWNER_OPERATIONS_GUIDE.md](docs/retrofit/OWNER_OPERATIONS_GUIDE.md) |
+| What needs the owner (keys, settings) | [docs/retrofit/NEEDS_FROM_OWNER.md](docs/retrofit/NEEDS_FROM_OWNER.md) |
+| What changed in the 2026 retrofit, and why | [docs/retrofit/FINAL_REPORT.md](docs/retrofit/FINAL_REPORT.md) |
+| Analytics, funnel and SQL | [docs/retrofit/ANALYTICS.md](docs/retrofit/ANALYTICS.md) |
+| Design system | [docs/retrofit/DESIGN_SYSTEM.md](docs/retrofit/DESIGN_SYSTEM.md) |
+| TikTok system | [marketing/tiktok/](marketing/tiktok/) · [marketing/renderer/](marketing/renderer/) |
 
-1.  Push your code to GitHub.
-2.  Import the project in Vercel.
-3.  Add the `STEAM_API_KEY` to the Vercel Project Settings > Environment Variables.
-4.  Deploy!
+## Notes
 
-## 📄 License
-
-MIT
+- Powered by Steam. WeBothPlay is not affiliated with or endorsed by Valve Corporation. Steam is a trademark of Valve Corporation.
+- Fonts (Archivo, Inter, JetBrains Mono) are SIL Open Font License 1.1. Social emoji are Twemoji (CC-BY 4.0).
