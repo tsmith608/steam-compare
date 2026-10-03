@@ -5,6 +5,7 @@
 // the request URL and is never logged or echoed back in errors.
 import { query } from "@/lib/db";
 import * as fx from "@/lib/steam-fixtures";
+import { parseSteamInput } from "@/lib/steam-input";
 
 const API = "https://api.steampowered.com";
 const STORE = "https://store.steampowered.com";
@@ -94,26 +95,7 @@ async function steamGet(base, path, params = {}, { timeoutMs = 8000, retries = 1
 
 /* ------------------------------ input parsing ----------------------------- */
 
-/**
- * Accepts SteamID64s, profile URLs, custom (vanity) URLs and bare vanity names.
- * @returns {{kind:"id",steamid:string}|{kind:"vanity",vanity:string}|null}
- */
-export function parseSteamInput(raw) {
-  if (raw === null || raw === undefined) return null;
-  const input = String(raw).trim();
-  if (!input || input.length > 200) return null;
-
-  if (/^\d{17}$/.test(input)) return { kind: "id", steamid: input };
-
-  const profile = input.match(/steamcommunity\.com\/profiles\/(\d{17})/i);
-  if (profile) return { kind: "id", steamid: profile[1] };
-
-  const vanityUrl = input.match(/steamcommunity\.com\/id\/([A-Za-z0-9_-]{2,32})(?:[/?#]|$)/i);
-  if (vanityUrl) return { kind: "vanity", vanity: vanityUrl[1] };
-
-  if (/^[A-Za-z0-9_-]{2,32}$/.test(input)) return { kind: "vanity", vanity: input };
-  return null;
-}
+export { parseSteamInput };
 
 /** Resolves any supported input to a SteamID64 or throws a SteamError. */
 export async function resolveSteamId(raw) {

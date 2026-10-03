@@ -10,10 +10,16 @@ import { alertOwner, logServerError } from "@/lib/ops";
 
 export const dynamic = "force-dynamic";
 
+// Claim an event for processing. Returns false if it was already handled or is
+// being handled right now; a claim older than 5 minutes (crashed handler) can
+// be taken over so Stripe's retry isn't swallowed.
 async function claimEvent(event) {
   try {
     const res = await query(
-      "INSERT INTO stripe_events (id, type) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING RETURNING id",
+      `INSERT INTO stripe_events (id, type, status, received_at) VALUES ($1, $2, 'processing', NOW())
+       ON CONFLICT (id) DO UPDATE SET received_at = NOW()
+         WHERE stripe_events.status = 'processing' AND stripe_events.received_at < NOW() - INTERVAL '5 minutes'
+       RETURNING id`,
       [event.id, event.type]
     );
     return res.rowCount === 1;
@@ -21,6 +27,10 @@ async function claimEvent(event) {
     // Table missing (un-migrated DB): process anyway; handlers are idempotent.
     return true;
   }
+}
+
+async function completeEvent(id) {
+  await query("UPDATE stripe_events SET status = 'done', processed_at = NOW() WHERE id = $1", [id]).catch(() => {});
 }
 
 async function releaseEvent(id) {
@@ -99,6 +109,7 @@ export async function POST(request) {
 
   try {
     await handle(stripe, event);
+    await completeEvent(event.id);
     return NextResponse.json({ received: true });
   } catch (err) {
     await releaseEvent(event.id);

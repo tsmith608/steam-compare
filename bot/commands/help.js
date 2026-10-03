@@ -13,7 +13,7 @@ module.exports = {
                 {
                     name: '🟢 Free Commands', value: [
                         '🔗 **/link** — Link your Steam account',
-                        '🎮 **/compare** — Compare libraries (up to 3 users)',
+                        '🎮 **/compare** — Compare libraries (up to 8 users)',
                         '🔍 **/compare search:** — Search for a specific shared game',
                         '❓ **/help** — Show this list',
                     ].join('\n')
@@ -29,7 +29,7 @@ module.exports = {
                         '🏆 **/leaderboard** — Top gamers in your server',
                     ].join('\n')
                 },
-                { name: '✨ Hacker Server Perk', value: 'If a **Hacker** tier member is in your server, **everyone** gets access to Premium commands and higher comparison limits (up to 12 users)!' }
+                { name: '✨ Hacker Server Perk', value: 'If a **Hacker** tier member is in your server, **everyone** gets access to Premium commands and bigger comparisons (up to 16 users)!' }
             )
             .setFooter({ text: 'Visit webothplay.com for the full experience!' });
 

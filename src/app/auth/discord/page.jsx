@@ -47,18 +47,18 @@ function LinkContent() {
         <p className="label text-accent mb-3">Discord × Steam</p>
         {status === "success" ? (
           <>
-            <h1 className="text-display-sm mb-3">You're linked.</h1>
+            <h1 className="display text-display-sm mb-3">You're linked.</h1>
             <p className="text-ink-2 mb-6">Head back to Discord and run <code className="kbd">/compare</code> with your friends.</p>
             <Link href="/" className="btn btn-ghost">Back to WeBothPlay</Link>
           </>
         ) : !discordId ? (
           <>
-            <h1 className="text-display-sm mb-3">This link is incomplete</h1>
+            <h1 className="display text-display-sm mb-3">This link is incomplete</h1>
             <p className="text-ink-2">Run <code className="kbd">/link</code> in Discord to get a fresh link.</p>
           </>
         ) : (
           <>
-            <h1 className="text-display-sm mb-3">Link your Steam account</h1>
+            <h1 className="display text-display-sm mb-3">Link your Steam account</h1>
             <p className="text-ink-2 mb-6">
               This lets the WeBothPlay bot compare your public Steam library when friends run <code className="kbd">/compare</code>.
             </p>

@@ -7,11 +7,14 @@ CREATE TABLE IF NOT EXISTS app_settings (
     value TEXT NOT NULL
 );
 
--- Stripe webhook idempotency: each event id is processed once.
+-- Stripe webhook idempotency: each event id is processed once. A claim stuck
+-- in 'processing' (crashed handler) can be re-claimed after 5 minutes.
 CREATE TABLE IF NOT EXISTS stripe_events (
-    id          TEXT PRIMARY KEY,
-    type        TEXT NOT NULL,
-    received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id           TEXT PRIMARY KEY,
+    type         TEXT NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'processing',
+    received_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMPTZ
 );
 
 -- First-party product analytics. No IP addresses, no Steam IDs, no emails:
@@ -61,9 +64,11 @@ CREATE TABLE IF NOT EXISTS polls (
 CREATE TABLE IF NOT EXISTS poll_votes (
     poll_id    TEXT NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
     voter      TEXT NOT NULL,
-    appid      INTEGER NOT NULL,
     voter_name TEXT,
+    yes        INTEGER[] NOT NULL DEFAULT '{}',
+    veto       INTEGER,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (poll_id, voter)
 );
 

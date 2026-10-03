@@ -3,12 +3,9 @@
 // never collide with a real Steam account. Game titles and app IDs are real so
 // cover art loads, but every library, playtime and name here is made up.
 
-export const DEMO_STEAM_IDS = [
-  "76561190000000001",
-  "76561190000000002",
-  "76561190000000003",
-  "76561190000000004",
-];
+import { DEMO_STEAM_IDS } from "@/lib/demo-ids";
+
+export { DEMO_STEAM_IDS };
 
 export const DEMO_PROFILES = {
   "76561190000000001": { personaname: "Demo · Nova", vanity: "demo-nova" },

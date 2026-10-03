@@ -24,8 +24,9 @@ module.exports = {
         const access = await checkTierAccess(interaction, 'Noob'); // We don't block compare, just scale it
         const executorTier = access.currentTier;
 
-        const tierLimits = { 'Noob': 3, 'Pro': 6, 'Hacker': 12 };
-        const maxUsers = tierLimits[executorTier] || 3;
+        // Keep in sync with src/lib/plans.js (PLAN_LIMITS).
+        const tierLimits = { 'Noob': 8, 'Pro': 12, 'Hacker': 16 };
+        const maxUsers = tierLimits[executorTier] || 8;
 
         // 1. Collect all users involved (Self + mentions + voice)
         const targets = [interaction.user];

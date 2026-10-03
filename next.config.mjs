@@ -19,6 +19,8 @@ const nextConfig = {
     return [
       // Old bot messages linked here; the route never existed.
       { source: "/dashboard/:id(\\d{17})", destination: "/:id", permanent: true },
+      { source: "/profile/:id", destination: "/:id", permanent: true },
+      { source: "/commands", destination: "/discord", permanent: true },
     ];
   },
 };

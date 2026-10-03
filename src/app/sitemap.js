@@ -1,12 +1,16 @@
+import { SITE_URL } from "@/lib/site";
+import { GUIDES } from "@/lib/guides";
+import { blogPosts } from "./blog/data";
+
+// Only indexable, evergreen pages. Comparison, share, vote and profile pages
+// are per-user and carry noindex. Google ignores priority/changefreq.
+const UPDATED = "2026-10-03";
+
 export default function sitemap() {
-    return [
-        { url: 'https://webothplay.com', lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
-        { url: 'https://webothplay.com/about', lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-        { url: 'https://webothplay.com/commands', lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-        { url: 'https://webothplay.com/upgrade', lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
-        { url: 'https://webothplay.com/blog', lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
-        { url: 'https://webothplay.com/terms', lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
-        { url: 'https://webothplay.com/privacy', lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
-        { url: 'https://webothplay.com/contact', lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
-    ]
+  const pages = ["/", "/roulette", "/backlog", "/coop", "/discord", "/upgrade", "/guides", "/help", "/about", "/blog", "/contact", "/privacy", "/terms"];
+  return [
+    ...pages.map((p) => ({ url: `${SITE_URL}${p === "/" ? "" : p}`, lastModified: UPDATED })),
+    ...GUIDES.map((g) => ({ url: `${SITE_URL}/guides/${g.slug}`, lastModified: g.updated })),
+    ...blogPosts.map((p) => ({ url: `${SITE_URL}/blog/${p.slug}`, lastModified: new Date(p.date).toISOString().slice(0, 10) })),
+  ];
 }
