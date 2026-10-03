@@ -188,7 +188,7 @@ Show items as text plus real UI recordings. No trailers, no gameplay, no key art
 
 ### 4.5 Fixing renderer templates whose payoff lands late
 
-The renderer templates follow these rules out of the box. Motion starts at frame 1, the payoff lands by about 3 s, the frame keeps a slow upward drift after the payoff, and the end card lasts 1.8 s.
+The renderer templates follow these rules out of the box. Motion starts at frame 1, the payoff lands by about 3 s, the frame keeps a slow upward drift after the payoff, and the handover to the end card is a staggered fade (the content lifts and fades out, then the card fades up), never a hard cut. The end card lasts 1.8 s.
 
 | Template | Length | When the payoff lands | Anything to do? |
 |---|---|---|---|
@@ -198,7 +198,7 @@ The renderer templates follow these rules out of the box. Motion starts at frame
 | stat-card | 9 s | Number counts 0.1–1.5 s; label at 0.6 s; sub-line at 1.4 s | None |
 | top-five | 11 s | Item 1 at 0.4 s, then one every 1.3 s | None |
 | meme-card | 9 s | Line 1 at frame 1, then one per second | None |
-| end-card | 1.8 s | — | Append it to screen recordings as is |
+| end-card | 1.8 s | — | It fades up from black, so appending it dips instead of cutting. A 0.3 s dissolve in CapCut is smoother still |
 
 **Flash-forward, step by step:** in CapCut, freeze the frame where the payoff is fully visible, place 0.5–0.8 s of it at the very start, then cut to the template from 0 s. The cut plus the micro-zoom gives you motion inside the first second.
 
@@ -232,7 +232,7 @@ The renderer templates follow these rules out of the box. Motion starts at frame
 7. **Captions:** CapCut auto-captions → restyle to `STYLE_GUIDE.md` §8 (Inter Bold 44 px, plate, ≤26 characters per line) → move into the body band (y 900→1400) → fix feature names ("Best for tonight", "One copy away").
 8. **Audio:** a VO track and an SFX track. **No CML in the master:** add any CML bed in TikTok when posting.
 9. **Flash-forward** if needed (§4.5).
-10. **End card:** append the renderer end card (already 1.8 s).
+10. **End card:** append the renderer end card (1.8 s, fades up from black). Use a short dissolve into it, never a hard cut.
 11. **Export:** 1080 × 1920, 30 fps, high bitrate. No CapCut watermark, no ending clip. Name it `W06-WED-master.mp4`.
 12. **Save the project as a CapCut template** for the format, so next week starts from step 3.
 

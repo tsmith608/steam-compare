@@ -25,7 +25,7 @@ npm run social:render -- --file my-posts.json --fps 24 --out ./my-out
 
 - `hook`: the headline in the top band.
 - `demo: true`: adds the **"Demo data · fictional friend group"** label. Use it whenever numbers or names aren't a real, consenting group.
-- `cta` / `sub`: override the end-card text.
+- `endCta` / `endSub`: override the end-card text on any post (the `end-card` template itself takes `cta` / `sub`).
 
 | Template | Length | `data` fields | Example |
 |---|---|---|---|
@@ -38,7 +38,7 @@ npm run social:render -- --file my-posts.json --fps 24 --out ./my-out
 | `hook-overlay` | still | `text`, `demo?`, `size?` (default 66) | Headline band for screen recordings |
 | `end-card` | 1.8 s | `cta?`, `sub?` | Wordmark + `webothplay.com` |
 
-Timing follows the TikTok research: motion from frame 1, the payoff by about 3 s, a slow upward drift after it, and an end card under 2 s. All text stays inside TikTok's safe area (x 64–940, y 150–1436, defined as `SAFE` in `lib.mjs`). The bottom of the frame is left for TikTok's caption and buttons. Long game titles shrink automatically in `nobody-played`; reel rows in `roulette` use a fixed 50 px size, so keep those titles under ~26 characters.
+Timing follows the TikTok research: motion from frame 1, the payoff by about 3 s, a slow upward drift after it, and an end card under 2 s that the content hands over to with staggered fades rather than a hard cut. All text stays inside TikTok's safe area (x 64–940, y 150–1436, defined as `SAFE` in `lib.mjs`). The bottom of the frame is left for TikTok's caption and buttons. Long game titles shrink automatically in `nobody-played`; reel rows in `roulette` use a fixed 50 px size, so keep those titles under ~26 characters.
 
 ## Adding a template
 

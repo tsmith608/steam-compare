@@ -1,21 +1,37 @@
 // 9:16 templates. Each is { duration (s), render(t, data) -> element tree }.
 // Everything important stays inside SAFE (x 64–940, y 150–1436).
-import { W, H, C, SAFE, SAFE_W, h, Frame, Rings, Hook, EndCard, Text, Pill, Dot, Wordmark, seg, easeOut, easeInOut, fmt, fadeIn } from "./lib.mjs";
+import { W, H, C, SAFE, SAFE_W, h, Frame, Rings, Hook, EndCard, DemoLabel, Text, Pill, Dot, Wordmark, seg, easeOut, easeInOut, fmt, fadeIn } from "./lib.mjs";
 
 // Timing follows marketing/TIKTOK_RESEARCH_2026.md §3: the payoff is on screen
 // from frame 1, the key message lands by 3 s, motion starts within 1 s, and the
 // end card lasts under 2 s.
 const END_AT = (d) => d - 1.8;
+// The handover to the end card is staggered fades, not a cut: the content lifts
+// and fades out over 0.3 s, then the card fades up from just below. They overlap
+// only at near-zero opacity, so the two layers' text never sits on top of each other.
+const FADE_OUT = 0.3, FADE_IN = 0.36, OVERLAP = 0.06;
+
+const layer = (opacity, dy, ...kids) =>
+  h("div", { style: { display: "flex", position: "absolute", left: 0, top: 0, width: W, height: H, opacity, transform: `translateY(${dy.toFixed(2)}px)` } }, ...kids);
 
 // After the payoff (holdFrom), a slow 14 px upward drift keeps the frame
 // moving until the end card. Vertical only, so nothing leaves the safe area's
 // x range (a zoom would push the widest lines into TikTok's right rail).
-// The demo label stays put (it lives in Frame).
+// The demo label stays put (it doesn't drift) and fades out with the content.
 function withEnd(t, duration, body, data, holdFrom = duration) {
-  if (t >= END_AT(duration)) return Frame({ demo: false, children: [EndCard({ cta: data.cta, sub: data.sub })] });
-  const drift = -14 * easeInOut(seg(t, holdFrom, END_AT(duration)));
-  const stage = h("div", { style: { display: "flex", position: "absolute", left: 0, top: 0, width: W, height: H, transform: `translateY(${drift.toFixed(2)}px)` } }, ...body);
-  return Frame({ demo: data.demo !== false, children: [stage] });
+  const endAt = END_AT(duration);
+  const xo = seg(t, endAt - FADE_OUT, endAt); // content out
+  const xi = seg(t, endAt - OVERLAP, endAt - OVERLAP + FADE_IN); // card in
+  const out = easeInOut(xo), inn = easeOut(xi);
+  const drift = -14 * easeInOut(seg(t, holdFrom, endAt - FADE_OUT)) - 30 * out;
+  const kids = [];
+  if (xo < 1) {
+    kids.push(layer(1 - out, drift, ...body));
+    if (data.demo !== false) kids.push(layer(1 - out, 0, DemoLabel()));
+  }
+  // endCta/endSub, not cta/sub: stat-card uses `sub` for its own line, which leaked onto the card.
+  if (xi > 0) kids.push(layer(inn, (1 - inn) * 28, EndCard({ cta: data.endCta, sub: data.endSub })));
+  return Frame({ demo: false, children: kids });
 }
 
 /* --------------------------------------------------------- overlap-reveal */
@@ -272,8 +288,11 @@ export const hookOverlay = {
 /* ---------------------------------------------------------------- end-card */
 export const endCard = {
   duration: 1.8,
-  render(_t, d) {
-    return Frame({ demo: false, children: [EndCard({ cta: d.cta, sub: d.sub })] });
+  // Fades up from black over its first 0.3 s, so appending it to a recording
+  // dips to black instead of cutting (a dissolve in CapCut is smoother still).
+  render(t, d) {
+    const e = easeOut(seg(t, 0, 0.3));
+    return Frame({ demo: false, children: [layer(e, (1 - e) * 28, EndCard({ cta: d.cta, sub: d.sub }))] });
   },
 };
 

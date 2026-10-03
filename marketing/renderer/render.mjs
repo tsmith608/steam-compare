@@ -127,8 +127,8 @@ for (const post of posts) {
     fs.writeFileSync(path.join(frameDir, `${String(f).padStart(4, "0")}.png`), lastBuf);
   }
 
-  // Cover = the last content frame before the end card.
-  const coverAt = Math.min(frames - 1, Math.round((post.coverAt ?? Math.max(0.5, duration - 1.9)) * fps));
+  // Cover = the last content frame before the dissolve into the end card starts (2.0 s from the end).
+  const coverAt = Math.min(frames - 1, Math.round((post.coverAt ?? Math.max(0.5, duration - 2.1)) * fps));
   fs.copyFileSync(path.join(frameDir, `${String(coverAt).padStart(4, "0")}.png`), path.join(outDir, `${post.id}-cover.png`));
 
   execFileSync("ffmpeg", [
