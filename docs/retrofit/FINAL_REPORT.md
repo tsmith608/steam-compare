@@ -27,7 +27,7 @@ The retrofit keeps the name, the near-black stage, the original blue, amber-for-
 5. **A growth engine.**
    - **Built into the product:** share and vote links with rendered preview cards; tagged bot links.
    - **Search:** six genuinely useful pages.
-   - **TikTok:** a research-backed 13-week system with a JSON-driven 9:16 renderer in the site's design language. 80 posts are already rendered, plus strategy, hooks, CTAs, style, shot lists, experiments and a weekly optimisation loop.
+   - **TikTok:** a research-backed 13-week system with a JSON-driven 9:16 renderer in the site's design language. All 80 calendar posts render from it with one command (one sample per template and a contact sheet are committed), plus strategy, hooks, CTAs, style, shot lists, experiments and a weekly optimisation loop.
 
 Scale: about 280 files changed (≈17k lines added, ≈9k removed, excluding the 3,420 committed `bot/node_modules` files, now untracked) across six phase commits.
 
@@ -126,10 +126,10 @@ Full spec: [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). Research: [DESIGN_RESEARCH.md](
 | Page | Mobile before → after | Desktop after |
 |---|---|---|
 | Home | Perf 79 → **90**, LCP 5.6 → 3.6 s, CLS 0 | Perf 100, LCP 0.8 s |
-| Results (example) | Perf 75 → **83**, LCP 6.8 → 4.1 s | Perf 95 |
+| Results (example) | Perf 75 → **82**, LCP 6.8 → 4.2 s, CLS 0 | Perf 99, CLS 0.13 → 0 |
 | Premium | Perf 54 → **94**, CLS 0.81 → **0** | Perf 100 |
 
-Accessibility 99–100 and Best practices 100 on all three. SEO 100 except the results page, which is `noindex` on purpose. Fixes behind these numbers:
+Accessibility 100 and Best practices 100 on all three, mobile and desktop. SEO 100 except the results page, which is `noindex` on purpose. Fixes behind these numbers:
 - Pricing is server-rendered.
 - Only Latin fonts are preloaded (the other scripts load on demand).
 - The 108 KB logo became a 3 KB one; proper favicons.
@@ -177,14 +177,14 @@ Everything lives in `marketing/`:
 | 90 hooks · CTAs and UTM rules · visual style · shot/motion guide · 7 weekly experiments · weekly optimisation playbook | `HOOK_LIBRARY.md` · `CTA_LIBRARY.md` · `STYLE_GUIDE.md` · `SHOT_AND_MOTION_GUIDE.md` · `EXPERIMENT_PLAN.md` · `WEEKLY_OPTIMIZATION_PLAYBOOK.md` |
 | **13-week calendar** (Oct 5 2026 → Jan 3 2027; the brief's 20 columns, including hook, voiceover, on-screen text, caption, hashtags, audio, assets and status) | `marketing/tiktok/90_DAY_CALENDAR.csv`, generated from `build-calendar.mjs` |
 | **Renderer**: JSON → 1080×1920 MP4s, covers, carousel slides and overlays in the site's design system; 8 templates; safe zones; demo label | `marketing/renderer/` (`npm run social:render`) |
-| Rendered assets | `marketing/renders/out/`: all 80 posts, regenerated with one command and gitignored. A sample per template and a contact sheet are committed in `marketing/renders/samples/` |
+| Rendered assets | `npm run social:render` writes all 80 posts to `marketing/renders/out/` in about 20 minutes. The folder is gitignored, so run it on your machine. A sample per template and a contact sheet of every cover are committed in `marketing/renders/samples/` |
 
 **Cadence:**
 - **Baseline:** 4 posts/week (Mon/Wed/Fri/Sun; 48 videos + 4 carousels). Floor 3.
 - **Extras:** 7/week only in confirmed event weeks; 18 reserve and 10 trend-slot rows let you post daily when something works.
 - **Event-dated rows** stay *Blocked* until you verify the date on Steam's partner calendar.
 
-**Templates follow the research timing:** motion from frame 1, payoff by about 3 s, quick hits at 9 s or longer, end card 1.8 s.
+**Templates follow the research timing:** motion from frame 1, payoff by about 3 s, quick hits at 9 s or longer, end card 1.8 s, with a slow drift during the hold so the frame never sits still.
 
 **Rules built in:**
 - Fictional groups are always labelled "Demo data · fictional friend group".

@@ -4,27 +4,27 @@
     "template": "overlap-reveal",
     "data": {
       "demo": true,
-      "hook": "4 friends. 1,300 games. Nothing to play?",
+      "hook": "4 friends. 873 games. Nothing to play?",
       "players": [
         {
-          "name": "Nova",
+          "name": "Lou",
           "count": 412
         },
         {
-          "name": "Bram",
+          "name": "Priya",
           "count": 377
         },
         {
-          "name": "Kit",
+          "name": "Max",
           "count": 298
         },
         {
-          "name": "Juno",
+          "name": "Ines",
           "count": 221
         }
       ],
       "shared": 64,
-      "union": 1308,
+      "union": 873,
       "punchline": "64 games they could launch tonight.",
       "funFact": "Most played together: Deep Rock Galactic"
     }
@@ -438,7 +438,7 @@
     "id": "W06-MON",
     "template": "hook-overlay",
     "data": {
-      "text": "Type /compare in voice"
+      "text": "Type /compare @friends"
     }
   },
   {
@@ -651,10 +651,10 @@
     "template": "stat-card",
     "data": {
       "demo": true,
-      "hook": "Juno buys ONE game…",
+      "hook": "Before Black Friday, check this number.",
       "value": 13,
       "label": "games the group is one copy away from",
-      "sub": "Best buy: Baldur's Gate 3 (everyone else owns it)"
+      "sub": "Each needs just one purchase. Juno's best buy: Baldur's Gate 3."
     }
   },
   {

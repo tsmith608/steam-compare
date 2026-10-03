@@ -9,6 +9,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TEMPLATES } from "../renderer/templates.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const START = new Date(Date.UTC(2026, 9, 5)); // Mon 5 Oct 2026
@@ -59,8 +60,8 @@ const CTA_Q = "Question ending (no CTA)";
 // slot: base | reserve | trend | event (event = publish only once the event date is verified)
 const BANK = [
   // ---- Week 1 (Oct 5–11): launch the new look; pain → demo → spin
-  { slot: "base", p: "P1", concept: "4 friends, 1,300 Steam games, nothing to play", hook: "4 friends. 1,300 games. Nothing to play?", len: "12s", format: "Template render", template: "overlap-reveal",
-    data: { ...DEMO, hook: "4 friends. 1,300 games. Nothing to play?", players: [{ name: "Nova", count: 412 }, { name: "Bram", count: 377 }, { name: "Kit", count: 298 }, { name: "Juno", count: 221 }], shared: 64, union: 1308, punchline: "64 games they could launch tonight.", funFact: "Most played together: Deep Rock Galactic" },
+  { slot: "base", p: "P1", concept: "4 friends, 873 different Steam games, nothing to play", hook: "4 friends. 873 games. Nothing to play?", len: "12s", format: "Template render", template: "overlap-reveal",
+    data: { ...DEMO, hook: "4 friends. 873 games. Nothing to play?", players: [{ name: "Lou", count: 412 }, { name: "Priya", count: 377 }, { name: "Max", count: 298 }, { name: "Ines", count: 221 }], shared: 64, union: 873, punchline: "64 games they could launch tonight.", funFact: "Most played together: Deep Rock Galactic" },
     visual: "Rings merge, count-up to 64, fun fact, end card", vo: "Four friends, thirteen hundred games... and somehow nothing to play. Here's what they all own.", onscreen: "4 friends · 1,308 games → 64 they ALL own", cta: CTA_Q, caption: "games to play with friends when nobody can decide — what's your group's number?", kw: "games to play with friends, steam games in common", tags: TAGS.core, audio: AUDIO.vo },
   { slot: "reserve", p: "P7", concept: "'What do you guys want to play?' → silence", hook: "Every group chat at 9pm", len: "9s", format: "Template render", template: "meme-card",
     data: { lines: ["9:02 PM", "Me:: what do you guys wanna play", "Everyone:: idk whatever", "Me:: ok so... nothing again"] },
@@ -156,8 +157,8 @@ const BANK = [
     visual: "Reel → Overcooked! 2", vo: "New rule. Nobody argues with the wheel.", onscreen: "Tonight's pick: Overcooked! 2", cta: CTA_Q, caption: "the wheel picked overcooked. pray for our friendship", kw: "steam game roulette", tags: TAGS.core, audio: AUDIO.bed },
 
   // ---- Week 6 (Nov 9–15): Discord week
-  { slot: "base", p: "P8", concept: "Discord bot: /compare everyone in voice", hook: "Type /compare in your voice channel", len: "20s", format: "Screen recording + VO", template: "hook-overlay", data: { text: "Type /compare in voice" },
-    visual: "Record bot in a test server: /compare → embed → 'View full comparison'", vo: "Already in voice? Type slash compare. It checks everyone in the channel.", onscreen: "/compare → shared games", cta: "Add the bot — link in bio", caption: "discord bot that finds games your whole server owns", kw: "games to play with friends, discord bot", tags: TAGS.discord, audio: AUDIO.vo },
+  { slot: "base", p: "P8", concept: "Discord bot: /compare your friends without leaving Discord (voice-channel compare is Pro, so not shown)", hook: "Type /compare @friends in Discord", len: "20s", format: "Screen recording + VO", template: "hook-overlay", data: { text: "Type /compare @friends" },
+    visual: "Record bot in a test server: /compare → embed → 'View full comparison'", vo: "Already in Discord? Type slash compare and tag your friends. Shared games, right in the chat.", onscreen: "/compare → shared games", cta: "Add the bot — link in bio", caption: "discord bot that finds games your whole server owns", kw: "games to play with friends, discord bot", tags: TAGS.discord, audio: AUDIO.vo },
   { slot: "reserve", p: "P7", concept: "Discord at 10pm: 'GG one more?'", hook: "'one more game' at 2am", len: "9s", format: "Template render", template: "meme-card",
     data: { lines: ["10:00 PM:: one game", "11:30 PM:: ok one more", "2:14 AM:: last one fr", "Work tomorrow:: 💀"] },
     visual: "Beats", vo: "—", onscreen: "one more game", cta: CTA_Q, caption: "it's never one more game", kw: "games to play with friends", tags: TAGS.meme, audio: AUDIO.bed },
@@ -204,8 +205,8 @@ const BANK = [
   { slot: "event", p: "P7", concept: "THANKSGIVING (Thu Nov 26): 'what are you thankful for' → shared library", hook: "Thankful for 39 games in common", len: "9s", format: "Template render", template: "meme-card",
     data: { lines: ["Thankful for:", "friends who game", "39 games in common", "and the wheel that decides for us"] },
     visual: "Beats", vo: "—", onscreen: "thankful for 39 games in common", cta: CTA_Q, caption: "happy thanksgiving to everyone with a group chat 🦃", kw: "games to play with friends", tags: TAGS.core, audio: AUDIO.bed },
-  { slot: "base", p: "P3", concept: "BLACK FRIDAY (Fri Nov 27): the one purchase that unlocks 13 games", hook: "1 purchase = 13 more games together", len: "8s", format: "Template render", template: "stat-card",
-    data: { ...DEMO, hook: "Juno buys ONE game…", value: 13, label: "games the group is one copy away from", sub: "Best buy: Baldur's Gate 3 (everyone else owns it)" },
+  { slot: "base", p: "P3", concept: "BLACK FRIDAY (Fri Nov 27): buy the games your group is one copy away from", hook: "13 games, one copy away", len: "8s", format: "Template render", template: "stat-card",
+    data: { ...DEMO, hook: "Before Black Friday, check this number.", value: 13, label: "games the group is one copy away from", sub: "Each needs just one purchase. Juno's best buy: Baldur's Gate 3." },
     visual: "Count-up 13", vo: "Black Friday tip: buy the game your friends already own.", onscreen: "one copy away: 13", cta: CTA_SITE, caption: "black friday gaming tip: buy what your friends already own (demo data)", kw: "steam sale, steam games in common", tags: TAGS.sale, audio: AUDIO.vo },
   { slot: "event", p: "TREND", concept: "Black Friday weekend trend slot (deals energy; no price claims without checking)", hook: "(from the trend)", len: "9–20s", format: "Template + screen recording", template: null, visual: "Adapt a shopping trend to 'buy what your friends own'", vo: "—", onscreen: "—", cta: CTA_Q, caption: "—", kw: "steam sale", tags: TAGS.sale, audio: AUDIO.trend },
   { slot: "base", p: "P5", concept: "Pile of Shame: what you bought last sale", hook: "Last sale's haul: still unplayed", len: "9s", format: "Template render", template: "nobody-played",
@@ -346,7 +347,8 @@ BANK.forEach((e, i) => {
     "Content pillar": PILLAR[e.p],
     Concept: e.concept,
     Hook: e.hook,
-    "Video length": e.len,
+    // Pure template renders take their length from the renderer, so the two never drift.
+    "Video length": e.format === "Template render" && TEMPLATES[e.template]?.duration ? `${TEMPLATES[e.template].duration}s` : e.len,
     Format: e.format,
     "Visual concept": e.visual,
     Voiceover: e.vo,

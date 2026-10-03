@@ -29,16 +29,16 @@ Requirements: Node ≥ 20.9 and `ffmpeg` on the PATH. Output goes to `marketing/
 
 | Template | Length | `data` fields | Example |
 |---|---|---|---|
-| `overlap-reveal` | 12 s | `hook`, `players: [{name, count}]` (≤ 8), `shared`, `union`, `punchline`, `funFact`, `sharedLabel?` | Rings merge → "64 games they ALL own" |
-| `roulette` | 10 s | `hook`, `titles: [..]` (6–10), `winner` (one of the titles), `reason` | Reel spins and lands on the winner |
+| `overlap-reveal` | 9 s | `hook`, `players: [{name, count}]` (≤ 8), `shared`, `union`, `punchline`, `funFact`, `sharedLabel?` | Rings merge → "64 games they ALL own" |
+| `roulette` | 9 s | `hook`, `titles: [..]` (6–10), `winner` (one of the titles), `reason` | Reel spins and lands on the winner |
 | `nobody-played` | 9 s | `players` (count), `game`, `punchline` | "All 4 of us own this game · Combined hours: 0" |
-| `stat-card` | 8 s | `hook`, `value` (number, counts up), `prefix?`, `suffix?`, `label`, `sub`, `big?` (number size, default 220) | "36h · Nova in Marvel Rivals" |
-| `top-five` | 16 s + slides | `hook`, `items: [{name, why}]` (5), `coverSub?` | A list, revealed item by item |
-| `meme-card` | 8 s | `lines: ["Speaker:: text", "plain line", …]` | A chat-style beat sheet (emoji supported) |
+| `stat-card` | 9 s | `hook`, `value` (number, counts up), `prefix?`, `suffix?`, `label`, `sub`, `big?` (number size, default 220) | "36h · Nova in Marvel Rivals" |
+| `top-five` | 11 s + slides | `hook`, `items: [{name, why}]` (5), `coverSub?` | A list, revealed item by item |
+| `meme-card` | 9 s | `lines: ["Speaker:: text", "plain line", …]` | A chat-style beat sheet (emoji supported) |
 | `hook-overlay` | still | `text`, `demo?`, `size?` (default 66) | Headline band for screen recordings |
-| `end-card` | 3 s | `cta?`, `sub?` | Wordmark + `webothplay.com` |
+| `end-card` | 1.8 s | `cta?`, `sub?` | Wordmark + `webothplay.com` |
 
-All text stays inside TikTok's safe area (x 64–940, y 150–1436, defined as `SAFE` in `lib.mjs`). The bottom of the frame is left for TikTok's caption and buttons. Long game titles shrink automatically in `nobody-played`; reel rows in `roulette` use a fixed 50 px size, so keep those titles under ~26 characters.
+Timing follows the TikTok research: motion from frame 1, the payoff by about 3 s, a slow upward drift after it, and an end card under 2 s. All text stays inside TikTok's safe area (x 64–940, y 150–1436, defined as `SAFE` in `lib.mjs`). The bottom of the frame is left for TikTok's caption and buttons. Long game titles shrink automatically in `nobody-played`; reel rows in `roulette` use a fixed 50 px size, so keep those titles under ~26 characters.
 
 ## Adding a template
 

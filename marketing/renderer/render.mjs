@@ -108,7 +108,8 @@ for (const post of posts) {
   let rendered = 0;
   for (let f = 0; f < frames; f++) {
     const t = f / fps;
-    const tree = tpl.render.call(tpl, t, data);
+    // A post may override the length; templates time their end card from this.duration.
+    const tree = tpl.render.call({ ...tpl, duration }, t, data);
     const key = JSON.stringify(tree);
     if (key !== lastKey) {
       lastBuf = await png(tree);
@@ -118,7 +119,8 @@ for (const post of posts) {
     fs.writeFileSync(path.join(frameDir, `${String(f).padStart(4, "0")}.png`), lastBuf);
   }
 
-  const coverAt = Math.min(frames - 1, Math.round((post.coverAt ?? Math.max(1, duration - 4)) * fps));
+  // Cover = the last content frame before the end card.
+  const coverAt = Math.min(frames - 1, Math.round((post.coverAt ?? Math.max(0.5, duration - 1.9)) * fps));
   fs.copyFileSync(path.join(frameDir, `${String(coverAt).padStart(4, "0")}.png`), path.join(outDir, `${post.id}-cover.png`));
 
   execFileSync("ffmpeg", [
