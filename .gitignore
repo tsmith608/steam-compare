@@ -48,3 +48,10 @@ next-env.d.ts
 # Playwright / test output
 /test-results/
 /playwright-report/
+
+# brag composition copy (served only while rendering)
+/public/brag/
+/brag-output/work/frames/
+/brag-output/work/stills/
+/brag-output/work/music.wav
+/brag-output/work/poster.png
