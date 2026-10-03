@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, resolveSteamIds, getLink } = require('../utils/api');
+const { API_BASE, resolveSteamIds, getLink, apiFetch } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,7 +23,7 @@ module.exports = {
         }
 
         try {
-            const compareRes = await fetch(`${API_BASE}/api/compare`, {
+            const compareRes = await apiFetch('/api/compare', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ users: [steamId, steamId] })
@@ -76,7 +76,7 @@ module.exports = {
 
         try {
             // Find the game AppID via comparison
-            const compareRes = await fetch(`${API_BASE}/api/compare`, {
+            const compareRes = await apiFetch('/api/compare', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ users: targetSteamId ? [execSteamId, targetSteamId] : [execSteamId, execSteamId] })
@@ -92,7 +92,7 @@ module.exports = {
             }
 
             // Get Achievement Stats
-            const flexRes = await fetch(`${API_BASE}/api/user/flex`, {
+            const flexRes = await apiFetch('/api/user/flex', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

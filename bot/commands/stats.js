@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, getLink } = require('../utils/api');
+const { API_BASE, getLink, apiFetch } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,7 +24,7 @@ module.exports = {
         }
 
         try {
-            const compareRes = await fetch(`${API_BASE}/api/compare`, {
+            const compareRes = await apiFetch('/api/compare', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ users: [steamId, steamId] })
@@ -80,7 +80,7 @@ module.exports = {
                 )
                 .setTimestamp();
 
-            const dashboardUrl = `${API_BASE}/dashboard/${steamId}`;
+            const dashboardUrl = `${API_BASE}/${steamId}?utm_source=discord&utm_medium=bot`;
             const row = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()

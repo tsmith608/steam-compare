@@ -1,129 +1,97 @@
+// Game collections. Anyone can read public collections; only the signed-in
+// owner can see private ones or create, edit and delete.
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { getSessionSteamId } from "@/lib/session";
+import { jsonError, limitOrNull, readJson, unauthorized } from "@/lib/http";
+import { resolveSteamId } from "@/lib/steam";
+import { logServerError } from "@/lib/ops";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
-    const { searchParams } = new URL(req.url);
-    const steamId = searchParams.get("steamid");
+  const input = new URL(req.url).searchParams.get("steamid");
+  if (!input) return jsonError("Missing steamid");
 
-    if (!steamId) {
-        return NextResponse.json({ error: "Missing steamid" }, { status: 400 });
+  let owner;
+  try {
+    owner = await resolveSteamId(input);
+  } catch {
+    return NextResponse.json({ collections: [] });
+  }
+
+  try {
+    const viewer = await getSessionSteamId();
+    const res = await query(
+      viewer === owner
+        ? "SELECT * FROM user_collections WHERE owner_steam_id = $1 ORDER BY created_at DESC"
+        : "SELECT * FROM user_collections WHERE owner_steam_id = $1 AND is_public = true ORDER BY created_at DESC",
+      [owner]
+    );
+    return NextResponse.json({ collections: res.rows });
+  } catch (err) {
+    await logServerError("api/user/collections GET", err);
+    return jsonError("Internal Server Error", 500);
+  }
+}
+
+function normalizeGames(list) {
+  return (Array.isArray(list) ? list : []).slice(0, 200).map((g) => {
+    if (g && typeof g === "object") {
+      return {
+        appid: Number(g.appid) || 0,
+        rating: typeof g.rating === "number" ? Math.max(0, Math.min(5, g.rating)) : 0,
+        comment: typeof g.comment === "string" ? g.comment.slice(0, 500) : "",
+      };
     }
-
-    try {
-        // Try exact Steam ID match first
-        let res = await query(
-            "SELECT * FROM user_collections WHERE owner_steam_id = $1 ORDER BY created_at DESC",
-            [steamId]
-        );
-
-        // If no collections found, maybe steamId is a vanity name or username
-        if (res.rows.length === 0 && !steamId.match(/^\d{17}$/)) {
-            const userRes = await query(
-                "SELECT steam_id FROM users WHERE LOWER(vanity_id) = LOWER($1) OR LOWER(persona_name) = LOWER($1) LIMIT 1",
-                [steamId]
-            );
-
-            if (userRes.rows.length > 0) {
-                const resolvedId = userRes.rows[0].steam_id;
-                res = await query(
-                    "SELECT * FROM user_collections WHERE owner_steam_id = $1 ORDER BY created_at DESC",
-                    [resolvedId]
-                );
-            }
-        }
-
-        return NextResponse.json({ collections: res.rows });
-    } catch (error) {
-        console.error("Error fetching collections:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
+    return { appid: Number(g) || 0, rating: 0, comment: "" };
+  }).filter((g) => g.appid > 0);
 }
 
 export async function POST(req) {
-    try {
-        const body = await req.json();
-        let { id, steamId, title, description, gameIds, isPublic } = body;
+  const owner = await getSessionSteamId();
+  if (!owner) return unauthorized();
+  const limited = limitOrNull(req, "collections-post", { limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
 
-        if (!steamId || !title) {
-            return NextResponse.json({ error: "Missing steamId or title" }, { status: 400 });
-        }
+  const { id, title, description, gameIds, isPublic } = await readJson(req, 128 * 1024);
+  if (typeof title !== "string" || !title.trim()) return jsonError("Give the collection a title.");
 
-        // Defensive ID Resolution: Ensure steamId is numeric
-        const steamIdStr = String(steamId);
-        if (!steamIdStr.match(/^\d{17}$/)) {
-            const userRes = await query(
-                "SELECT steam_id FROM users WHERE LOWER(vanity_id) = LOWER($1) OR LOWER(persona_name) = LOWER($1) LIMIT 1",
-                [steamIdStr]
-            );
-
-            if (userRes.rows.length > 0) {
-                steamId = userRes.rows[0].steam_id;
-            } else {
-                // If we can't resolve it, we might have a problem if it's a vanity name not in our DB.
-                // However, the dashboard usually ensures the user exists.
-                // We'll proceed, but it might fail DB constraints if it's not a BigInt-compatible string.
-                console.warn(`Could not resolve vanity Steam ID: ${steamId}`);
-            }
-        }
-
-        // Validate/Normalize gameIds to ensure they are stored consistently
-        // We expect an array of objects: { appid, rating, comment }
-        // If we receive simple IDs (legacy), convert them to objects with defaults.
-        const normalizedGames = (gameIds || []).map(g => {
-            if (typeof g === 'object' && g !== null) {
-                return {
-                    appid: g.appid,
-                    rating: typeof g.rating === 'number' ? g.rating : 0,
-                    comment: typeof g.comment === 'string' ? g.comment : ""
-                };
-            }
-            // Fallback for legacy ID strings/numbers
-            return { appid: g, rating: 0, comment: "" };
-        });
-
-        if (id) {
-            // Update existing
-            await query(
-                `UPDATE user_collections 
-                 SET title = $1, description = $2, game_ids = $3, is_public = $4
-                 WHERE id = $5 AND owner_steam_id = $6`,
-                [title, description || "", JSON.stringify(normalizedGames), isPublic ?? true, id, steamId]
-            );
-            return NextResponse.json({ success: true, id });
-        } else {
-            // Create new
-            const res = await query(
-                `INSERT INTO user_collections (owner_steam_id, title, description, game_ids, is_public)
-                 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-                [steamId, title, description || "", JSON.stringify(normalizedGames), isPublic ?? true]
-            );
-            return NextResponse.json({ success: true, id: res.rows[0].id });
-        }
-    } catch (error) {
-        console.error("Error managing collection:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  const values = [title.trim().slice(0, 80), String(description || "").slice(0, 1000), JSON.stringify(normalizeGames(gameIds)), isPublic ?? true];
+  try {
+    if (id) {
+      const res = await query(
+        `UPDATE user_collections SET title = $1, description = $2, game_ids = $3, is_public = $4
+         WHERE id = $5 AND owner_steam_id = $6 RETURNING id`,
+        [...values, id, owner]
+      );
+      if (!res.rowCount) return jsonError("Collection not found.", 404);
+      return NextResponse.json({ success: true, id });
     }
+    const count = await query("SELECT COUNT(*)::int AS n FROM user_collections WHERE owner_steam_id = $1", [owner]);
+    if (count.rows[0].n >= 50) return jsonError("You've reached the collection limit.", 400);
+    const res = await query(
+      `INSERT INTO user_collections (owner_steam_id, title, description, game_ids, is_public)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [owner, ...values]
+    );
+    return NextResponse.json({ success: true, id: res.rows[0].id });
+  } catch (err) {
+    await logServerError("api/user/collections POST", err);
+    return jsonError("Internal Server Error", 500);
+  }
 }
 
 export async function DELETE(req) {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    const steamId = searchParams.get("steamid");
-
-    if (!id || !steamId) {
-        return NextResponse.json({ error: "Missing id or steamid" }, { status: 400 });
-    }
-
-    try {
-        await query(
-            "DELETE FROM user_collections WHERE id = $1 AND owner_steam_id = $2",
-            [id, steamId]
-        );
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error("Error deleting collection:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
+  const owner = await getSessionSteamId();
+  if (!owner) return unauthorized();
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return jsonError("Missing id");
+  try {
+    await query("DELETE FROM user_collections WHERE id = $1 AND owner_steam_id = $2", [id, owner]);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    await logServerError("api/user/collections DELETE", err);
+    return jsonError("Internal Server Error", 500);
+  }
 }

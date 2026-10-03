@@ -1,41 +1,28 @@
-import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import Stripe from 'stripe';
+// Opens the Stripe Customer Portal (cancel, change plan, card, invoices) for
+// the signed-in user only.
+import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import { getSessionSteamId } from "@/lib/session";
+import { jsonError, unauthorized } from "@/lib/http";
+import { getStripe } from "@/lib/billing";
+import { logServerError } from "@/lib/ops";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function POST(request) {
-    try {
-        if (!process.env.STRIPE_SECRET_KEY) {
-            console.error('Missing STRIPE_SECRET_KEY');
-            return NextResponse.json({ error: 'Payment system not configured' }, { status: 500 });
-        }
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const steamid = await getSessionSteamId();
+  if (!steamid) return unauthorized();
+  const stripe = getStripe();
+  if (!stripe) return jsonError("Payments aren't set up yet.", 503);
 
-        const { steamid } = await request.json();
-
-        if (!steamid) {
-            return NextResponse.json({ error: 'Steam ID is required' }, { status: 400 });
-        }
-
-        // 1. Find the customer ID from our database
-        const userRes = await query('SELECT stripe_customer_id FROM users WHERE steam_id = $1', [steamid]);
-
-        if (userRes.rows.length === 0 || !userRes.rows[0].stripe_customer_id) {
-            return NextResponse.json({ error: 'No Stripe customer found for this account' }, { status: 404 });
-        }
-
-        const customerId = userRes.rows[0].stripe_customer_id;
-
-        // 2. Create a portal session
-        const session = await stripe.billingPortal.sessions.create({
-            customer: customerId,
-            return_url: `${request.nextUrl.origin}/upgrade`,
-        });
-
-        return NextResponse.json({ url: session.url });
-    } catch (error) {
-        console.error('Stripe Customer Portal error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+  try {
+    const res = await query("SELECT stripe_customer_id FROM users WHERE steam_id = $1", [steamid]);
+    const customer = res.rows[0]?.stripe_customer_id;
+    if (!customer) return jsonError("No billing account found for this Steam account.", 404);
+    const session = await stripe.billingPortal.sessions.create({ customer, return_url: `${request.nextUrl.origin}/upgrade` });
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    await logServerError("api/portal", err);
+    return jsonError("Couldn't open billing right now.", 500);
+  }
 }

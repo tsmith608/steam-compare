@@ -1,44 +1,22 @@
+// Plan status for a profile page (accepts a SteamID64 or custom URL name).
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { jsonError } from "@/lib/http";
+import { resolveSteamId } from "@/lib/steam";
+import { effectiveTier, isPaidTier } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
-    const { searchParams } = new URL(req.url);
-    const steamId = searchParams.get("steamid");
-
-    if (!steamId) {
-        return NextResponse.json({ error: "Missing steamid" }, { status: 400 });
-    }
-
-    try {
-        // Try exact Steam ID match first
-        let res = await query("SELECT created_at as added_at, tier, expires_at, steam_id FROM users WHERE steam_id = $1", [steamId]);
-
-        // If not found, try vanity_id or persona_name match
-        if (res.rows.length === 0) {
-            res = await query(
-                "SELECT created_at as added_at, tier, expires_at, steam_id FROM users WHERE LOWER(vanity_id) = LOWER($1) OR LOWER(persona_name) = LOWER($1) LIMIT 1",
-                [steamId]
-            );
-        }
-
-        if (res.rows.length === 0) {
-            return NextResponse.json({ isPremium: false });
-        }
-
-        const user = res.rows[0];
-        const isPremium = (user.tier === 'Hacker' || user.tier === 'Pro') && (user.expires_at === null || new Date(user.expires_at) > new Date());
-
-        return NextResponse.json({
-            isPremium,
-            addedAt: user.added_at,
-            source: user.source,
-            tier: user.tier || 'Noob',
-            expiresAt: user.expires_at
-        });
-    } catch (error) {
-        console.error("Error checking premium status:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
+  const input = new URL(req.url).searchParams.get("steamid");
+  if (!input) return jsonError("Missing steamid");
+  try {
+    const steamid = await resolveSteamId(input);
+    const res = await query("SELECT created_at, tier, expires_at FROM users WHERE steam_id = $1", [steamid]);
+    if (!res.rows.length) return NextResponse.json({ isPremium: false, tier: "Noob" });
+    const tier = effectiveTier(res.rows[0]);
+    return NextResponse.json({ isPremium: isPaidTier(tier), tier, addedAt: res.rows[0].created_at, expiresAt: res.rows[0].expires_at });
+  } catch {
+    return NextResponse.json({ isPremium: false, tier: "Noob" });
+  }
 }

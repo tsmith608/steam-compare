@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, resolveSteamIds } = require('../utils/api');
+const { API_BASE, resolveSteamIds, apiFetch } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -55,7 +55,7 @@ module.exports = {
     // Shared spin logic for both initial command and button re-spins
     async _spinAndReply(interaction, steamIds, isUpdate) {
         try {
-            const compareRes = await fetch(`${API_BASE}/api/compare`, {
+            const compareRes = await apiFetch('/api/compare', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ users: steamIds })

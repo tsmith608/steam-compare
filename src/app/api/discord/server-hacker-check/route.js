@@ -1,35 +1,30 @@
+// Bot-only: does any member of this server hold an active Hacker plan?
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { botAuthError, isSnowflake, jsonError, readJson } from "@/lib/http";
+import { logServerError } from "@/lib/ops";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
-    try {
-        const { discordIds } = await req.json();
+  const denied = botAuthError(req);
+  if (denied) return denied;
 
-        if (!discordIds || !Array.isArray(discordIds)) {
-            return NextResponse.json({ error: "Missing or invalid discordIds array" }, { status: 400 });
-        }
+  const { discordIds } = await readJson(req, 512 * 1024);
+  if (!Array.isArray(discordIds)) return jsonError("Missing or invalid discordIds array");
+  const ids = discordIds.filter(isSnowflake).slice(0, 5000);
+  if (!ids.length) return NextResponse.json({ hasHacker: false });
 
-        if (discordIds.length === 0) {
-            return NextResponse.json({ hasHacker: false });
-        }
-
-        // Check if any of these discord IDs have a Hacker tier and haven't expired
-        const res = await query(
-            `SELECT COUNT(*) as count
-             FROM users 
-             WHERE discord_id = ANY($1) 
-             AND tier = 'Hacker' 
-             AND (expires_at IS NULL OR expires_at > NOW())`,
-            [discordIds]
-        );
-
-        const hasHacker = parseInt(res.rows[0].count) > 0;
-
-        return NextResponse.json({ hasHacker });
-    } catch (error) {
-        console.error("Error checking server hacker status:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
+  try {
+    const res = await query(
+      `SELECT COUNT(*)::int AS count FROM users
+        WHERE discord_id = ANY($1) AND LOWER(tier) IN ('hacker', 'gold')
+          AND (expires_at IS NULL OR expires_at > NOW())`,
+      [ids]
+    );
+    return NextResponse.json({ hasHacker: res.rows[0].count > 0 });
+  } catch (err) {
+    await logServerError("api/discord/server-hacker-check", err);
+    return jsonError("Internal Server Error", 500);
+  }
 }

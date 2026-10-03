@@ -1,118 +1,89 @@
 /**
  * GET /api/gif-proxy?url=<encoded-url>
  *
- * Server-side proxy for GIF/image URLs that block browser hotlinking (e.g. Tenor).
- * Fetches the resource from the Next.js server (no browser origin) and streams it back.
- *
- * Allowed hosts: tenor.com, media.tenor.com, giphy.com, media.giphy.com, media0-4.giphy.com
+ * Proxies GIFs from Tenor/Giphy (which block hotlinking) for profile widgets.
+ * Only allow-listed hosts are fetched (including after redirects and og:image
+ * extraction), and only image/video content types are relayed, so the proxy
+ * can't be used to reach internal hosts or serve HTML/SVG from our origin.
  */
+import { limitOrNull } from "@/lib/http";
 
-const ALLOWED_HOSTS = [
-    "tenor.com",
-    "media.tenor.com",
-    "giphy.com",
-    "media.giphy.com",
-    "media0.giphy.com",
-    "media1.giphy.com",
-    "media2.giphy.com",
-    "media3.giphy.com",
-    "media4.giphy.com",
-];
+const ALLOWED_HOSTS = ["tenor.com", "media.tenor.com", "c.tenor.com", "giphy.com", "media.giphy.com", "i.giphy.com"];
+const ALLOWED_TYPES = ["image/gif", "image/webp", "image/png", "image/jpeg", "video/mp4", "video/webm"];
+const MAX_BYTES = 15 * 1024 * 1024;
 
-export async function GET(request) {
-    const { searchParams } = new URL(request.url);
-    const targetUrl = searchParams.get("url");
+function allowedUrl(raw) {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:") return null;
+    const host = u.hostname.replace(/^www\./, "");
+    const ok = ALLOWED_HOSTS.some((h) => host === h) || /^media\d?\.giphy\.com$/.test(host) || /^media\d?\.tenor\.com$/.test(host);
+    return ok ? u : null;
+  } catch {
+    return null;
+  }
+}
 
-    if (!targetUrl) {
-        return new Response("Missing url parameter", { status: 400 });
+async function fetchAllowed(url, hops = 3) {
+  let current = url;
+  for (let i = 0; i <= hops; i++) {
+    const res = await fetch(current, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(8000),
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; WeBothPlay/1.0)", Accept: "image/*,video/*,text/html;q=0.8" },
+    });
+    if (res.status >= 300 && res.status < 400) {
+      const next = allowedUrl(new URL(res.headers.get("location") || "", current).toString());
+      if (!next) return null;
+      current = next;
+      continue;
     }
+    return res;
+  }
+  return null;
+}
 
-    // Validate URL
-    let parsed;
-    try {
-        parsed = new URL(targetUrl);
-    } catch {
-        return new Response("Invalid URL", { status: 400 });
-    }
+function relay(upstream) {
+  const type = (upstream.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  if (!ALLOWED_TYPES.includes(type)) return new Response("Unsupported media type", { status: 415 });
+  const len = Number(upstream.headers.get("content-length") || 0);
+  if (len > MAX_BYTES) return new Response("Too large", { status: 413 });
+  return new Response(upstream.body, {
+    status: 200,
+    headers: {
+      "Content-Type": type,
+      "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; sandbox",
+    },
+  });
+}
 
-    // Security: only proxy from allowed GIF hosts
-    const host = parsed.hostname.replace(/^www\./, "");
-    const isAllowed = ALLOWED_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
-    if (!isAllowed) {
-        return new Response(`Host not allowed: ${host}`, { status: 403 });
-    }
+export async function GET(req) {
+  const limited = limitOrNull(req, "gif-proxy", { limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
 
-    try {
-        const upstream = await fetch(targetUrl, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                Accept: "image/gif,image/webp,image/apng,image/*,text/html,*/*;q=0.8",
-                Referer: "https://tenor.com/",
-            },
-            redirect: "follow",
-        });
+  const target = allowedUrl(new URL(req.url).searchParams.get("url") || "");
+  if (!target) return new Response("Host not allowed", { status: 403 });
 
-        if (!upstream.ok) {
-            return new Response(`Upstream error: ${upstream.status}`, { status: upstream.status });
-        }
+  try {
+    const upstream = await fetchAllowed(target);
+    if (!upstream || !upstream.ok) return new Response("Upstream error", { status: 502 });
 
-        const contentType = upstream.headers.get("content-type") ?? "";
+    const type = upstream.headers.get("content-type") || "";
+    if (!type.includes("text/html")) return relay(upstream);
 
-        // If Tenor returned HTML, scrape the real media URL from og:image / og:video
-        if (contentType.includes("text/html")) {
-            const html = await upstream.text();
-
-            // Try og:image first (GIF), then og:video (MP4)
-            const ogMatch =
-                html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i) ||
-                html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i) ||
-                html.match(/<meta[^>]+property="og:video"[^>]+content="([^"]+)"/i) ||
-                html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:video"/i);
-
-            if (!ogMatch || !ogMatch[1]) {
-                console.error("[gif-proxy] Could not find media URL in HTML response");
-                return new Response("Could not extract media URL from page", { status: 422 });
-            }
-
-            const mediaUrl = ogMatch[1];
-            console.log("[gif-proxy] Extracted media URL from HTML:", mediaUrl);
-
-            // Proxy the actual CDN media file
-            const mediaRes = await fetch(mediaUrl, {
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (compatible)",
-                    Referer: "https://tenor.com/",
-                },
-                redirect: "follow",
-            });
-
-            if (!mediaRes.ok) {
-                return new Response(`Media fetch error: ${mediaRes.status}`, { status: mediaRes.status });
-            }
-
-            const mediaType = mediaRes.headers.get("content-type") ?? "image/gif";
-            return new Response(mediaRes.body, {
-                status: 200,
-                headers: {
-                    "Content-Type": mediaType,
-                    "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
-                    "Access-Control-Allow-Origin": "*",
-                },
-            });
-        }
-
-        // Direct media response — stream it straight back
-        return new Response(upstream.body, {
-            status: 200,
-            headers: {
-                "Content-Type": contentType || "image/gif",
-                "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
-                "Access-Control-Allow-Origin": "*",
-            },
-        });
-    } catch (err) {
-        console.error("[gif-proxy] Fetch failed:", err);
-        return new Response("Proxy fetch failed", { status: 502 });
-    }
+    // Tenor share pages: pull the real media URL from og:image / og:video.
+    const html = (await upstream.text()).slice(0, 500_000);
+    const og =
+      html.match(/<meta[^>]+property="og:(?:image|video)"[^>]+content="([^"]+)"/i) ||
+      html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:(?:image|video)"/i);
+    const media = og && allowedUrl(og[1].replace(/&amp;/g, "&"));
+    if (!media) return new Response("Could not extract media URL", { status: 422 });
+    const mediaRes = await fetchAllowed(media);
+    if (!mediaRes || !mediaRes.ok) return new Response("Media fetch error", { status: 502 });
+    return relay(mediaRes);
+  } catch {
+    return new Response("Proxy fetch failed", { status: 502 });
+  }
 }

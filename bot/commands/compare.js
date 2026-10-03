@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, resolveSteamIds } = require('../utils/api');
+const { API_BASE, resolveSteamIds, apiFetch, compareUrl } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -119,11 +119,10 @@ module.exports = {
 
         // 4. Fetch comparison data
         const steamIds = resolved.map(r => r.steamId);
-        const steamParams = steamIds.map(id => `steamid=${id}`).join('&');
-        const compareUrl = `${API_BASE}/?${steamParams}`;
+        const fullCompareUrl = compareUrl(steamIds);
 
         try {
-            const compareRes = await fetch(`${API_BASE}/api/compare`, {
+            const compareRes = await apiFetch('/api/compare', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ users: steamIds })
@@ -159,7 +158,7 @@ module.exports = {
                         new ButtonBuilder()
                             .setLabel('View Full Comparison')
                             .setStyle(ButtonStyle.Link)
-                            .setURL(compareUrl)
+                            .setURL(fullCompareUrl)
                     );
 
                 return interaction.editReply({ embeds: [searchEmbed], components: [searchRow] });
@@ -169,7 +168,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor(0x60A5FA)
                 .setTitle('🎮 Library Comparison')
-                .setDescription(`Found Steam accounts for **${resolved.length} users**.\n[**Click here to view full comparison**](${compareUrl})`)
+                .setDescription(`Found Steam accounts for **${resolved.length} users**.\n[**Click here to view full comparison**](${fullCompareUrl})`)
                 .addFields(
                     { name: 'Comparing', value: resolved.map(r => `• ${r.user.username}`).join('\n'), inline: true }
                 )
@@ -200,7 +199,7 @@ module.exports = {
                     new ButtonBuilder()
                         .setLabel('View Full Comparison')
                         .setStyle(ButtonStyle.Link)
-                        .setURL(compareUrl),
+                        .setURL(fullCompareUrl),
                     new ButtonBuilder()
                         .setCustomId(`compare:roulette:${steamIds.join(',')}`)
                         .setLabel('🎰 Pick a Random Game')
@@ -225,7 +224,7 @@ module.exports = {
             const steamIds = steamIdsStr.split(',');
 
             try {
-                const compareRes = await fetch(`${API_BASE}/api/compare`, {
+                const compareRes = await apiFetch('/api/compare', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ users: steamIds })
