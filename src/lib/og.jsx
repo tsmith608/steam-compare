@@ -121,7 +121,7 @@ export function ComparisonCard({ s }) {
   const n = s.players.length;
   return (
     <div style={{ display: "flex", width: "100%", height: "100%", background: C.bg, padding: 64, position: "relative", fontFamily: "Inter" }}>
-      <div style={{ display: "flex", position: "absolute", right: -120, top: 60 }}>
+      <div style={{ display: "flex", position: "absolute", right: -170, top: 60 }}>
         <Rings width={700} opacity={0.9} />
       </div>
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%" }}>
@@ -137,12 +137,11 @@ export function ComparisonCard({ s }) {
           <AvatarStack players={s.players} size={70} />
           <div style={{ display: "flex", alignItems: "flex-end", marginTop: 26 }}>
             <div style={{ display: "flex", fontFamily: "ArchivoWide", fontSize: 200, lineHeight: 0.82, color: C.accentHi, letterSpacing: -6 }}>{fmt(s.sharedCount)}</div>
-            <div style={{ display: "flex", flexDirection: "column", marginLeft: 28, marginBottom: 8 }}>
-              <div style={{ display: "flex", fontWeight: 700, fontSize: 46, color: C.ink1 }}>games in common</div>
-              <div style={{ display: "flex", fontSize: 26, color: C.ink2, marginTop: 6 }}>
-                {n} friends · {fmt(s.unionCount)} games between them · {s.overlapPct}% overlap
-              </div>
-            </div>
+            <div style={{ display: "flex", fontWeight: 700, fontSize: 46, color: C.ink1, marginLeft: 28, marginBottom: 8 }}>games in common</div>
+          </div>
+          {/* Own row, so its length never depends on the size of the number (keeps clear of the rings). */}
+          <div style={{ display: "flex", fontSize: 26, color: C.ink2, marginTop: 18 }}>
+            {n} friends · {fmt(s.unionCount)} games between them · {s.overlapPct}% overlap
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

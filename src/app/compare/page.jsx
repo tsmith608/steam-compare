@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function ComparePage() {
   return (
-    <main id="main" className="min-h-[70vh]">
+    <main id="main" className="min-h-screen">
       <Suspense fallback={null}>
         <ResultsPage />
       </Suspense>

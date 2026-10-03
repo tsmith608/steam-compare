@@ -70,7 +70,7 @@ function GameCard({ game, meta, profiles, shortlisted, onToggleShortlist, layout
           <p className="truncate text-xs text-ink-3">{[note, ...tags].join(" · ")}</p>
         </div>
         <div className="hidden w-28 sm:block"><PlayBars playtimes={game.playtimes} profiles={profiles} /></div>
-        <a href={steamRun(game.appid)} onClick={() => track("game_opened", { via: "launch" })} className="btn btn-quiet btn-sm !px-2.5" aria-label={`Launch ${game.name} in Steam`}>
+        <a href={steamRun(game.appid)} onClick={() => track("game_opened", { via: "launch" })} className="btn btn-quiet btn-sm !px-2.5" aria-label={`Play ${game.name} in Steam`}>
           <Icon name="play" className="h-4 w-4" />
         </a>
         <button type="button" onClick={() => onToggleShortlist(game.appid)} aria-pressed={shortlisted} className={`btn btn-quiet btn-sm !px-2.5 ${shortlisted ? "!text-amber-hi" : ""}`} aria-label={shortlisted ? `Remove ${game.name} from shortlist` : `Shortlist ${game.name}`}>
@@ -105,7 +105,7 @@ function GameCard({ game, meta, profiles, shortlisted, onToggleShortlist, layout
             <a href={steamStore(game.appid)} target="_blank" rel="noopener noreferrer" onClick={() => track("game_opened", { via: "store" })} className="btn btn-quiet btn-sm !px-2" aria-label={`${game.name} on the Steam store`}>
               <Icon name="external" className="h-4 w-4" />
             </a>
-            <a href={steamRun(game.appid)} onClick={() => track("game_opened", { via: "launch" })} className="btn btn-ghost btn-sm" aria-label={`Launch ${game.name} in Steam`}>
+            <a href={steamRun(game.appid)} onClick={() => track("game_opened", { via: "launch" })} className="btn btn-ghost btn-sm" aria-label={`Play ${game.name} in Steam`}>
               <Icon name="play" className="h-3.5 w-3.5" /> Play
             </a>
           </div>

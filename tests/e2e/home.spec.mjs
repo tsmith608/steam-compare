@@ -30,6 +30,12 @@ test.describe("homepage", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("games you all own");
   });
 
+  test("old bot links (/?steamid=…) still open the comparison", async ({ page }) => {
+    await page.goto("/?steamid=76561190000000001&steamid=76561190000000002");
+    await expect(page).toHaveURL(/\/compare\?steamid=76561190000000001&steamid=76561190000000002/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("games you all own");
+  });
+
   test("example link opens a labelled demo", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "See an example first" }).click();

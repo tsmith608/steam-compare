@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import PricingClient from "@/components/pricing/PricingClient";
 import { priceTable } from "@/lib/billing";
 
@@ -14,9 +13,7 @@ export default function UpgradePage() {
   const configured = !!(process.env.STRIPE_SECRET_KEY && prices.Pro.month);
   return (
     <main id="main">
-      <Suspense fallback={null}>
-        <PricingClient annualAvailable={annualAvailable} configured={configured} />
-      </Suspense>
+      <PricingClient annualAvailable={annualAvailable} configured={configured} />
     </main>
   );
 }

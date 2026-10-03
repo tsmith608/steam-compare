@@ -15,7 +15,7 @@ const NAV = [
 export function Wordmark({ className = "" }) {
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <img src="/logo.png" alt="" width={29} height={24} className="h-6 w-auto" />
+      <img src="/logo-mark.png" alt="" width={29} height={24} className="h-6 w-auto" />
       <span className="font-display text-[1.12rem] font-extrabold tracking-[-0.01em] text-ink-1" style={{ fontStretch: "108%" }}>
         We<span className="text-accent-hi">Both</span>Play
       </span>

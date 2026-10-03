@@ -13,14 +13,16 @@ import { SITE_NAME, SITE_URL, TAGLINE } from "@/lib/site";
 // - Inter (optical sizes): interface and body text only; covers Cyrillic and
 //   Greek so friends' Steam names render properly.
 // - JetBrains Mono: Steam IDs and codes; not preloaded.
+// `subsets` only controls preloading; latin-ext, Cyrillic and Greek files are
+// still self-hosted and fetched on demand when such characters appear.
 const display = Archivo({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
   axes: ["wdth"],
 });
 const sans = Inter({
-  subsets: ["latin", "latin-ext", "cyrillic", "greek"],
+  subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
   axes: ["opsz"],
@@ -57,7 +59,7 @@ export const metadata = {
     title: "WeBothPlay — What are we playing tonight?",
     description: TAGLINE,
   },
-  icons: { icon: [{ url: "/icon.png", type: "image/png" }], apple: "/icon.png" },
+  icons: { icon: [{ url: "/favicon-32.png", sizes: "32x32", type: "image/png" }, { url: "/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/apple-touch-icon.png" },
   other: {
     "google-adsense-account": "ca-pub-5774226834741887",
     "impact-site-verification": "a9cefe9f-8aad-4a52-a4c2-195be9478964",

@@ -21,6 +21,9 @@ const nextConfig = {
       { source: "/dashboard/:id(\\d{17})", destination: "/:id", permanent: true },
       { source: "/profile/:id", destination: "/:id", permanent: true },
       { source: "/commands", destination: "/discord", permanent: true },
+      // Old bot messages (still sitting in Discord channels) linked to /?steamid=a&steamid=b.
+      // The query string carries over; the results page reads the legacy steamid params.
+      { source: "/", has: [{ type: "query", key: "steamid" }], destination: "/compare", permanent: true },
     ];
   },
 };

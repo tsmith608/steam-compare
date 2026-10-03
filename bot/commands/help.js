@@ -13,13 +13,14 @@ module.exports = {
                 {
                     name: '🟢 Free Commands', value: [
                         '🔗 **/link** — Link your Steam account',
-                        '🎮 **/compare** — Compare libraries (up to 8 users)',
+                        '🎮 **/compare** — Compare with up to 3 friends (mention them)',
                         '🔍 **/compare search:** — Search for a specific shared game',
                         '❓ **/help** — Show this list',
                     ].join('\n')
                 },
                 {
                     name: '💎 Premium Commands (Pro/Hacker)', value: [
+                        '🎙️ **/compare** in a voice channel — Compare everyone there',
                         '🎰 **/roulette** — Spin for a random shared game',
                         '📜 **/stats** — View your Gamer Resume',
                         '🛑 **/backlog** — Find unplayed games (Pile of Shame)',

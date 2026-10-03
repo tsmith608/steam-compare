@@ -334,6 +334,7 @@ export default function ResultsView({ data, groupKey, editHref }) {
               )}
             </p>
 
+            <h2 className="sr-only">{tab === "backlog" ? "Games nobody's really played" : "Games you all own"}</h2>
             {view.games.length === 0 ? (
               <div className="rounded-lg border border-dashed border-line-strong p-10 text-center">
                 <p className="display text-xl">Nothing matches that.</p>

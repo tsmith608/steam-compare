@@ -6,13 +6,14 @@ import { PLAN_LIMITS } from "@/lib/plans";
 
 export const metadata = {
   title: "Discord bot — compare Steam libraries in your server",
-  description: "Add the WeBothPlay bot to Discord: /compare checks everyone in your voice channel, /roulette picks a shared game, /backlog finds what nobody has played.",
+  description: "Add the WeBothPlay bot to Discord: /compare your friends right in chat. Premium adds voice-channel compare, /roulette and /backlog.",
   alternates: { canonical: "/discord" },
 };
 
 const COMMANDS = [
   { cmd: "/link", desc: "Connect your Steam account (once). Uses Steam's own sign-in; we only read public library data.", plan: "Free" },
-  { cmd: "/compare", desc: `Compare with up to ${PLAN_LIMITS.Noob.maxPlayers} people — mention them, or run it in a voice channel. Add search: to find a specific shared game.`, plan: "Free" },
+  { cmd: "/compare", desc: "Compare yourself and up to three friends — mention them. Add search: to find a specific shared game.", plan: "Free" },
+  { cmd: "/compare (voice)", desc: `Run it in a voice channel to check everyone there — up to ${PLAN_LIMITS.Pro.maxPlayers} people on Pro, ${PLAN_LIMITS.Hacker.maxPlayers} on Hacker.`, plan: "Premium" },
   { cmd: "/help", desc: "Every command, right in Discord.", plan: "Free" },
   { cmd: "/roulette", desc: "Pick a random game everyone in the group owns.", plan: "Premium" },
   { cmd: "/backlog", desc: "Games you all own that nobody has really played.", plan: "Premium" },
@@ -45,7 +46,7 @@ export default function DiscordPage() {
         {[
           ["01", "Add the bot", "A server admin adds it with the button above. It needs to read slash commands and send messages."],
           ["02", "Everyone runs /link", "Each friend links their Steam account once, through Steam's sign-in page."],
-          ["03", "Run /compare", "In a voice channel it checks everyone there. Or mention up to three people."],
+          ["03", "Run /compare", "Mention up to three friends. With Premium, run it in a voice channel to check everyone there."],
         ].map(([n, t, d]) => (
           <div key={n} className="bg-bg p-6">
             <span className="num text-sm text-accent-hi">{n}</span>

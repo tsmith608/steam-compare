@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { signInHref, useSession } from "@/components/SessionProvider";
 import { Icon } from "@/components/Icon";
@@ -27,8 +28,14 @@ function Price({ tier, interval }) {
   );
 }
 
-export default function PricingClient({ annualAvailable, configured }) {
+// Only this notice depends on the URL, so the rest of the page is server-rendered.
+function CanceledNotice() {
   const sp = useSearchParams();
+  if (sp.get("canceled") !== "1") return null;
+  return <p className="mb-8 rounded-lg border border-line bg-surface-1 px-4 py-3 text-sm text-ink-2">Checkout canceled — you weren't charged.</p>;
+}
+
+export default function PricingClient({ annualAvailable, configured }) {
   const { user, loading } = useSession();
   const [interval, setBillingInterval] = useState("month");
   const [busy, setBusy] = useState(null);
@@ -88,9 +95,9 @@ export default function PricingClient({ annualAvailable, configured }) {
 
   return (
     <div className="container-page py-12 sm:py-16">
-      {sp.get("canceled") === "1" && (
-        <p className="mb-8 rounded-lg border border-line bg-surface-1 px-4 py-3 text-sm text-ink-2">Checkout canceled — you weren't charged.</p>
-      )}
+      <Suspense fallback={null}>
+        <CanceledNotice />
+      </Suspense>
       {user?.billingStatus === "past_due" && (
         <p className="mb-8 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-ink-1">
           Your last payment didn't go through. <button type="button" className="underline" onClick={portal}>Update your card</button> to keep Premium.
