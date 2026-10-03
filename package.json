@@ -28,6 +28,7 @@
     "stripe": "^20.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "1.56.1",
     "@resvg/resvg-js": "^2.6.2",
     "@twemoji/svg": "15.0.0",

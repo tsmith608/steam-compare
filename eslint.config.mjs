@@ -27,6 +27,11 @@ const config = [
     },
   },
   {
+    // Playwright fixtures call a `use()` callback that isn't a React hook.
+    files: ["tests/e2e/**/*.mjs"],
+    rules: { "react-hooks/rules-of-hooks": "off" },
+  },
+  {
     // The Discord bot is CommonJS Node code.
     files: ["bot/**/*.js"],
     languageOptions: { sourceType: "commonjs" },
