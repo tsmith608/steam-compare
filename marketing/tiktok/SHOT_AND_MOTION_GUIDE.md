@@ -223,7 +223,7 @@ The renderer templates follow these rules out of the box. Motion starts at frame
 
 1. **Render the overlay.** Add to `marketing/renderer/posts.json`:
    `{ "id": "W06-WED", "template": "hook-overlay", "data": { "text": "Stop asking what everyone owns", "demo": true } }`
-   Then run `npm run social:render -- --only W06-WED`. Output: `marketing/renders/out/W06-WED.png`, 1080 × 1920 and transparent, with the plate already in the hook band.
+   Push it and GitHub renders it (or run `npm run social:render -- --only W06-WED` locally). Output: `marketing/renders/posts/W06-WED.png`, 1080 × 1920 and transparent, with the plate already in the hook band.
 2. **New CapCut project:** 9:16, 1080 × 1920, 30 fps.
 3. **Track 1:** the screen recording, scaled to fill, with the key UI inside the safe box (zoom and pan as in §5).
 4. **Track 2:** the overlay PNG at position 0,0 and 100% scale; it's pre-positioned. Keep it on for at least the first 3 s, or the whole clip.

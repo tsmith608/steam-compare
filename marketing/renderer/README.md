@@ -10,7 +10,7 @@ npm run social:render -- --skip-existing         # everything not rendered yet (
 npm run social:render -- --file my-posts.json --fps 24 --out ./my-out
 ```
 
-Requirements: Node ≥ 20.9 and `ffmpeg` on the PATH. Output goes to `marketing/renders/out/`, which is gitignored. A rendered sample of every template and a contact sheet are committed in `marketing/renders/samples/`.
+**You normally don't run this yourself.** The finished files are committed in `marketing/renders/posts/`, with a posting checklist in `INDEX.md`. GitHub Actions (`.github/workflows/social-render.yml`) re-renders and commits them whenever the calendar, a template or the fonts change. To render locally you need Node ≥ 20.9 and `ffmpeg` on the PATH; output goes to the same folder. `--clean` removes earlier renders first.
 
 | Output | When |
 |---|---|

@@ -40,9 +40,10 @@ Open <http://localhost:3000> and try **See an example first**. In mock mode, the
 | `npm run test:e2e` | Playwright end-to-end + accessibility tests (after `npm run build`; needs Postgres, see `playwright.config.mjs`) |
 | `npm run db:migrate` | Apply `db/migrations/*.sql` (rollback script in `db/rollback/`) |
 | `npm run social:calendar` | Rebuild the 90-day TikTok calendar and renderer data |
-| `npm run social:render` | Render TikTok videos, covers and carousels (`marketing/renderer/README.md`) |
+| `npm run social:render` | Render TikTok posts locally. Normally GitHub Actions does it and commits them to `marketing/renders/posts/` |
+| `npm run check:secrets` | Fail if any tracked file contains a credential (also runs in CI) |
 
-CI (`.github/workflows/ci.yml`) runs lint, migrations, unit + DB tests, build and E2E on every pull request.
+CI (`.github/workflows/ci.yml`) runs a secret scan, lint, migrations, unit + DB tests, build and E2E on every pull request. `.github/workflows/social-render.yml` re-renders the TikTok posts whenever the calendar or templates change.
 
 ## Configuration
 

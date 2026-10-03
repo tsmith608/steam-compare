@@ -1,0 +1,52 @@
+name: Render TikTok posts
+
+# Whenever the content calendar or the templates change, GitHub re-renders
+# every post and commits the finished files to marketing/renders/posts/ on the
+# same branch, so nobody has to render by hand. Can also be run from the
+# Actions tab ("Run workflow").
+on:
+  push:
+    paths:
+      - "marketing/tiktok/build-calendar.mjs"
+      - "marketing/renderer/**"
+      - "!marketing/renderer/README.md"
+      - "src/assets/fonts/**"
+  workflow_dispatch:
+
+concurrency:
+  group: social-render-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: npm ci
+      - name: Build the calendar and posting index
+        run: npm run social:calendar
+      - name: Render every post
+        run: npm run social:render -- --clean
+      - name: Commit the rendered posts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add marketing/renders/posts marketing/tiktok/90_DAY_CALENDAR.csv marketing/renderer/posts.json
+          if git diff --cached --quiet; then
+            echo "Rendered posts are already up to date."
+            exit 0
+          fi
+          # [skip ci] stops this commit from triggering the workflows again.
+          git commit -m "chore(social): re-render TikTok posts [skip ci]"
+          git pull --rebase --autostash
+          git push

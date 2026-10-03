@@ -108,8 +108,8 @@ npm run test:e2e      # Playwright: needs a build + STEAM_MOCK=1 (see playwright
 ## 9. Social workflow (TikTok)
 
 1. **Plan:** `marketing/tiktok/90_DAY_CALENDAR.csv` (open in Sheets). Base posts Mon/Wed/Fri/Sun; reserve and trend slots fill gaps; event rows stay *Blocked* until the date is verified.
-2. **Edit content:** change the bank in `marketing/tiktok/build-calendar.mjs`, then `npm run social:calendar` (rewrites the CSV and `marketing/renderer/posts.json`).
-3. **Render:** `npm run social:render -- --only W03-MON` (or everything: `npm run social:render -- --skip-existing`). Output goes to `marketing/renders/out/` (not committed): MP4 masters, covers, carousel slides, transparent overlays.
+2. **Get the files:** they're already rendered in `marketing/renders/posts/`. `INDEX.md` there lists each date's file, caption and hashtags.
+3. **Change something?** Edit the bank in `marketing/tiktok/build-calendar.mjs` (or a template) and push. GitHub Actions re-renders every post and commits the new files within about 25 minutes (*Actions → Render TikTok posts*; you can also start it by hand there). Rendering locally (`npm run social:render`) is optional.
 4. **Assemble:** in CapCut/TikTok, add the overlay PNGs on your own screen recordings of the site; add music from TikTok's **Commercial Music Library** (business accounts can't use the general library); keep the "Demo data" label on fictional groups.
 5. **Post** yourself (or via TikTok's own scheduler). Captions, hashtags (≤ 5) and CTAs are in the CSV.
 6. **Log** in the tracker (§1) and adjust per the playbook.

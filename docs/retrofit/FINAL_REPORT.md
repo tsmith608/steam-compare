@@ -27,7 +27,7 @@ The retrofit keeps the name, the near-black stage, the original blue, amber-for-
 5. **A growth engine.**
    - **Built into the product:** share and vote links with rendered preview cards; tagged bot links.
    - **Search:** six genuinely useful pages.
-   - **TikTok:** a research-backed 13-week system with a JSON-driven 9:16 renderer in the site's design language. All 80 calendar posts render from it with one command (one sample per template and a contact sheet are committed), plus strategy, hooks, CTAs, style, shot lists, experiments and a weekly optimisation loop.
+   - **TikTok:** a research-backed 13-week system with a JSON-driven 9:16 renderer in the site's design language. All 80 rendered posts are committed and ready to upload, and GitHub re-renders them automatically when content changes. Also strategy, hooks, CTAs, style, shot lists, experiments and a weekly optimisation loop.
 
 Scale: about 280 files changed (≈17k lines added, ≈9k removed, excluding the 3,420 committed `bot/node_modules` files, now untracked) across six phase commits.
 
@@ -177,7 +177,7 @@ Everything lives in `marketing/`:
 | 90 hooks · CTAs and UTM rules · visual style · shot/motion guide · 7 weekly experiments · weekly optimisation playbook | `HOOK_LIBRARY.md` · `CTA_LIBRARY.md` · `STYLE_GUIDE.md` · `SHOT_AND_MOTION_GUIDE.md` · `EXPERIMENT_PLAN.md` · `WEEKLY_OPTIMIZATION_PLAYBOOK.md` |
 | **13-week calendar** (Oct 5 2026 → Jan 3 2027; the brief's 20 columns, including hook, voiceover, on-screen text, caption, hashtags, audio, assets and status) | `marketing/tiktok/90_DAY_CALENDAR.csv`, generated from `build-calendar.mjs` |
 | **Renderer**: JSON → 1080×1920 MP4s, covers, carousel slides and overlays in the site's design system; 8 templates; safe zones; demo label | `marketing/renderer/` (`npm run social:render`) |
-| Rendered assets | `npm run social:render` writes all 80 posts to `marketing/renders/out/` in about 20 minutes. The folder is gitignored, so run it on your machine. A sample per template and a contact sheet of every cover are committed in `marketing/renders/samples/` |
+| **Finished posts, ready to upload** | `marketing/renders/posts/`: every rendered video, cover, carousel slide and overlay, committed. `INDEX.md` there is the posting checklist (date → file → caption + hashtags). A GitHub Action (`.github/workflows/social-render.yml`) re-renders and commits them whenever the calendar or templates change. Contact sheet: `marketing/renders/contact-sheet.jpg` |
 
 **Cadence:**
 - **Baseline:** 4 posts/week (Mon/Wed/Fri/Sun; 48 videos + 4 carousels). Floor 3.
@@ -193,12 +193,14 @@ Everything lives in `marketing/`:
 - Claims about games are checked against bot gating (voice-channel `/compare` is Pro, so it's not promoted as free).
 - **Never** bots, bought engagement or unofficial automation.
 
-**Workflow:** TikTok's Content Posting API reportedly limits unaudited apps to private posts. This is unverified: TikTok's developer site was blocked here (research §3.9). So the honest automation is a **5-minute review-and-schedule** routine (SHOT_AND_MOTION_GUIDE §8):
-1. `npm run social:calendar` (optional, after editing the bank).
-2. `npm run social:render`.
-3. Drop the overlay on your screen capture in CapCut and add Commercial Music Library audio.
-4. Paste the caption and hashtags from the CSV.
-5. Schedule in TikTok.
+**Workflow:** TikTok's Content Posting API reportedly limits unaudited apps to private posts. This is unverified: TikTok's developer site was blocked here (research §3.9). So the honest automation is a **5-minute review-and-schedule** routine per post (SHOT_AND_MOTION_GUIDE §8):
+1. Open `marketing/renders/posts/INDEX.md` and find this week's posts.
+2. Upload the video (or, for overlay posts, lay the PNG over your screen recording in CapCut).
+3. Add a Commercial Music Library track in TikTok.
+4. Paste the caption and hashtags from the index.
+5. Schedule.
+
+Rendering is never manual: GitHub re-renders and commits the files whenever you change the calendar or templates.
 
 ## Automation
 
@@ -208,7 +210,8 @@ What runs without you:
 - **Vercel Cron, weekly:** the Monday report to Discord.
 - **Stripe and Ko-fi webhooks:** keep plans in sync, idempotently, including renewals, cancellations, plan switches and failed payments.
 - **Store metadata:** cached and refreshed on demand within Steam's rate limits.
-- **CI:** blocks broken pull requests (lint, tests, build, E2E, accessibility).
+- **CI:** blocks broken pull requests (secret scan, lint, tests, build, E2E, accessibility).
+- **Social renders:** a GitHub Action re-renders all TikTok posts and commits them when the calendar or templates change.
 - **Social:** the calendar and renders regenerate from one data file.
 
 ## Monitoring

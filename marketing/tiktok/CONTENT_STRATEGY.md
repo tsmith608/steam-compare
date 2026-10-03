@@ -245,7 +245,7 @@ Confirmed event weeks add 3 short videos. Do them in a second, ~45-minute sessio
 ### 8.1 Renderer templates (`marketing/renderer`)
 
 - Each post is a JSON object in `posts.json`, keyed by the calendar ID (for example `W01-MON`).
-- Render with `npm run social:render -- --only W01-MON`. Output goes to `marketing/renders/out/<id>.mp4`, plus `-cover.png`, `-slide-N.png` for carousels, and `<id>.png` for overlays.
+- The finished files are already in `marketing/renders/posts/`: `<id>.mp4`, plus `-cover.png`, `-slide-N.png` for carousels, and `<id>.png` for overlays. `INDEX.md` there maps dates to files and captions. Edit a post in the bank and push, and GitHub re-renders it automatically.
 - **Renders are silent masters.** Add voiceover and SFX in CapCut, and any CML bed in TikTok.
 - Templates already respect the safe box and stamp the demo label (except carousel slides; see `STYLE_GUIDE.md` §4).
 

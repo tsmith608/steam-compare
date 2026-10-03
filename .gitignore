@@ -48,4 +48,3 @@ next-env.d.ts
 # Playwright / test output
 /test-results/
 /playwright-report/
-/marketing/renders/out/

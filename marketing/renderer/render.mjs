@@ -5,8 +5,11 @@
 //   npm run social:render                         # everything in posts.json
 //   npm run social:render -- --only W01-MON,W01-WED
 //   npm run social:render -- --file my-posts.json --fps 24
+//   npm run social:render -- --clean            # wipe earlier renders, render everything
 //
-// Output: marketing/renders/out/<id>.mp4 (+ -cover.png, -slide-N.png, .png)
+// GitHub Actions runs this automatically when the calendar or templates change
+// (.github/workflows/social-render.yml) and commits the results.
+// Output: marketing/renders/posts/<id>.mp4 (+ -cover.png, -slide-N.png, .png)
 // Videos are silent masters: add Commercial Music Library audio or voiceover
 // in TikTok/CapCut (see marketing/tiktok/STYLE_GUIDE.md).
 import fs from "node:fs";
@@ -27,11 +30,16 @@ const opt = (name, def) => {
 const file = path.resolve(opt("file", path.join(here, "posts.json")));
 const only = (opt("only", "") || "").split(",").filter(Boolean);
 const fps = Number(opt("fps", 30));
-const outDir = path.resolve(opt("out", path.join(here, "..", "renders", "out")));
+const outDir = path.resolve(opt("out", path.join(here, "..", "renders", "posts")));
 const keepFrames = args.includes("--keep-frames");
 
 const posts = JSON.parse(fs.readFileSync(file, "utf8")).filter((p) => !only.length || only.includes(p.id));
 fs.mkdirSync(outDir, { recursive: true });
+
+// --clean removes earlier renders first, so renamed or removed posts don't linger.
+if (args.includes("--clean") && !only.length && !args.includes("--child")) {
+  for (const f of fs.readdirSync(outDir)) if (/\.(mp4|png)$/.test(f)) fs.unlinkSync(path.join(outDir, f));
+}
 
 // Rendering many videos in one process accumulates native (resvg) memory, so
 // batches run one post per child process.
