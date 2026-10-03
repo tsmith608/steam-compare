@@ -33,10 +33,10 @@ export default function DiscordPage() {
         lede="The WeBothPlay bot compares everyone's Steam libraries right in your server, and links to the full results here when you want to dig in."
       >
         <div className="mt-8 flex flex-wrap gap-3">
-          <a href={BOT_INSTALL_URL} target="_blank" rel="noopener noreferrer" className="btn btn-discord btn-lg">
+          <a href={BOT_INSTALL_URL} data-track="discord_cta_clicked" data-track-location="discord_page_bot" target="_blank" rel="noopener noreferrer" className="btn btn-discord btn-lg">
             <Icon name="discord" className="h-5 w-5" /> Add to your server
           </a>
-          <a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-lg">Join our community</a>
+          <a href={COMMUNITY_URL} data-track="discord_cta_clicked" data-track-location="discord_page_community" target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-lg">Join our community</a>
         </div>
       </PageHeader>
 

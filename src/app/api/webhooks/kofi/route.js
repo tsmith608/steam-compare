@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { normalizeTier } from "@/lib/plans";
 import { alertOwner, logServerError } from "@/lib/ops";
+import { grantKofiPremium } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -54,19 +55,7 @@ export async function POST(request) {
       [transactionId, parseFloat(data.amount) || 0, data.currency || null, tier, message, data.from_name || null, data.email || null, steamId]
     );
 
-    if (steamId) {
-      await query(
-        `INSERT INTO users (steam_id, transaction_id, purchased_at, source, tier, expires_at)
-         VALUES ($1, $2, NOW(), 'kofi', $3, NOW() + INTERVAL '32 days')
-         ON CONFLICT (steam_id) DO UPDATE SET
-           transaction_id = EXCLUDED.transaction_id,
-           purchased_at = EXCLUDED.purchased_at,
-           source = CASE WHEN users.source = 'stripe' AND users.subscription_id IS NOT NULL THEN users.source ELSE 'kofi' END,
-           tier = CASE WHEN users.source = 'stripe' AND users.subscription_id IS NOT NULL THEN users.tier ELSE EXCLUDED.tier END,
-           expires_at = GREATEST(COALESCE(users.expires_at, NOW()), EXCLUDED.expires_at)`,
-        [steamId, transactionId, tier]
-      );
-    }
+    if (steamId) await grantKofiPremium({ steamId, transactionId, tier });
     return NextResponse.json({ status: "success" });
   } catch (err) {
     await logServerError("kofi-webhook", err);

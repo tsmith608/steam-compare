@@ -2,9 +2,14 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function GamePickerModal({ isOpen, onClose, fullLibrary, initialSelected = [], onSave }) {
-    if (!isOpen) return null;
+// The body mounts only while open, so hooks never run conditionally and the
+// selection starts from initialSelected each time the picker opens.
+export default function GamePickerModal(props) {
+    if (!props.isOpen) return null;
+    return <GamePickerModalBody {...props} />;
+}
 
+function GamePickerModalBody({ isOpen, onClose, fullLibrary, initialSelected = [], onSave }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedIds, setSelectedIds] = useState(initialSelected || []);
 

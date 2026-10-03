@@ -95,3 +95,28 @@ export async function applySubscription(sub, { steamId: hintSteamId = null } = {
   );
   return steamId;
 }
+
+/**
+ * Grants (or extends) Premium for one Ko-fi payment: 32 days from `from`.
+ * Never shortens access — a paid plan with no expiry (granted by the old claim
+ * flow) stays permanent — and never overrides a live Stripe subscription or
+ * downgrades an active Hacker plan to Pro.
+ */
+export async function grantKofiPremium({ steamId, transactionId, tier, from = null }) {
+  await query(
+    `INSERT INTO users (steam_id, transaction_id, purchased_at, source, tier, expires_at)
+     VALUES ($1, $2, NOW(), 'kofi', $3, COALESCE($4::timestamptz, NOW()) + INTERVAL '32 days')
+     ON CONFLICT (steam_id) DO UPDATE SET
+       transaction_id = EXCLUDED.transaction_id,
+       purchased_at = EXCLUDED.purchased_at,
+       source = CASE WHEN users.source = 'stripe' AND users.subscription_id IS NOT NULL THEN users.source ELSE 'kofi' END,
+       tier = CASE
+         WHEN users.source = 'stripe' AND users.subscription_id IS NOT NULL THEN users.tier
+         WHEN users.tier = 'Hacker' AND (users.expires_at IS NULL OR users.expires_at > NOW()) THEN users.tier
+         ELSE EXCLUDED.tier END,
+       expires_at = CASE
+         WHEN users.expires_at IS NULL AND COALESCE(users.tier, 'Noob') <> 'Noob' THEN NULL
+         ELSE GREATEST(COALESCE(users.expires_at, NOW()), EXCLUDED.expires_at) END`,
+    [steamId, transactionId, normalizeTier(tier || "Pro"), from]
+  );
+}

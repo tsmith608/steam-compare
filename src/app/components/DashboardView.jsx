@@ -669,6 +669,7 @@ export default function DashboardView({ overrideSteamId }) {
                                         <span className={`text-[10px] font-black w-4 flex-shrink-0 ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : 'text-amber-700'}`}>#{i + 1}</span>
                                         <img
                                             src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_sm_120.jpg`}
+                                            alt=""
                                             className="w-8 h-8 rounded-lg object-cover flex-shrink-0 shadow-lg border border-white/5"
                                             onError={(e) => { e.target.style.display = 'none'; }}
                                         />
@@ -713,6 +714,7 @@ export default function DashboardView({ overrideSteamId }) {
                                         <div key={id} className="relative aspect-[2/3] w-full group/item overflow-hidden rounded-xl border border-white/10 shadow-xl bg-zinc-900 mx-auto">
                                             <img
                                                 src={`https://cdn.akamai.steamstatic.com/steam/apps/${id}/library_600x900.jpg`}
+                                                alt={fullLibrary.find((g) => g.appid === id)?.name || "Pinned game"}
                                                 className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-700"
                                             />
                                         </div>
@@ -773,6 +775,7 @@ export default function DashboardView({ overrideSteamId }) {
                                                 >
                                                     <img
                                                         src={`https://cdn.akamai.steamstatic.com/steam/apps/${typeof gid === 'object' ? gid.appid : gid}/capsule_184x69.jpg`}
+                                                        alt={fullLibrary.find((g) => g.appid === (typeof gid === 'object' ? gid.appid : gid))?.name || "Game in collection"}
                                                         className="w-20 h-9 object-cover rounded-md border border-white/10 shadow-lg bg-zinc-900"
                                                     />
                                                 </motion.div>

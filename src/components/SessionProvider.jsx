@@ -35,6 +35,8 @@ export function SessionProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    // refresh() sets state only after /api/auth/me responds.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
     // Clean up identity left in browser storage by the old client-side "login".
     try {

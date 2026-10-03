@@ -44,6 +44,8 @@ export default function Roulette({ games, profiles, onClose, onShortlist, shortl
 
   useLayoutEffect(() => {
     if (!games.length) return;
+    // Each round resets the reel before layout is measured for the next spin.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPhase("spinning");
     setAnimate(false);
     setOffset(0);

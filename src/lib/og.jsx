@@ -97,7 +97,7 @@ export function AvatarStack({ players, size = 76, max = 6 }) {
             color: C.bg,
           }}
         >
-          {p.avatarData ? <img src={p.avatarData} width={size} height={size} style={{ objectFit: "cover" }} /> : (p.name || "?").slice(0, 1).toUpperCase()}
+          {p.avatarData ? <img src={p.avatarData} alt="" width={size} height={size} style={{ objectFit: "cover" }} /> : (p.name || "?").slice(0, 1).toUpperCase()}
         </div>
       ))}
       {players.length > max && (

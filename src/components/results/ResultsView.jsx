@@ -19,16 +19,14 @@ const PAGE = 48;
 
 function useAppMeta(appids) {
   const [meta, setMeta] = useState({});
-  const [loading, setLoading] = useState(true);
   const key = appids.join(",");
+  const [doneKey, setDoneKey] = useState(null);
+  const loading = appids.length > 0 && doneKey !== key;
 
   useEffect(() => {
     let alive = true;
     const want = [...appids];
-    if (!want.length) {
-      setLoading(false);
-      return;
-    }
+    if (!want.length) return;
     (async () => {
       let pending = want;
       for (let round = 0; round < 8 && pending.length && alive; round++) {
@@ -50,7 +48,7 @@ function useAppMeta(appids) {
           break;
         }
       }
-      if (alive) setLoading(false);
+      if (alive) setDoneKey(key);
     })();
     return () => {
       alive = false;
@@ -66,6 +64,8 @@ function useShortlist(groupKey) {
   const [list, setList] = useState([]);
   useEffect(() => {
     try {
+      // Browser storage is read after hydration so server and client HTML match.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setList(JSON.parse(sessionStorage.getItem(storageKey) || "[]"));
     } catch {}
   }, [storageKey]);
@@ -114,7 +114,6 @@ export default function ResultsView({ data, groupKey, editHref }) {
   const [filters, setFilters] = useState(sp.get("filter") ? [sp.get("filter")] : []);
   const [showSingle, setShowSingle] = useState(false);
   const [layout, setLayout] = useState("grid");
-  const [visible, setVisible] = useState(PAGE);
   const [rouletteOpen, setRouletteOpen] = useState(sp.get("spin") === "1");
   const [shareOpen, setShareOpen] = useState(false);
   const [pollOpen, setPollOpen] = useState(false);
@@ -124,6 +123,8 @@ export default function ResultsView({ data, groupKey, editHref }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("wbp.layout");
+      // Read after hydration (see useShortlist).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved === "list" || saved === "grid") setLayout(saved);
     } catch {}
   }, []);
@@ -143,7 +144,10 @@ export default function ResultsView({ data, groupKey, editHref }) {
   );
   const counts = useMemo(() => filterCounts(pool, meta), [pool, meta]);
 
-  useEffect(() => setVisible(PAGE), [tab, query, filters, sort, showSingle]);
+  // "Show more" resets whenever the tab, search, filters or sort change.
+  const viewKey = JSON.stringify([tab, query, filters, sort, showSingle]);
+  const [paging, setPaging] = useState({ key: viewKey, visible: PAGE });
+  const visible = paging.key === viewKey ? paging.visible : PAGE;
 
   const toggleFilter = (key) => {
     setFilters((f) => (f.includes(key) ? f.filter((k) => k !== key) : [...f, key]));
@@ -353,7 +357,7 @@ export default function ResultsView({ data, groupKey, editHref }) {
             )}
             {visible < view.games.length && (
               <div className="text-center">
-                <button type="button" className="btn btn-ghost" onClick={() => setVisible((v) => v + PAGE)}>
+                <button type="button" className="btn btn-ghost" onClick={() => setPaging({ key: viewKey, visible: visible + PAGE })}>
                   Show more ({formatCount(view.games.length - visible)} left)
                 </button>
               </div>

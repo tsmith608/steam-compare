@@ -29,6 +29,8 @@ export default function PollVote({ id, initialOptions }) {
 
   useEffect(() => {
     const v = anonId();
+    // The anonymous voter id and remembered name exist only in the browser, so they load after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVoter(v);
     try {
       setName(localStorage.getItem(NAME_KEY) || "");

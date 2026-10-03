@@ -47,6 +47,28 @@ function attribution() {
   }
 }
 
+/** Context sent with API calls whose outcome the server records (e.g. /api/compare). */
+export function trackContext() {
+  if (typeof window === "undefined") return {};
+  const { utm, referrer } = attribution();
+  return { anonId: anonId(), path: window.location.pathname, referrer, utm };
+}
+
+const STARTED_KEY = "wbp.started";
+
+/** The form marks the group it just submitted so the results page doesn't count it twice. */
+export function markStarted(groupKey) {
+  safeStorage("sessionStorage")?.setItem(STARTED_KEY, groupKey);
+}
+
+/** True (once) when this group was just submitted from the form. */
+export function consumeStarted(groupKey) {
+  const ss = safeStorage("sessionStorage");
+  if (!ss || ss.getItem(STARTED_KEY) !== groupKey) return false;
+  ss.removeItem(STARTED_KEY);
+  return true;
+}
+
 /**
  * @param {string} name one of the names in src/lib/analytics.js
  * @param {Record<string, string|number|boolean>} [props] counts/enums only

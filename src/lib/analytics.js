@@ -43,6 +43,7 @@ export const EVENT_NAMES = new Set([
 export const SERVER_ONLY_EVENTS = new Set([
   "comparison_succeeded",
   "account_signed_in",
+  "checkout_started",
   "checkout_succeeded",
   "subscription_canceled",
   "payment_failed",

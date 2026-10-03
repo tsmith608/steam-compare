@@ -11,7 +11,8 @@ const API_BASE = process.env.BOT_API_BASE || 'https://webothplay.com';
  * per-IP rate limits. Set the same BOT_API_KEY on the website and the bot.
  */
 function apiFetch(path, options = {}) {
-    const headers = { ...(options.headers || {}) };
+    // The User-Agent lets the website report bot comparisons separately (it grants nothing by itself).
+    const headers = { 'User-Agent': 'WeBothPlayBot/1.0 (+https://webothplay.com/discord)', ...(options.headers || {}) };
     if (process.env.BOT_API_KEY) headers.Authorization = `Bearer ${process.env.BOT_API_KEY}`;
     return fetch(`${API_BASE}${path}`, { ...options, headers });
 }

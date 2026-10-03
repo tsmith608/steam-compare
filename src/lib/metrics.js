@@ -12,24 +12,41 @@ const FUNNEL = [
   ["checkout_succeeded", "Became Premium"],
 ];
 
-async function countEvents(name, days, offsetDays = 0, distinct = false) {
+// Comparisons the Discord bot runs are reported separately (they never pass
+// through the website funnel). Rows from before `via` existed count as web.
+const WEB_ONLY = "COALESCE(props->>'via', 'web') = 'web'";
+
+async function countEvents(name, days, offsetDays = 0, { distinct = false, where = "TRUE" } = {}) {
   const res = await query(
     `SELECT ${distinct ? "COUNT(DISTINCT anon_id)" : "COUNT(*)"}::int AS n FROM events
       WHERE name = $1 AND ts >= NOW() - ($2 || ' days')::interval - ($3 || ' days')::interval
-        AND ts < NOW() - ($3 || ' days')::interval`,
+        AND ts < NOW() - ($3 || ' days')::interval AND ${where}`,
     [name, String(days), String(offsetDays)]
   );
   return res.rows[0].n;
 }
 
-/** Funnel step counts for the last `days` days. Visits are unique browsers. */
+/**
+ * Funnel step counts for the last `days` days. Visits are unique browsers on
+ * the homepage; later steps count events from every entry point (shared links
+ * and the bot's links skip the homepage), so read it as volumes per step.
+ * docs/retrofit/ANALYTICS.md has a strict per-browser version.
+ */
 export async function funnel(days = 7, offsetDays = 0) {
   const steps = [];
   for (const [name, label] of FUNNEL) {
-    const n = await countEvents(name, days, offsetDays, name === "landing_viewed");
+    const n = await countEvents(name, days, offsetDays, {
+      distinct: name === "landing_viewed",
+      where: name === "comparison_succeeded" ? WEB_ONLY : "TRUE",
+    });
     steps.push({ name, label, n });
   }
   return steps;
+}
+
+/** Comparisons run from Discord (bot) in the period. */
+export async function botComparisons(days = 7, offsetDays = 0) {
+  return countEvents("comparison_succeeded", days, offsetDays, { where: "props->>'via' = 'discord_bot'" });
 }
 
 export async function topSources(days = 7, limit = 6) {
@@ -66,7 +83,8 @@ export async function errorSummary(hours = 24 * 7) {
 export async function compareFailures(days = 7) {
   const res = await query(
     `SELECT COALESCE(props->>'code','unknown') AS code, COUNT(*)::int AS n FROM events
-      WHERE name = 'comparison_failed' AND ts >= NOW() - ($1 || ' days')::interval GROUP BY 1 ORDER BY 2 DESC`,
+      WHERE name = 'comparison_failed' AND ts >= NOW() - ($1 || ' days')::interval AND ${WEB_ONLY}
+      GROUP BY 1 ORDER BY 2 DESC`,
     [String(days)]
   );
   return res.rows;

@@ -9,7 +9,7 @@ import { PrivateHelp } from "@/components/results/PrivateBanner";
 import { Icon } from "@/components/Icon";
 import { DEMO_STEAM_IDS } from "@/lib/demo-ids";
 import { rememberGroup } from "@/lib/recent-groups";
-import { track } from "@/lib/track";
+import { consumeStarted, track, trackContext } from "@/lib/track";
 
 /** Reads the group from the URL (?p=a,b or legacy ?steamid=a&steamid=b, ?demo=1). */
 function useGroupFromUrl() {
@@ -39,19 +39,20 @@ function ErrorPanel({ title, children, actions }) {
 export default function ResultsPage() {
   const { ids, demo } = useGroupFromUrl();
   const key = ids.join(",");
-  const [state, setState] = useState({ status: "idle" });
+  // The response for the current group; anything else means we're still loading.
+  const [response, setResponse] = useState({ key: null });
+  const state = ids.length < 2 ? { status: "empty" } : response.key === key ? response : { status: "loading" };
+  const setState = (next) => setResponse({ key, ...next });
 
   useEffect(() => {
-    if (ids.length < 2) {
-      setState({ status: "empty" });
-      return;
-    }
+    if (ids.length < 2) return;
     let alive = true;
-    setState({ status: "loading" });
+    // Opened from a shared link, the bot, a saved group or the demo (the form already counted its own submits).
+    if (!consumeStarted(key)) track("comparison_started", { players: ids.length, entry: demo ? "demo" : "link" });
     fetch("/api/compare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ users: ids }),
+      body: JSON.stringify({ users: ids, ctx: trackContext() }),
     })
       .then(async (r) => ({ ok: r.ok, status: r.status, body: await r.json().catch(() => ({})) }))
       .then(({ ok, status, body }) => {

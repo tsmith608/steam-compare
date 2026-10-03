@@ -200,7 +200,7 @@ export default function HomePage() {
               for you. Results link back here when you want the full picture.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href={BOT_INSTALL_URL} target="_blank" rel="noopener noreferrer" className="btn btn-discord">
+              <a href={BOT_INSTALL_URL} data-track="discord_cta_clicked" data-track-location="home_bot" target="_blank" rel="noopener noreferrer" className="btn btn-discord">
                 <Icon name="discord" className="h-5 w-5" /> Add to your server
               </a>
               <Link href="/discord" className="btn btn-ghost">All commands</Link>

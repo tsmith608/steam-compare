@@ -6,6 +6,7 @@ import { getSessionSteamId } from "@/lib/session";
 import { jsonError, limitOrNull, readJson, unauthorized } from "@/lib/http";
 import { normalizeTier } from "@/lib/plans";
 import { logServerError } from "@/lib/ops";
+import { grantKofiPremium } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -36,17 +37,7 @@ export async function POST(req) {
     }
 
     const tier = normalizeTier(claim.rows[0].tier_name || "Pro");
-    await query(
-      `INSERT INTO users (steam_id, transaction_id, purchased_at, source, tier, expires_at)
-       VALUES ($1, $2, NOW(), 'kofi', $3, COALESCE($4::timestamptz, NOW()) + INTERVAL '32 days')
-       ON CONFLICT (steam_id) DO UPDATE SET
-         transaction_id = EXCLUDED.transaction_id,
-         purchased_at = EXCLUDED.purchased_at,
-         source = EXCLUDED.source,
-         tier = EXCLUDED.tier,
-         expires_at = GREATEST(COALESCE(users.expires_at, NOW()), EXCLUDED.expires_at)`,
-      [steamid, transactionId.trim(), tier, claim.rows[0].processed_at]
-    );
+    await grantKofiPremium({ steamId: steamid, transactionId: transactionId.trim(), tier, from: claim.rows[0].processed_at });
     return NextResponse.json({ success: true, tier });
   } catch (err) {
     await logServerError("api/claim-premium", err);

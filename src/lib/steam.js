@@ -27,7 +27,7 @@ export class SteamError extends Error {
 
 export const isMockMode = () => process.env.STEAM_MOCK === "1";
 export const isDemoId = (id) => fx.DEMO_STEAM_IDS.includes(String(id)) || String(id) === DEMO_PRIVATE_ID;
-const useFixtures = (id) => isMockMode() || isDemoId(id);
+const fromFixtures = (id) => isMockMode() || isDemoId(id);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -142,7 +142,7 @@ export async function getPlayerSummaries(ids) {
   const toFetch = [];
 
   for (const id of wanted) {
-    if (useFixtures(id)) {
+    if (fromFixtures(id)) {
       const p = fx.DEMO_PROFILES[id] || (id === DEMO_PRIVATE_ID ? { personaname: "Demo · Private" } : null);
       if (p) out.set(id, { steamid: id, personaname: p.personaname, avatar: null, profileurl: null, visibility: id === DEMO_PRIVATE_ID ? 1 : 3 });
       continue;
@@ -188,7 +188,7 @@ export function isJunkGame(g) {
  */
 export async function getOwnedGames(steamid) {
   const id = String(steamid);
-  if (useFixtures(id)) {
+  if (fromFixtures(id)) {
     if (id === DEMO_PRIVATE_ID) return { games: [], isPrivate: true };
     const games = fx.fixtureLibrary(id);
     if (!games) throw new SteamError("not_found", "That Steam profile doesn't exist.");
@@ -217,7 +217,7 @@ export async function getOwnedGames(steamid) {
 
 export async function getRecentGames(steamid) {
   const id = String(steamid);
-  if (useFixtures(id)) return fx.fixtureRecent(id);
+  if (fromFixtures(id)) return fx.fixtureRecent(id);
   const cached = cacheGet(`recent:${id}`);
   if (cached) return cached;
   try {
@@ -233,7 +233,7 @@ export async function getRecentGames(steamid) {
 /** Wishlisted app IDs, or [] when private/unavailable. Never throws. */
 export async function getWishlistAppIds(steamid) {
   const id = String(steamid);
-  if (useFixtures(id)) return fx.fixtureWishlist(id).map((w) => w.appid);
+  if (fromFixtures(id)) return fx.fixtureWishlist(id).map((w) => w.appid);
   const cached = cacheGet(`wishlist:${id}`);
   if (cached) return cached;
   try {
@@ -249,7 +249,7 @@ export async function getWishlistAppIds(steamid) {
 /** Friend SteamIDs, or null when the friends list is private. */
 export async function getFriendIds(steamid) {
   const id = String(steamid);
-  if (useFixtures(id)) return fx.fixtureFriends(id);
+  if (fromFixtures(id)) return fx.fixtureFriends(id);
   const { status, data } = await steamGet(API, "/ISteamUser/GetFriendList/v1/", { steamid: id, relationship: "friend" });
   if (status === 401 || status === 403 || !data?.friendslist) return null;
   return data.friendslist.friends.map((f) => f.steamid);
@@ -278,7 +278,7 @@ export function normalizeAppDetails(appid, d) {
 }
 
 async function fetchAppDetailsFromStore(appid) {
-  if (useFixtures(appid) || isMockMode()) return normalizeAppDetails(appid, fx.fixtureAppDetails(appid));
+  if (fromFixtures(appid) || isMockMode()) return normalizeAppDetails(appid, fx.fixtureAppDetails(appid));
   const { data } = await steamGet(
     STORE,
     "/api/appdetails",

@@ -8,7 +8,7 @@ import { signInHref, useSession } from "@/components/SessionProvider";
 import { Icon } from "@/components/Icon";
 import { PlayerDot } from "@/components/compare/PlayerDot";
 import FriendPicker from "@/components/compare/FriendPicker";
-import { track } from "@/lib/track";
+import { track, markStarted } from "@/lib/track";
 
 const HARD_MAX = 16;
 const FREE_MAX = 8;
@@ -40,6 +40,8 @@ export default function CompareForm({ initial = [], autoPick = false, compact = 
   const enteredOnce = useRef(new Set());
 
   const [saved, setSaved] = useState([]);
+  // Recent groups live in localStorage, so they load after hydration.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setRecent(loadRecentGroups()), []);
   useEffect(() => {
     if (!user) return;
@@ -49,22 +51,23 @@ export default function CompareForm({ initial = [], autoPick = false, compact = 
       .catch(() => {});
   }, [user]);
 
-  // Signed in: the first row is you.
-  useEffect(() => {
-    if (!user || initial.length) return;
-    setRows((prev) => {
-      if (prev.some((r) => normalize(r.value) === user.steamid)) return prev;
-      const next = [...prev];
-      if (!next[0].value) next[0] = { value: user.steamid, touched: false };
-      else next.unshift({ value: user.steamid, touched: false });
-      return next.slice(0, HARD_MAX);
-    });
-    setSelfName(user.name);
-  }, [user, initial.length]);
-
-  useEffect(() => {
-    if (autoPick && user) setPickerOpen(true);
-  }, [autoPick, user]);
+  // When the session arrives: the first row is you, and ?pick=1 opens the friend picker.
+  // (State is adjusted during render, as React recommends for responding to new props.)
+  const [seenUser, setSeenUser] = useState(null);
+  if (user && seenUser !== user.steamid) {
+    setSeenUser(user.steamid);
+    if (!initial.length) {
+      setRows((prev) => {
+        if (prev.some((r) => normalize(r.value) === user.steamid)) return prev;
+        const next = [...prev];
+        if (!next[0].value) next[0] = { value: user.steamid, touched: false };
+        else next.unshift({ value: user.steamid, touched: false });
+        return next.slice(0, HARD_MAX);
+      });
+      setSelfName(user.name);
+    }
+    if (autoPick) setPickerOpen(true);
+  }
 
   const ownMax = user?.maxPlayers || FREE_MAX;
   const filled = rows.filter((r) => r.value.trim()).length;
@@ -139,7 +142,8 @@ export default function CompareForm({ initial = [], autoPick = false, compact = 
       return;
     }
     setSubmitting(true);
-    track("comparison_started", { players: ids.length, signed_in: !!user });
+    track("comparison_started", { players: ids.length, signed_in: !!user, entry: "form" });
+    markStarted(ids.join(","));
     router.push(`/compare?p=${ids.map(encodeURIComponent).join(",")}${extraQuery ? `&${extraQuery}` : ""}`);
   }
 

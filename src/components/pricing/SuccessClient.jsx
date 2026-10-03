@@ -42,7 +42,7 @@ export default function SuccessClient() {
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/" className="btn btn-primary">Compare a big group</Link>
-          <a href={BOT_INSTALL_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost"><Icon name="discord" className="h-4 w-4" /> Add the bot</a>
+          <a href={BOT_INSTALL_URL} data-track="discord_cta_clicked" data-track-location="upgrade_success" target="_blank" rel="noopener noreferrer" className="btn btn-ghost"><Icon name="discord" className="h-4 w-4" /> Add the bot</a>
         </div>
       </div>
     </div>

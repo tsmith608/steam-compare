@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { signInHref, useSession } from "@/components/SessionProvider";
 import { Icon } from "@/components/Icon";
 import { PLAN_FEATURES, PRICING } from "@/lib/plans";
-import { track } from "@/lib/track";
+import { trackContext } from "@/lib/track";
 
 const FAQ = [
   { q: "Can I cancel any time?", a: "Yes — from Plan & billing in your account menu, in two clicks. You keep Premium until the end of the period you've paid for, and you won't be charged again." },
@@ -30,7 +30,7 @@ function Price({ tier, interval }) {
 export default function PricingClient({ annualAvailable, configured }) {
   const sp = useSearchParams();
   const { user, loading } = useSession();
-  const [interval, setInterval] = useState("month");
+  const [interval, setBillingInterval] = useState("month");
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState("");
   const tier = user?.tier || "Noob";
@@ -38,11 +38,10 @@ export default function PricingClient({ annualAvailable, configured }) {
   async function checkout(target) {
     setBusy(target);
     setError("");
-    track("checkout_started", { tier: target, interval, source: "pricing" });
     try {
-      const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tier: target, interval }) });
+      const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tier: target, interval, ctx: trackContext() }) });
       const d = await r.json().catch(() => ({}));
-      if (d.url) window.location.href = d.url;
+      if (d.url) window.location.assign(d.url);
       else throw new Error(d.error || "Couldn't start checkout.");
     } catch (e) {
       setError(e.message);
@@ -56,7 +55,7 @@ export default function PricingClient({ annualAvailable, configured }) {
     try {
       const r = await fetch("/api/portal", { method: "POST" });
       const d = await r.json().catch(() => ({}));
-      if (d.url) window.location.href = d.url;
+      if (d.url) window.location.assign(d.url);
       else throw new Error(d.error || "Couldn't open billing.");
     } catch (e) {
       setError(e.message);
@@ -110,7 +109,7 @@ export default function PricingClient({ annualAvailable, configured }) {
       {annualAvailable && (
         <div className="mt-8 inline-flex rounded-full border border-line-strong p-1" role="group" aria-label="Billing period">
           {["month", "year"].map((i) => (
-            <button key={i} type="button" aria-pressed={interval === i} onClick={() => setInterval(i)} className={`rounded-full px-4 py-1.5 text-sm font-semibold ${interval === i ? "bg-surface-3 text-ink-1" : "text-ink-3"}`}>
+            <button key={i} type="button" aria-pressed={interval === i} onClick={() => setBillingInterval(i)} className={`rounded-full px-4 py-1.5 text-sm font-semibold ${interval === i ? "bg-surface-3 text-ink-1" : "text-ink-3"}`}>
               {i === "month" ? "Monthly" : "Yearly · save ~37%"}
             </button>
           ))}

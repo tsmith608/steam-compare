@@ -1,9 +1,9 @@
 // Builds the weekly owner report (Discord markdown + raw numbers).
-import { billingEvents, change, compareFailures, errorSummary, featureUsage, funnel, newAccounts, pct, stripeMrr, topSources } from "@/lib/metrics";
+import { billingEvents, botComparisons, change, compareFailures, errorSummary, featureUsage, funnel, newAccounts, pct, stripeMrr, topSources } from "@/lib/metrics";
 import { SITE_URL } from "@/lib/site";
 
 export async function buildWeeklyReport() {
-  const [now, before, sources, features, errors, failures, billing, accounts, mrr] = await Promise.all([
+  const [now, before, sources, features, errors, failures, billing, accounts, mrr, bot, botBefore] = await Promise.all([
     funnel(7, 0),
     funnel(7, 7),
     topSources(7),
@@ -13,6 +13,8 @@ export async function buildWeeklyReport() {
     billingEvents(7),
     newAccounts(7),
     stripeMrr().catch(() => null),
+    botComparisons(7, 0),
+    botComparisons(7, 7),
   ]);
   const get = (list, name) => list.find((s) => s.name === name)?.n || 0;
   const visits = get(now, "landing_viewed");
@@ -33,6 +35,7 @@ export async function buildWeeklyReport() {
     `**Funnel (7 days, vs previous week)**`,
     ...now.map((s) => `• ${s.label}: **${s.n}** (${change(s.n, get(before, s.name))})`),
     `• Visit → results: ${pct(done, visits)}% · started → results: ${pct(done, started)}%`,
+    `• Discord bot comparisons: **${bot}** (${change(bot, botBefore)})`,
     "",
     `**Revenue**`,
     mrr ? `• MRR **$${mrr.mrr.toFixed(2)}** · ${mrr.active} active · ${mrr.pastDue} past due` : "• MRR: Stripe not configured",
@@ -48,5 +51,5 @@ export async function buildWeeklyReport() {
     "",
     `TikTok + Search Console aren't connected: log them in docs/retrofit/OWNER_OPERATIONS_GUIDE.md. Funnel: ${SITE_URL}/admin`,
   ].filter((l) => l !== null);
-  return { text: lines.join("\n"), data: { now, before, sources, features, errors, failures, billing, accounts, mrr, anomalies } };
+  return { text: lines.join("\n"), data: { now, before, sources, features, errors, failures, billing, accounts, mrr, bot, anomalies } };
 }

@@ -11,7 +11,6 @@ function useCountUp(target, ms = 900) {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let raf;
     const start = performance.now();
-    setN(0);
     const tick = (t) => {
       const p = Math.min(1, (t - start) / ms);
       setN(Math.round(target * (1 - Math.pow(1 - p, 3))));

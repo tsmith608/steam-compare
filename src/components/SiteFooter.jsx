@@ -42,8 +42,8 @@ export default function SiteFooter() {
             Find the games your whole group already owns, then actually pick one.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <a href={BOT_INSTALL_URL} className="btn btn-ghost btn-sm" target="_blank" rel="noopener noreferrer">Add the bot</a>
-            <a href={COMMUNITY_URL} className="btn btn-quiet btn-sm" target="_blank" rel="noopener noreferrer">Join our Discord</a>
+            <a href={BOT_INSTALL_URL} data-track="discord_cta_clicked" data-track-location="footer_bot" className="btn btn-ghost btn-sm" target="_blank" rel="noopener noreferrer">Add the bot</a>
+            <a href={COMMUNITY_URL} data-track="discord_cta_clicked" data-track-location="footer_community" className="btn btn-quiet btn-sm" target="_blank" rel="noopener noreferrer">Join our Discord</a>
           </div>
         </div>
         {COLUMNS.map((col) => (

@@ -21,14 +21,14 @@
   --line-strong: rgba(232, 238, 247, 0.16);
 
   /* Text */
-  --ink-1: #f3f5f8; /* 18.9:1 on --bg */
-  --ink-2: #b7bdc7; /* 10.9:1 */
-  --ink-3: #8a919d; /* 6.2:1  — smallest text allowed */
-  --ink-4: #5c636e; /* decorative / disabled only */
+  --ink-1: #f3f5f8; /* 18.5:1 on --bg */
+  --ink-2: #b7bdc7; /* 10.7:1 */
+  --ink-3: #8a919d; /* 6.4:1 (5.9:1 on surface-1) — dimmest text allowed */
+  --ink-4: #5c636e; /* 3.3:1 — icons/decoration only, never text */
 
   /* Brand signal: the original WeBothPlay blue */
   --accent: #3b82f6; /* signal: rings, bars, dots (not behind small white text) */
-  --accent-hi: #60a5fa; /* text on dark: 7.6:1 */
+  --accent-hi: #60a5fa; /* text on dark: 7.9:1 */
   --accent-lo: #2563eb; /* button fill: white text 5.2:1 */
   --accent-press: #1d4ed8; /* hover/press: 6.7:1 */
   --accent-ink: #ffffff;

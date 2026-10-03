@@ -20,7 +20,7 @@ export async function POST(request) {
   const stripe = getStripe();
   if (!stripe) return jsonError("Payments aren't set up yet.", 503);
 
-  const { tier: rawTier, interval: rawInterval } = await readJson(request);
+  const { tier: rawTier, interval: rawInterval, ctx } = await readJson(request);
   const tier = rawTier === "Hacker" ? "Hacker" : "Pro";
   const interval = rawInterval === "year" ? "year" : "month";
   const price = priceFor(tier, interval) || (interval === "year" ? null : priceFor(tier, "month"));
@@ -49,7 +49,7 @@ export async function POST(request) {
       success_url: `${origin}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/upgrade?canceled=1`,
     });
-    await recordEvent("checkout_started", { tier, interval });
+    await recordEvent("checkout_started", { tier, interval }, ctx && typeof ctx === "object" ? ctx : {});
     return NextResponse.json({ url: session.url });
   } catch (err) {
     await logServerError("api/checkout", err);

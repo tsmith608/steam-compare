@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSessionSteamId } from "@/lib/session";
-import { change, compareFailures, errorSummary, featureUsage, funnel, pct, stripeMrr, topSources } from "@/lib/metrics";
+import { botComparisons, change, compareFailures, errorSummary, featureUsage, funnel, pct, stripeMrr, topSources } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Owner dashboard", robots: { index: false, follow: false } };
@@ -91,6 +91,8 @@ export default async function AdminPage() {
         <p className="mt-3 text-ink-2">
           {steamid ? "This Steam account isn't on the owner list (ADMIN_STEAM_IDS)." : "Sign in through Steam with an owner account to view this page."}
         </p>
+        {/* An API route that redirects to Steam, so a plain link (next/link would try to prefetch it). */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         {!steamid && <a href="/api/compare/auth/steam/start?next=/admin" className="btn btn-steam mt-6">Sign in through Steam</a>}
       </main>
     );
@@ -98,7 +100,7 @@ export default async function AdminPage() {
 
   let data;
   try {
-    const [now, before, sources, features, failures, errors, mrr] = await Promise.all([
+    const [now, before, sources, features, failures, errors, mrr, bot, botBefore] = await Promise.all([
       funnel(7, 0),
       funnel(7, 7),
       topSources(7, 10),
@@ -106,8 +108,10 @@ export default async function AdminPage() {
       compareFailures(7),
       errorSummary(24 * 7),
       stripeMrr().catch(() => null),
+      botComparisons(7, 0),
+      botComparisons(7, 7),
     ]);
-    data = { now, before, sources, features, failures, errors, mrr };
+    data = { now, before, sources, features, failures, errors, mrr, bot, botBefore };
   } catch (err) {
     return (
       <main id="main" className="container-page py-16">
@@ -128,11 +132,12 @@ export default async function AdminPage() {
         <Link href="/" className="btn btn-ghost btn-sm">Back to site</Link>
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Tile hero label="Monthly recurring revenue" value={data.mrr ? `$${data.mrr.mrr.toFixed(2)}` : "—"} />
         <Tile label="Active subscriptions" value={data.mrr ? `${data.mrr.active}${data.mrr.pastDue ? ` (+${data.mrr.pastDue} past due)` : ""}` : "—"} />
-        <Tile label="Comparisons with results" value={get(data.now, "comparison_succeeded").toLocaleString("en-US")} delta={change(get(data.now, "comparison_succeeded"), get(data.before, "comparison_succeeded"))} />
+        <Tile label="Website comparisons with results" value={get(data.now, "comparison_succeeded").toLocaleString("en-US")} delta={change(get(data.now, "comparison_succeeded"), get(data.before, "comparison_succeeded"))} />
         <Tile label="Visit → results" value={`${pct(get(data.now, "comparison_succeeded"), get(data.now, "landing_viewed"))}%`} />
+        <Tile label="Discord bot comparisons" value={data.bot.toLocaleString("en-US")} delta={change(data.bot, data.botBefore)} />
       </div>
 
       <section className="mt-10 rounded-lg border border-line bg-surface-1 p-5">
