@@ -8,12 +8,20 @@ Legend: 🔴 do before (or the moment) this ships · 🟠 within the first week 
 
 ## 🔴 1. Rotate the two leaked secrets (15 min) — do this first, today
 
-The repository is **public**, and its git history contains the **production database password** and a **Steam Web API key**. They were in `check_db_users.js`, `manual_link_humphrey.js`, `scripts/migrate_users.js`, `scripts/add_dashboard_layout.js` and `audit_library.js`. Those files are deleted on this branch, but **deleting files doesn't remove them from history**: anyone can still read them.
+**How it happened:** one-off debugging and migration scripts had the credentials pasted straight into the code, and they were committed and pushed to this **public** repository.
+- **The production database connection string, with its password:** first in `setup_db.js` (Feb 15, 2026), then copied into 15 more scripts by Feb 22. Examples: `check_db_users.js`, `migrate_stripe.js`, `scripts/migrate_users.js`, `scripts/add_dashboard_layout.js`.
+- **The Steam Web API key:** written as a fallback (`process.env.STEAM_API_KEY || "…"`) in `audit_library.js`, `debug_friend.js` and `resolve_vanity.js` (Feb 19).
+
+Bots scan public GitHub for exactly this, usually within minutes of a push, so treat both as known to others. There's no way to tell from here whether anyone used them; your Supabase logs are the place to look.
+
+These files are deleted on this branch, but **deleting files doesn't remove them from git history**, and `main` still contains them until you merge. **Rotation is the real fix.** A new `npm run check:secrets` step in CI now fails any commit that contains a connection string, API key or token.
 
 1. **Supabase**: go to *Project Settings → Database → Reset database password*. Then update `DATABASE_URL` (and `POSTGRES_URL*` if present) in *Vercel → Settings → Environment Variables*, then redeploy.
    - While there, review *Database → Roles* and the logs for anything you don't recognise.
 2. **Steam**: on <https://steamcommunity.com/dev/apikey>, click *Revoke my Steam Web API Key*, then register a new key. Put it in Vercel as `STEAM_API_KEY` and redeploy.
-3. *(Optional)* Rewriting git history isn't required once the secrets are rotated, because rotation makes the old values useless. If you want them gone anyway, use GitHub's guide on removing sensitive data. It force-pushes and breaks existing clones, so it's your call.
+3. **GitHub** (2 min): *Settings → Code security* → turn on **Secret scanning** and **Push protection**. Both are free on public repos. GitHub then blocks pushes that contain known key formats.
+4. *(Optional)* Make the repository private (*Settings → General → Danger zone*). That stops further exposure, but it doesn't undo what was already public, so rotate either way.
+5. *(Optional)* Rewriting git history isn't required once the secrets are rotated, because rotation makes the old values useless. If you want them gone anyway, use GitHub's guide on removing sensitive data. It force-pushes and breaks existing clones, so it's your call.
 
 ## 🔴 2. Set the new environment variables in Vercel (15 min)
 
