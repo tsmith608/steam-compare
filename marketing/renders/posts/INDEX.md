@@ -73,7 +73,7 @@ Videos are silent masters: add a Commercial Music Library track (or your voiceov
 | Tue 2026-11-10 | W06-TUE · 'one more game' at 2am | `W06-TUE.mp4` (cover: `W06-TUE-cover.png`) | it's never one more game #pcgaming #gamingmemes #steam #webothplay | Reserve bank |
 | Wed 2026-11-11 | W06-WED · Everyone claimed it. Nobody played it. | `W06-WED.mp4` (cover: `W06-WED-cover.png`) | your group's backlog is free entertainment 💀 (demo data) #steam #coopgames #gamestoplaywithfriends #webothplay | Planned |
 | Thu 2026-11-12 | W06-THU · Pick friends straight from Steam | `W06-THU.png` overlay + your screen recording + `END-SITE.mp4` | compare steam libraries with your friends list #steam #coopgames #gamestoplaywithfriends #webothplay | Reserve bank |
-| Fri 2026-11-13 | W06-FRI · We spent 20 minutes deciding | `W06-FRI.mp4` (cover: `W06-FRI-cover.png`) | the hardest multiplayer game is deciding what to launch #steam #coopgames #gamestoplaywithfriends #webothplay | Planned |
+| Fri 2026-11-13 | W06-FRI · We spent 23 minutes deciding | `W06-FRI.mp4` (cover: `W06-FRI-cover.png`) | the hardest multiplayer game is deciding what to launch #steam #coopgames #gamestoplaywithfriends #webothplay | Planned |
 | Sat 2026-11-14 | W06-SAT · (from the trend) | — (make it on the day: trend slot) | — #pcgaming #multiplayergames #steamgames #webothplay | Trend slot |
 | Sun 2026-11-15 | W06-SUN · How many Steam games do you own? | `W06-SUN.mp4` (cover: `W06-SUN-cover.png`) | how many games are in your steam library? be honest 👇 #pcgaming #multiplayergames #steamgames #webothplay | Planned |
 

@@ -62,7 +62,7 @@ const BANK = [
   // ---- Week 1 (Oct 5–11): launch the new look; pain → demo → spin
   { slot: "base", p: "P1", concept: "4 friends, 873 different Steam games, nothing to play", hook: "4 friends. 873 games. Nothing to play?", len: "12s", format: "Template render", template: "overlap-reveal",
     data: { ...DEMO, hook: "4 friends. 873 games. Nothing to play?", players: [{ name: "Lou", count: 412 }, { name: "Priya", count: 377 }, { name: "Max", count: 298 }, { name: "Ines", count: 221 }], shared: 64, union: 873, punchline: "64 games they could launch tonight.", funFact: "Most played together: Deep Rock Galactic" },
-    visual: "Rings merge, count-up to 64, fun fact, end card", vo: "Four friends, thirteen hundred games... and somehow nothing to play. Here's what they all own.", onscreen: "4 friends · 1,308 games → 64 they ALL own", cta: CTA_Q, caption: "games to play with friends when nobody can decide — what's your group's number?", kw: "games to play with friends, steam games in common", tags: TAGS.core, audio: AUDIO.vo },
+    visual: "Rings merge, count-up to 64, fun fact, end card", vo: "Four friends, almost nine hundred games between them... and somehow nothing to play. Here's what they all own.", onscreen: "4 friends · 873 games → 64 they ALL own", cta: CTA_Q, caption: "games to play with friends when nobody can decide — what's your group's number?", kw: "games to play with friends, steam games in common", tags: TAGS.core, audio: AUDIO.vo },
   { slot: "reserve", p: "P7", concept: "'What do you guys want to play?' → silence", hook: "Every group chat at 9pm", len: "9s", format: "Template render", template: "meme-card",
     data: { lines: ["9:02 PM", "Me:: what do you guys wanna play", "Everyone:: idk whatever", "Me:: ok so... nothing again"] },
     visual: "Text-message beats revealed one by one", vo: "—", onscreen: "what do you guys wanna play / idk whatever", cta: CTA_Q, caption: "every group chat at 9pm 😐 #gamestoplaywithfriends", kw: "what game should we play", tags: TAGS.meme, audio: AUDIO.bed },
@@ -115,7 +115,7 @@ const BANK = [
   { slot: "trend", p: "TREND", concept: "Trend slot (fallback: Ask the squad prompt)", hook: "(from the trend)", len: "9–20s", format: "Template render", template: null, visual: "Adapt or fallback", vo: "—", onscreen: "—", cta: CTA_Q, caption: "—", kw: "games to play with friends", tags: TAGS.core, audio: AUDIO.trend },
   { slot: "base", p: "P3", concept: "Squad stats: hours your group has sunk into shared games", hook: "Our group: 5,383 hours in shared games", len: "8s", format: "Template render", template: "stat-card",
     data: { ...DEMO, hook: "4 friends. Shared games only.", value: 5383, suffix: "h", label: "played together (and apart)", sub: "Most of it in Counter-Strike 2" },
-    visual: "Count-up 0→5,383h", vo: "Four friends. Five thousand hours in games they all own.", onscreen: "5,383 hours", cta: CTA_Q, caption: "how many hours has your group sunk into the same games? (demo data)", kw: "multiplayer games steam", tags: TAGS.pc, audio: AUDIO.bed },
+    visual: "Count-up 0→5,383h", vo: "Four friends. Over five thousand hours in games they all own.", onscreen: "5,383 hours", cta: CTA_Q, caption: "how many hours has your group sunk into the same games? (demo data)", kw: "multiplayer games steam", tags: TAGS.pc, audio: AUDIO.bed },
 
   // ---- Week 4 (Oct 26–Nov 1): HALLOWEEN (Sat Oct 31) — event week
   { slot: "base", p: "P6", concept: "Co-op horror your group already owns (Halloween)", hook: "Halloween co-op you already own", len: "carousel (7 slides)", format: "Photo Mode carousel", template: "top-five",
@@ -167,7 +167,7 @@ const BANK = [
     visual: "Combined hours: 0", vo: "Everyone grabbed it. Nobody played it.", onscreen: "Combined hours: 0", cta: CTA_Q, caption: "your group's backlog is free entertainment 💀 (demo data)", kw: "steam backlog", tags: TAGS.core, audio: AUDIO.bed },
   { slot: "reserve", p: "P2", concept: "Sign in & pick friends from your Steam list", hook: "Pick friends straight from Steam", len: "15s", format: "Screen recording + VO", template: "hook-overlay", data: { text: "Pick friends straight from Steam" },
     visual: "Sign in through Steam (blur personal info) → Pick from Steam friends → compare", vo: "Sign in through Steam, tick your friends, compare. No copying links.", onscreen: "sign in → tick friends → compare", cta: CTA_SITE, caption: "compare steam libraries with your friends list", kw: "compare steam libraries", tags: TAGS.core, audio: AUDIO.vo },
-  { slot: "base", p: "P1", concept: "The 20-minute debate (time-lapse)", hook: "We spent 20 minutes deciding", len: "12s", format: "Template render", template: "stat-card",
+  { slot: "base", p: "P1", concept: "The 20-minute debate (time-lapse)", hook: "We spent 23 minutes deciding", len: "12s", format: "Template render", template: "stat-card",
     data: { hook: "Time spent deciding vs. playing", value: 23, suffix: " min", label: "deciding what to play", sub: "Time playing before someone had to leave: 15 min" },
     visual: "Count-up 23 min", vo: "Twenty-three minutes deciding. Fifteen playing.", onscreen: "23 min deciding · 15 playing", cta: CTA_SITE, caption: "the hardest multiplayer game is deciding what to launch", kw: "what game should we play", tags: TAGS.core, audio: AUDIO.vo },
   { slot: "trend", p: "TREND", concept: "Trend slot (fallback: 'Carry Report' stat card)", hook: "(from the trend)", len: "9–20s", format: "Template render", template: null, visual: "Adapt or fallback", vo: "—", onscreen: "—", cta: CTA_Q, caption: "—", kw: "multiplayer games steam", tags: TAGS.pc, audio: AUDIO.trend },
@@ -230,7 +230,7 @@ const BANK = [
   { slot: "trend", p: "TREND", concept: "Trend slot (fallback: Spin It)", hook: "(from the trend)", len: "9–20s", format: "Template render", template: null, visual: "Adapt or fallback", vo: "—", onscreen: "—", cta: CTA_Q, caption: "—", kw: "steam game roulette", tags: TAGS.core, audio: AUDIO.trend },
   { slot: "base", p: "P3", concept: "Most played together vs. most owned", hook: "Most played together: 1,685 hours", len: "8s", format: "Template render", template: "stat-card",
     data: { ...DEMO, hook: "Our most-played shared game:", value: 1685, suffix: "h", label: "Counter-Strike 2", sub: "Juno's share: 42 minutes" },
-    visual: "Count-up 1,685h", vo: "Sixteen hundred hours together. Juno: forty-two minutes.", onscreen: "1,685h · Juno: 42 min", cta: CTA_Q, caption: "the game your group has sunk the most hours into (demo data)", kw: "multiplayer games steam", tags: TAGS.pc, audio: AUDIO.bed },
+    visual: "Count-up 1,685h", vo: "Nearly seventeen hundred hours together. Juno: forty-two minutes.", onscreen: "1,685h · Juno: 42 min", cta: CTA_Q, caption: "the game your group has sunk the most hours into (demo data)", kw: "multiplayer games steam", tags: TAGS.pc, audio: AUDIO.bed },
 
   // ---- Week 10 (Dec 7–13): Game Awards window (verify) + recommendations
   { slot: "base", p: "P6", concept: "Underrated co-op your group owns from bundles", hook: "Bundles gave you these co-op gems", len: "35s", format: "Template render", template: "top-five",
