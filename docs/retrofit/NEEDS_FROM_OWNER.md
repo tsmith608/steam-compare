@@ -51,6 +51,8 @@ npm run db:migrate        # uses DATABASE_URL from .env.local and prints which d
 
 `pg_dump` comes with the PostgreSQL client tools. Each migration runs in a transaction, so a failure leaves the database as it was. If `npm run db:migrate` can't connect, it says why: usually the password (URL-encode special characters) or, on Supabase, the direct connection (host starting with `db.`), which needs IPv6. Use the **Session pooler** string from *Supabase → Connect* instead.
 
+**Just reset the database password and the pooler still says it's wrong?** Supabase's pooler caches passwords and can keep rejecting a new one for a few minutes after a reset; resetting again restarts that wait. When the pooler rejects the password, `npm run db:migrate` tries the same password on the direct connection, which skips the pooler. If that works, it migrates over it. If the direct connection rejects the password too, the password itself is wrong. If it can't reach the direct connection (no IPv6), it says so. Supabase also blocks an IP after repeated wrong passwords: up to 2 minutes on the pooler ("Circuit breaker open"), or 30 minutes on the direct connection ("Connection refused"), which you can lift early with *Database Settings → Unban IP*.
+
 **Can't connect from your machine at all?** Run `npm run db:sql`, open the `db-migrate.sql` it writes, copy everything into *Supabase → SQL Editor → New query* and click **Run**. Same migrations, one transaction, and it records what ran so `npm run db:migrate` skips them later. (Vercel still needs a working `DATABASE_URL` for the site itself.)
 
 - If you ever need to undo the schema (you shouldn't), use `db/rollback/002_retrofit.down.sql`. Read its header first.

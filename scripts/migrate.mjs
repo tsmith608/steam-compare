@@ -38,14 +38,15 @@ if (process.argv.includes("--sql")) {
 // Variables already set in the shell win over the files.
 const fromShell = process.env.DATABASE_URL;
 const { loadedEnvFiles } = nextEnv.loadEnvConfig(root, false, { info: () => {}, error: console.error });
-// The file's own DATABASE_URL line (the loader reports the shell's value when both are set).
-const fileValue = (contents = "") => {
-  const m = contents.match(/^\s*(?:export\s+)?DATABASE_URL\s*=\s*(.*)$/m);
-  if (!m) return undefined;
-  const v = m[1].trim(), q = v.match(/^(['"`])([\s\S]*?)\1/);
-  return q ? q[2] : v.replace(/\s+#.*$/, "").trim();
-};
-const file = loadedEnvFiles.find((f) => fileValue(f.contents) !== undefined); // first file wins, like Next.js
+// A file's DATABASE_URL lines as written (the loader reports the shell's value when both are set).
+const fileLines = (contents = "") =>
+  [...contents.matchAll(/^[ \t]*(?:export[ \t]+)?DATABASE_URL[ \t]*=[ \t]*(.*)$/gm)].map(([, line]) => {
+    const v = line.trim(), q = v.match(/^(['"`])([\s\S]*?)\1/);
+    return q ? q[2] : v.replace(/\s+#.*$/, "").trim();
+  });
+const file = loadedEnvFiles.find((f) => fileLines(f.contents).length); // first file wins, like Next.js
+const lines = file ? fileLines(file.contents) : [];
+const fileValue = lines.at(-1); // and within a file, the last line wins
 
 const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
 if (!raw) {
@@ -53,13 +54,20 @@ if (!raw) {
   process.exit(1);
 }
 const source = fromShell ? "your terminal / system environment" : file ? file.path : "POSTGRES_URL";
-if (fromShell && file && fileValue(file.contents) !== fromShell) {
+if (fromShell && file && fileValue !== fromShell) {
   console.warn(
     `Note: DATABASE_URL is set both in your terminal/system environment and in ${file.path}, and the terminal one wins.\n` +
       "      If that's an old value, clear it (PowerShell: Remove-Item Env:DATABASE_URL · macOS/Linux: unset DATABASE_URL,\n" +
       "      and remove it from Windows' Environment Variables settings if it's there), then run this again."
   );
 }
+if (!fromShell && lines.length > 1)
+  console.warn(`Note: ${file.path} has ${lines.length} DATABASE_URL lines, and only the last one is used (the app does the same). Delete the others.`);
+if (!fromShell && fileValue?.includes("$") && fileValue !== process.env.DATABASE_URL)
+  console.warn(
+    `Note: DATABASE_URL in ${file.path} contains a $, which is read as the start of a variable name (the app does the same),\n` +
+      "      so part of it is dropped. If the $ is part of your password, write it as %24 instead."
+  );
 
 const local = /localhost|127\.0\.0\.1/.test(raw);
 // sslmode in the URL would override the ssl option below (and fail on Supabase's
@@ -75,14 +83,47 @@ try {
 }
 console.log(`Migrating ${target} (DATABASE_URL from ${source})`);
 
-const client = new pg.Client({ connectionString, ssl: local ? undefined : { rejectUnauthorized: false } });
+const ssl = local ? undefined : { rejectUnauthorized: false };
+const connect = async (cs, extra) => {
+  const c = new pg.Client({ connectionString: cs, ssl, ...extra });
+  await c.connect();
+  return c;
+};
+
+// Supabase: the shared pooler (user postgres.<ref>) fronts the direct connection,
+// db.<ref>.supabase.co (user postgres), and both take the same password.
+function supabase(cs) {
+  try {
+    const u = new URL(cs);
+    const pooled = /\.pooler\.supabase\.com$/i.test(u.hostname) && decodeURIComponent(u.username).match(/^(.+)\.([a-z0-9]+)$/);
+    if (pooled) {
+      u.username = pooled[1];
+      u.hostname = `db.${pooled[2]}.supabase.co`;
+      u.port = "5432";
+      return { ref: pooled[2], direct: u.toString() };
+    }
+    const ref = u.hostname.match(/^db\.([a-z0-9]+)\.supabase\.co$/i)?.[1];
+    return ref ? { ref, direct: null } : null;
+  } catch {
+    return null;
+  }
+}
+const sb = supabase(connectionString);
+
+const said = (err) => `${err.code || ""} ${err.message || ""}`;
+const wrongPassword = (err) => /28P01|password authentication failed/i.test(said(err));
+const banned =
+  "Supabase refused the connection, which usually means it has blocked your IP for 30 minutes after repeated wrong passwords.\n" +
+  "To lift it sooner, open Database Settings in the Supabase dashboard and click Unban IP.";
 
 // Plain-language help for the usual connection problems (the password is never printed).
 function explain(err) {
-  const m = `${err.code || ""} ${err.message || ""}`;
-  if (/28P01|password authentication failed/i.test(m)) return "The database rejected the password. Check it in DATABASE_URL, and URL-encode special characters (@ → %40, # → %23, / → %2F, : → %3A).";
+  const m = said(err);
+  if (wrongPassword(err)) return "The database rejected the password. Check it in DATABASE_URL, and URL-encode special characters (@ → %40, # → %23, / → %2F, : → %3A).";
   if (/Tenant or user not found/i.test(m)) return "Supabase didn't recognise the user. Use the exact pooler string from Supabase → Connect (the user looks like postgres.<project-ref>).";
+  if (/circuit breaker/i.test(m)) return "Supabase's pooler is turning your IP away for up to 2 minutes after repeated failed logins. Wait 2 minutes, then run this once.";
   if (/ENOTFOUND|EAI_AGAIN/.test(m)) return "Couldn't find the database host. Copy the connection string again from Supabase → Connect.";
+  if (sb && /ECONNREFUSED/.test(m)) return banned;
   if (/ENETUNREACH|EHOSTUNREACH|ETIMEDOUT|ECONNREFUSED/.test(m)) return "Couldn't reach the database. If the host starts with db. (Supabase's direct connection, IPv6 only), use the Session pooler string from Supabase → Connect instead.";
   if (/certificate/i.test(m)) return "TLS certificate problem. Remove any ?sslmode=... from DATABASE_URL and run this again.";
   return null;
@@ -104,18 +145,45 @@ function passwordChecks() {
   if (/["'“”‘’]/.test(pw)) out.push("The password contains quote marks (often picked up when copying from a notes app).");
   if (pw) out.push(`The password being sent is ${pw.length} characters long; compare that with the one you set.`);
   out.push("It must be the database password (Supabase → Project Settings → Database), not your Supabase login or an API key.");
-  out.push("Just reset it? Supabase's pooler can take a few minutes to accept the new one.");
+  if (sb) out.push(`It must be this project's password: the project's address in the Supabase dashboard contains ${sb.ref}.`);
   return out;
 }
+const list = (items) => items.forEach((item) => console.error(`  - ${item}`));
 
+let client, viaDirect = false;
 try {
-  await client.connect();
+  client = await connect(connectionString);
 } catch (err) {
   console.error(`Couldn't connect: ${err.message}`);
-  const hint = explain(err);
-  if (hint) console.error(hint);
-  if (/28P01|password authentication failed/i.test(`${err.code} ${err.message}`)) for (const line of passwordChecks()) console.error(`  - ${line}`);
-  process.exit(1);
+  if (!wrongPassword(err) || !sb?.direct) {
+    const hint = explain(err);
+    if (hint) console.error(hint);
+    if (wrongPassword(err)) list(passwordChecks());
+    process.exit(1);
+  }
+  // Supabase's pooler caches passwords and can keep rejecting a new one for a while
+  // after a reset, so try the same password where the pooler isn't involved.
+  console.error(`Supabase's pooler rejected the password, so trying it on the direct connection (${new URL(sb.direct).hostname}), which skips the pooler…`);
+  try {
+    client = await connect(sb.direct, { connectionTimeoutMillis: 10_000 });
+  } catch (err2) {
+    if (wrongPassword(err2)) {
+      console.error("The direct connection rejected it too, so it's not the pooler: the password in DATABASE_URL isn't the database's current password.");
+      list(passwordChecks());
+      process.exit(1);
+    }
+    const m = said(err2);
+    if (/ECONNREFUSED/.test(m)) console.error(banned);
+    else if (/ENOTFOUND|EAI_AGAIN|ENETUNREACH|EHOSTUNREACH|EADDRNOTAVAIL|ETIMEDOUT|timeout/i.test(m))
+      console.error("Couldn't reach it to double-check: the direct connection needs IPv6, which this network doesn't seem to have.");
+    else console.error(`Couldn't double-check there: ${err2.message}${explain(err2) ? `\n${explain(err2)}` : ""}`);
+    console.error("So either the password is wrong, or the pooler hasn't caught up with a recent password reset yet.");
+    list([...passwordChecks(), "Just reset it? Don't reset it again: each reset restarts the wait. Give it a few minutes, then run this again."]);
+    console.error("To apply the migrations without connecting from here: npm run db:sql, then paste db-migrate.sql into Supabase → SQL Editor.");
+    process.exit(1);
+  }
+  console.log("The direct connection accepted it, so your password is right: the pooler just hasn't caught up with it yet.\nMigrating over the direct connection instead.");
+  viaDirect = true;
 }
 try {
   await client.query(
@@ -144,3 +212,8 @@ try {
 } finally {
   await client.end();
 }
+if (viaDirect && !process.exitCode)
+  console.log(
+    "Done. The site connects through the pooler, which should catch up within a few minutes. If it still rejects\n" +
+      "the password after that, contact Supabase support and tell them the direct connection works."
+  );
