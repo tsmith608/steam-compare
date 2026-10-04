@@ -44,10 +44,12 @@ Then redeploy, and open `https://webothplay.com/api/health`. It should return `"
 The migration is **additive only**: 8 new tables, 3 new nullable columns and plain indexes. Nothing is changed or deleted, and the old code keeps working against it. It was tested locally with migrate → rollback → re-migrate.
 
 ```bash
-# from your machine, with the NEW (rotated) connection string
-pg_dump "$DATABASE_URL" > backup-before-retrofit.sql      # or confirm a Supabase backup exists
-DATABASE_URL="postgresql://…" npm run db:migrate
+# from your project folder, with the NEW (rotated) connection string in .env.local
+pg_dump "postgresql://…your connection string…" > backup-before-retrofit.sql   # or confirm Supabase → Database → Backups has a recent one
+npm run db:migrate        # uses DATABASE_URL from .env.local and prints which database it's changing
 ```
+
+`pg_dump` comes with the PostgreSQL client tools. Each migration runs in a transaction, so a failure leaves the database as it was. If `npm run db:migrate` can't connect, it says why: usually the password (URL-encode special characters) or, on Supabase, the direct connection (host starting with `db.`), which needs IPv6. Use the **Session pooler** string from *Supabase → Connect* instead.
 
 - If you ever need to undo the schema (you shouldn't), use `db/rollback/002_retrofit.down.sql`. Read its header first.
 - To undo the **app**, use *Vercel → Deployments → previous → Promote*. The database can stay as it is.

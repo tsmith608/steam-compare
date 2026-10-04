@@ -57,7 +57,7 @@ Set in *Vercel → Settings → Environment Variables*; changes need a redeploy.
 2. Locally or in CI: `npm ci && npm run lint && npm test && npm run build` (and `npm run test:e2e` for UI changes — see §8).
 3. Check the preview: homepage → example comparison → a real comparison → `/upgrade`.
 4. Merge to `main` → production deploy.
-5. If the change has a migration: `DATABASE_URL=… npm run db:migrate` **before** merging (migrations must stay additive so the old deploy keeps working against the new schema).
+5. If the change has a migration: `npm run db:migrate` (it uses `DATABASE_URL` from `.env.local`) **before** merging (migrations must stay additive so the old deploy keeps working against the new schema).
 
 **Rollback:** *Vercel → Deployments → pick the last good one → Promote to Production* (takes seconds). Don't roll back the database unless a migration itself is broken; `db/rollback/` has the manual down-script for 002.
 
