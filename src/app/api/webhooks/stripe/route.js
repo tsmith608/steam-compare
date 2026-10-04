@@ -1,138 +1,120 @@
-import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import Stripe from 'stripe';
+// Stripe webhook. Verified, idempotent (each event id processed once) and
+// order-independent: subscription state is always re-read from Stripe rather
+// than trusted from the payload, so late or out-of-order events can't regress
+// a user's plan.
+import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import { applySubscription, getStripe, invoiceSubscriptionId, tierForSubscription } from "@/lib/billing";
+import { recordEvent } from "@/lib/analytics";
+import { alertOwner, logServerError } from "@/lib/ops";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+// Claim an event for processing. Returns false if it was already handled or is
+// being handled right now; a claim older than 5 minutes (crashed handler) can
+// be taken over so Stripe's retry isn't swallowed.
+async function claimEvent(event) {
+  try {
+    const res = await query(
+      `INSERT INTO stripe_events (id, type, status, received_at) VALUES ($1, $2, 'processing', NOW())
+       ON CONFLICT (id) DO UPDATE SET received_at = NOW()
+         WHERE stripe_events.status = 'processing' AND stripe_events.received_at < NOW() - INTERVAL '5 minutes'
+       RETURNING id`,
+      [event.id, event.type]
+    );
+    return res.rowCount === 1;
+  } catch {
+    // Table missing (un-migrated DB): process anyway; handlers are idempotent.
+    return true;
+  }
+}
+
+async function completeEvent(id) {
+  await query("UPDATE stripe_events SET status = 'done', processed_at = NOW() WHERE id = $1", [id]).catch(() => {});
+}
+
+async function releaseEvent(id) {
+  await query("DELETE FROM stripe_events WHERE id = $1", [id]).catch(() => {});
+}
+
+async function handle(stripe, event) {
+  const obj = event.data.object;
+  switch (event.type) {
+    case "checkout.session.completed": {
+      if (obj.mode !== "subscription" || !obj.subscription) return;
+      const steamId = obj.client_reference_id || obj.metadata?.steam_id || null;
+      const sub = await stripe.subscriptions.retrieve(typeof obj.subscription === "string" ? obj.subscription : obj.subscription.id);
+      const updated = await applySubscription(sub, { steamId });
+      if (!updated) throw new Error(`checkout ${obj.id} has no Steam id`);
+      await query(
+        `INSERT INTO stripe_transactions (id, customer_id, steam_id, amount, currency, status, type)
+         VALUES ($1, $2, $3, $4, $5, 'completed', 'checkout') ON CONFLICT (id) DO NOTHING`,
+        [obj.id, obj.customer, updated, (obj.amount_total || 0) / 100, obj.currency]
+      );
+      await recordEvent("checkout_succeeded", { tier: tierForSubscription(sub) });
+      return;
+    }
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+    case "customer.subscription.resumed":
+    case "customer.subscription.paused": {
+      const sub = await stripe.subscriptions.retrieve(obj.id);
+      await applySubscription(sub);
+      return;
+    }
+    case "customer.subscription.deleted": {
+      const sub = await stripe.subscriptions.retrieve(obj.id).catch(() => obj);
+      await applySubscription({ ...sub, status: "canceled" });
+      await recordEvent("subscription_canceled", {});
+      return;
+    }
+    case "invoice.paid":
+    case "invoice.payment_succeeded": {
+      const subId = invoiceSubscriptionId(obj);
+      if (!subId) return;
+      await applySubscription(await stripe.subscriptions.retrieve(subId));
+      return;
+    }
+    case "invoice.payment_failed": {
+      const subId = invoiceSubscriptionId(obj);
+      if (!subId) return;
+      // Stripe retries and emails the customer; we just reflect the status.
+      await applySubscription(await stripe.subscriptions.retrieve(subId));
+      await recordEvent("payment_failed", { attempt: obj.attempt_count || 0 });
+      return;
+    }
+    default:
+      return;
+  }
+}
 
 export async function POST(request) {
-    if (!process.env.STRIPE_SECRET_KEY) {
-        console.error('Missing STRIPE_SECRET_KEY');
-        return NextResponse.json({ error: 'Payment system not configured' }, { status: 500 });
-    }
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const stripe = getStripe();
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!stripe || !secret) {
+    await alertOwner("stripe-config", "Stripe webhook received but STRIPE_SECRET_KEY/STRIPE_WEBHOOK_SECRET is missing");
+    return NextResponse.json({ error: "Payment system not configured" }, { status: 500 });
+  }
 
-    const body = await request.text();
-    const sig = request.headers.get('stripe-signature');
+  const body = await request.text();
+  const sig = request.headers.get("stripe-signature");
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(body, sig || "", secret);
+  } catch (err) {
+    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+  }
 
-    let event;
+  if (!(await claimEvent(event))) return NextResponse.json({ received: true, duplicate: true });
 
-    try {
-        if (!sig || !webhookSecret) {
-            console.error('Missing stripe-signature or webhook secret');
-            return NextResponse.json({ error: 'Webhook Secret Required' }, { status: 400 });
-        }
-        event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-    } catch (err) {
-        console.error(`Webhook signature verification failed: ${err.message}`);
-        return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
-    }
-
-    try {
-        switch (event.type) {
-            case 'checkout.session.completed': {
-                const session = event.data.object;
-                const steamId = session.metadata.steam_id || session.client_reference_id;
-                const tier = session.metadata.tier || 'Pro';
-                const customerId = session.customer;
-                const subscriptionId = session.subscription;
-
-                if (steamId) {
-                    // Fetch subscription to get current_period_end
-                    let expiresAt = new Date(Date.now() + 32 * 24 * 60 * 60 * 1000); // Fallback
-                    if (subscriptionId) {
-                        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-                        expiresAt = new Date(subscription.current_period_end * 1000);
-                    }
-
-                    // Update user table
-                    await query(
-                        `INSERT INTO users (steam_id, stripe_customer_id, subscription_id, purchased_at, source, tier, expires_at) 
-                         VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $4, $5, $6) 
-                         ON CONFLICT (steam_id) DO UPDATE SET 
-                            stripe_customer_id = EXCLUDED.stripe_customer_id,
-                            subscription_id = EXCLUDED.subscription_id,
-                            purchased_at = EXCLUDED.purchased_at,
-                            source = EXCLUDED.source,
-                            tier = EXCLUDED.tier,
-                            expires_at = EXCLUDED.expires_at`,
-                        [steamId, customerId, subscriptionId, 'stripe', tier, expiresAt]
-                    );
-
-                    // Log transaction
-                    await query(
-                        `INSERT INTO stripe_transactions (id, customer_id, steam_id, amount, currency, status, type) 
-                         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                        [session.id, customerId, steamId, session.amount_total / 100, session.currency, 'completed', 'checkout']
-                    );
-
-                    console.log(`Stripe: Successfully upgraded Steam ID ${steamId} to ${tier}`);
-                }
-                break;
-            }
-
-            case 'customer.subscription.updated': {
-                const subscription = event.data.object;
-                const customerId = subscription.customer;
-                const tier = subscription.metadata.tier;
-                const expiresAt = new Date(subscription.current_period_end * 1000);
-
-                if (tier) {
-                    await query(
-                        'UPDATE users SET tier = $1, expires_at = $2 WHERE stripe_customer_id = $3',
-                        [tier, expiresAt, customerId]
-                    );
-                    console.log(`Stripe: Subscription ${subscription.id} updated to tier ${tier} for customer ${customerId}`);
-                } else {
-                    await query(
-                        'UPDATE users SET expires_at = $1 WHERE stripe_customer_id = $2',
-                        [expiresAt, customerId]
-                    );
-                    console.log(`Stripe: Subscription ${subscription.id} updated (expiry: ${expiresAt}) for customer ${customerId}`);
-                }
-                break;
-            }
-
-            case 'customer.subscription.deleted': {
-                const subscription = event.data.object;
-                const customerId = subscription.customer;
-
-                // Mark the subscription as ended by setting subscription_id to NULL
-                // But we keep the tier until expires_at passes
-                await query(
-                    'UPDATE users SET subscription_id = NULL WHERE stripe_customer_id = $1',
-                    [customerId]
-                );
-                console.log(`Stripe: Subscription ${subscription.id} deleted for customer ${customerId}`);
-                break;
-            }
-
-            case 'invoice.paid': {
-                const invoice = event.data.object;
-                const subscriptionId = invoice.subscription;
-
-                if (subscriptionId) {
-                    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-                    const expiresAt = new Date(subscription.current_period_end * 1000);
-
-                    // Extend membership
-                    await query(
-                        "UPDATE users SET expires_at = $1 WHERE subscription_id = $2",
-                        [expiresAt, subscriptionId]
-                    );
-                    console.log(`Stripe: Invoice paid for subscription ${subscriptionId}, extended membership to ${expiresAt}.`);
-                }
-                break;
-            }
-
-            default:
-                console.log(`Stripe: Unhandled event type ${event.type}`);
-        }
-
-        return NextResponse.json({ received: true });
-    } catch (error) {
-        console.error('Stripe Webhook Error handler:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
+  try {
+    await handle(stripe, event);
+    await completeEvent(event.id);
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    await releaseEvent(event.id);
+    await logServerError("stripe-webhook", err, { type: event.type });
+    await alertOwner("stripe-webhook", `Stripe webhook failed (${event.type})`, `${event.id}: ${err.message}. Stripe will retry automatically.`);
+    return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
+  }
 }

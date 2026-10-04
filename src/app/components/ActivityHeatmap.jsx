@@ -67,6 +67,7 @@ export default function ActivityHeatmap({ fullLibrary, steamId, minimal = false,
                                 <span className={`text-[10px] font-black w-4 flex-shrink-0 ${i === 0 ? 'text-emerald-400' : i === 1 ? 'text-emerald-500/70' : 'text-emerald-600/40'}`}>#{i + 1}</span>
                                 <img
                                     src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_sm_120.jpg`}
+                                    alt=""
                                     className="w-8 h-8 rounded-lg object-cover flex-shrink-0 shadow-lg border border-white/5 group-hover:scale-110 transition-transform duration-300"
                                     onError={(e) => { e.target.style.display = 'none'; }}
                                 />

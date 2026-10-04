@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, resolveSteamIds } = require('../utils/api');
+const { API_BASE, resolveSteamIds, apiFetch, compareUrl } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -37,7 +37,7 @@ module.exports = {
         }
 
         try {
-            const compareRes = await fetch(`${API_BASE}/api/compare`, {
+            const compareRes = await apiFetch('/api/compare', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ users: [id1, id2] })
@@ -104,13 +104,13 @@ module.exports = {
                 embed.addFields({ name: '🏆 Top Shared Games', value: topShared });
             }
 
-            const compareUrl = `${API_BASE}/?steamid=${id1}&steamid=${id2}`;
+            const fullCompareUrl = compareUrl([id1, id2]);
             const row = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setLabel('🔗 Compare Full Libraries')
                         .setStyle(ButtonStyle.Link)
-                        .setURL(compareUrl)
+                        .setURL(fullCompareUrl)
                 );
 
             await interaction.editReply({ embeds: [embed], components: [row] });

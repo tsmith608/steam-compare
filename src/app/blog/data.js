@@ -1,5 +1,29 @@
 export const blogPosts = [
   {
+    slug: "october-2026-votes-share-cards",
+    title: "October 2026: group votes, share cards and a faster WeBothPlay",
+    date: "October 3, 2026",
+    excerpt: "Free comparisons for up to 8 players, every filter unlocked, group votes with vetoes, share cards for your group chat, and a rebuilt results page.",
+    content: `
+      <p>This is the biggest update since launch. The short version: the part of WeBothPlay that answers "what can we all play?" is now completely free, and we've added tools for the part that comes after — actually deciding.</p>
+      <h2>What's new</h2>
+      <ul>
+        <li><strong>Free for up to 8 players.</strong> Every filter, sort and search is now free too.</li>
+        <li><strong>Group votes.</strong> Star a few games and send a vote link to the chat. Everyone taps what they'd play and gets one veto.</li>
+        <li><strong>Share cards.</strong> Share a comparison and the link shows a proper preview in Discord and messaging apps.</li>
+        <li><strong>One copy away.</strong> For groups of three or more, see the games everyone owns except one person.</li>
+        <li><strong>Private profiles handled properly.</strong> If a friend's game details are hidden, we tell you who, compare everyone else, and give you a message to send them.</li>
+        <li><strong>Saved groups</strong> for signed-in users, plus recent groups remembered on your device.</li>
+        <li><strong>Faster and lighter</strong>, with no ads.</li>
+      </ul>
+      <h2>Security</h2>
+      <p>We rebuilt sign-in around a secure server session. If you were signed in before, you'll need to sign in through Steam once more.</p>
+      <h2>Premium</h2>
+      <p>Premium now focuses on bigger groups (up to 16), saved groups and the full Discord bot. Existing subscribers keep their plan and price.</p>
+      <p><a href="/">Compare your group</a> or <a href="/compare?demo=1">see an example</a>.</p>
+    `
+  },
+  {
     slug: "getting-ready-to-launch",
     title: "Getting Ready to Launch: Discord Bot & Premium Upgrades",
     date: "February 17, 2026",

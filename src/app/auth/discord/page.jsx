@@ -1,107 +1,96 @@
 "use client";
-import React, { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import SteamLoginButton from '@/app/components/SteamLoginButton';
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
-function AuthContent() {
-    const searchParams = useSearchParams();
-    const discordId = searchParams.get('discord_id');
-    const [status, setStatus] = React.useState('idle'); // idle, loading, success, error
-    const [message, setMessage] = React.useState('');
+function LinkContent() {
+  const params = useSearchParams();
+  const discordId = params.get("discord_id");
+  const exp = params.get("exp");
+  const sig = params.get("sig");
 
-    const onSteamSuccess = async (profile) => {
-        setStatus('loading');
-        try {
-            const res = await fetch('/api/discord/link', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    discordId: discordId,
-                    steamId: profile.steamid
-                })
-            });
+  const [user, setUser] = useState(undefined);
+  const [status, setStatus] = useState("idle");
+  const [message, setMessage] = useState("");
 
-            if (res.ok) {
-                setStatus('success');
-            } else {
-                const err = await res.json();
-                setStatus('error');
-                setMessage(err.error || "Failed to link accounts.");
-            }
-        } catch (e) {
-            console.error("Link error:", e);
-            setStatus('error');
-            setMessage("An error occurred while linking account.");
-        }
-    };
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setUser(d.user))
+      .catch(() => setUser(null));
+  }, []);
 
-    if (status === 'success') {
-        return (
-            <div className="bg-[#0e0e10] min-h-screen text-gray-100 flex flex-col items-center justify-center p-6">
-                <div className="max-w-md w-full bg-green-500/10 border border-green-500/20 rounded-2xl p-8 text-center shadow-xl animate-in fade-in zoom-in duration-300">
-                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/20">
-                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <h1 className="text-3xl font-bold mb-2 text-white">Success!</h1>
-                    <p className="text-gray-300 mb-8 text-lg">
-                        Your Steam account has been linked to Discord.
-                    </p>
+  const signInHref = `/api/compare/auth/steam/start?next=${encodeURIComponent(
+    `/auth/discord?${params.toString()}`
+  )}`;
 
-                    <div className="bg-black/40 rounded-xl p-6 border border-white/5">
-                        <p className="text-gray-400 text-sm uppercase tracking-widest font-bold mb-2">Next Step</p>
-                        <p className="text-white text-lg font-medium">
-                            Go back to Discord and type:
-                        </p>
-                        <code className="block mt-3 bg-black/60 p-3 rounded-lg text-blue-400 font-mono text-xl select-all cursor-pointer hover:bg-black/80 transition-colors">
-                            /compare
-                        </code>
-                    </div>
-
-                    <a href="/" className="block mt-8 text-gray-500 hover:text-white underline text-sm transition-colors">
-                        Return to Home Page
-                    </a>
-                </div>
-            </div>
-        );
+  async function link() {
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/discord/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discordId, exp, sig }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Couldn't link your accounts.");
+      setStatus("success");
+    } catch (e) {
+      setStatus("error");
+      setMessage(e.message);
     }
+  }
 
-    return (
-        <div className="bg-[#0e0e10] min-h-screen text-gray-100 flex flex-col items-center justify-center p-6">
-            <div className="max-w-md w-full bg-white/5 border border-white/10 rounded-2xl p-8 text-center shadow-xl">
-                <h1 className="text-3xl font-bold mb-4 text-white">Connect Steam</h1>
-                <p className="text-gray-400 mb-8">
-                    Link your Steam account to Discord user <code className="bg-black/30 px-2 py-1 rounded text-blue-400">{discordId || 'Unknown'}</code> to start comparing games.
+  return (
+    <main id="main" className="min-h-[80vh] grid place-items-center px-4 py-16">
+      <div className="w-full max-w-md surface-raised p-8 text-center">
+        <p className="label text-accent mb-3">Discord × Steam</p>
+        {status === "success" ? (
+          <>
+            <h1 className="display text-display-sm mb-3">You're linked.</h1>
+            <p className="text-ink-2 mb-6">Head back to Discord and run <code className="kbd">/compare</code> with your friends.</p>
+            <Link href="/" className="btn btn-ghost">Back to WeBothPlay</Link>
+          </>
+        ) : !discordId ? (
+          <>
+            <h1 className="display text-display-sm mb-3">This link is incomplete</h1>
+            <p className="text-ink-2">Run <code className="kbd">/link</code> in Discord to get a fresh link.</p>
+          </>
+        ) : (
+          <>
+            <h1 className="display text-display-sm mb-3">Link your Steam account</h1>
+            <p className="text-ink-2 mb-6">
+              This lets the WeBothPlay bot compare your public Steam library when friends run <code className="kbd">/compare</code>.
+            </p>
+            {status === "error" && (
+              <p role="alert" className="mb-5 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-ink-1">{message}</p>
+            )}
+            {user === undefined ? (
+              <p className="text-ink-3" aria-live="polite">Checking your session…</p>
+            ) : user ? (
+              <div className="space-y-4">
+                <p className="text-sm text-ink-2">
+                  Signed in as <strong className="text-ink-1">{user.name}</strong>
                 </p>
-
-                {status === 'error' && (
-                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-200 text-sm">
-                        ❌ {message}
-                    </div>
-                )}
-
-                <div className={`flex justify-center transition-opacity ${status === 'loading' ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <SteamLoginButton
-                        mode="popup"
-                        onSuccess={onSteamSuccess}
-                        label={status === 'loading' ? 'Linking...' : 'Sign in with Steam'}
-                        className="scale-110"
-                    />
-                </div>
-
-                <p className="text-xs text-gray-500 mt-8">
-                    We only access your public library information.
-                </p>
-            </div>
-        </div>
-    );
+                <button type="button" onClick={link} disabled={status === "loading"} className="btn btn-primary w-full">
+                  {status === "loading" ? "Linking…" : "Link to Discord"}
+                </button>
+              </div>
+            ) : (
+              <a href={signInHref} className="btn btn-steam w-full">Sign in through Steam</a>
+            )}
+            <p className="mt-6 text-xs text-ink-3">We only read public library data. You can unlink any time by contacting support.</p>
+          </>
+        )}
+      </div>
+    </main>
+  );
 }
 
 export default function DiscordAuthPage() {
-    return (
-        <Suspense fallback={<div className="text-white p-10">Loading...</div>}>
-            <AuthContent />
-        </Suspense>
-    );
+  return (
+    <Suspense fallback={<main className="min-h-[80vh]" />}>
+      <LinkContent />
+    </Suspense>
+  );
 }

@@ -1,0 +1,106 @@
+/* Brag composition: 360×640 CSS px stage, captured at DPR 3 → 1080×1920.
+   Uses the app's own stylesheet (tokens, components, fonts); this file only
+   positions things and freezes the app's own CSS motion so every frame is a
+   pure function of time. */
+html, body { margin: 0; width: 360px; height: 640px; overflow: hidden; background: var(--bg); }
+*, *::before, *::after { transition: none !important; animation: none !important; caret-color: transparent !important; }
+#stage { position: relative; width: 360px; height: 640px; overflow: hidden; background: var(--bg); color: var(--ink-1); font-family: var(--font-sans), system-ui, sans-serif; }
+.glow { position: absolute; inset: -20% -40%; background: radial-gradient(closest-side, rgba(59, 130, 246, 0.16), transparent 70%); pointer-events: none; }
+.scene { position: absolute; inset: 0; opacity: 0; will-change: opacity; }
+.abs { position: absolute; }
+.center-x { left: 0; right: 0; display: flex; justify-content: center; }
+.hl { font-family: var(--font-display), var(--font-sans), sans-serif; font-weight: 800; font-stretch: 118%; letter-spacing: -0.02em; line-height: 1.02; color: var(--ink-1); margin: 0; }
+.sub { margin: 0; color: var(--ink-3); font-size: 13px; line-height: 1.4; }
+
+/* Real fragments, re-hosted */
+.frag-form .surface-raised { padding: 14px !important; }
+.frag-toolbar .sticky { position: static !important; margin: 0 !important; padding: 0 0 10px !important; border: 0 !important; background: transparent !important; backdrop-filter: none !important; }
+.frag-toolbar .scrollbar-none { overflow: hidden !important; }
+.reel { overflow: hidden; border-radius: 14px; border: 1px solid var(--line-strong); background: var(--bg-raised); }
+.reel-strip { position: absolute; top: 8px; left: 0; display: flex; gap: 8px; }
+.reel-tile { width: 140px; height: 66px; flex: none; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.reel-tile > div { width: 100%; height: 100%; }
+.reel-mark { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: var(--accent-hi); border-radius: 2px; box-shadow: 0 0 12px rgba(96, 165, 250, 0.8); }
+.pick dialog { position: relative !important; inset: auto !important; display: block !important; margin: 0 !important; width: 100% !important; max-width: none !important; }
+.pick dialog .overflow-hidden.rounded-lg.border { display: none; }
+.pick dialog .btn-quiet:not([aria-label]) { display: none; }
+.vote-row { display: flex; align-items: center; gap: 11px; padding: 9px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-1); }
+.vote-row .tile { width: 74px; height: 40px; flex: none; border-radius: 9px; overflow: hidden; border: 1px solid var(--line); }
+.vote-row .tile > div { width: 100%; height: 100%; padding: 5px !important; }
+.vote-row .tile span { font-size: 9.5px !important; line-height: 1.1 !important; }
+.vote-row .col { flex: 1; min-width: 0; }
+.vote-row .name { margin: 0 0 6px; font: 600 14px/1.2 var(--font-sans); color: var(--ink-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vote-row .btns { display: flex; gap: 6px; }
+.vote-row .btns .btn { min-height: 30px !important; padding: 0 9px !important; font-size: 12.5px !important; gap: 5px !important; }
+.vote-row .btns .btn.flex-1 { flex: 0 0 auto !important; }
+.fact { display: flex; gap: 10px; align-items: flex-start; padding: 13px 14px; border-radius: 14px; border: 1px solid rgba(96, 165, 250, 0.45); background: var(--surface-1); font-size: 15px; line-height: 1.4; color: var(--ink-2); }
+.fact li { list-style: none; }
+.tap { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 999px; background: rgba(255, 255, 255, 0.32); border: 1.5px solid rgba(255, 255, 255, 0.7); pointer-events: none; opacity: 0; }
+.fade-bottom { -webkit-mask-image: linear-gradient(#000 0, #000 78%, transparent 100%); mask-image: linear-gradient(#000 0, #000 78%, transparent 100%); }
+
+/* Discord-style channel (scene 1): Discord's look, our own markup. Sizes are
+   Discord's, laid out at 390 px and scaled down on the stage. */
+.dc { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: #313338; border-radius: 20px; overflow: hidden; box-shadow: 0 34px 70px -30px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.06); font-family: var(--font-sans), system-ui, sans-serif; color: #dbdee1; }
+.dc-head { position: absolute; left: 0; right: 0; top: 0; height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid #26272b; font: 600 16px/1 var(--font-sans); color: #f2f3f5; background: #313338; z-index: 2; }
+.dc-head .hash { color: #80848e; font: 400 24px/1 var(--font-sans); margin-top: -2px; }
+.dc-body { position: absolute; left: 0; right: 0; overflow: hidden; }
+.dc-scroll { position: absolute; left: 0; right: 0; top: 0; padding: 8px 0 6px; will-change: transform; }
+.dc-welcome { padding: 8px 16px 14px; }
+.dc-welcome .ic { width: 56px; height: 56px; border-radius: 50%; background: #41434a; display: grid; place-items: center; font: 400 34px/1 var(--font-sans); color: #fff; }
+.dc-welcome .h { margin: 10px 0 4px; font: 700 22px/1.2 var(--font-sans); color: #f2f3f5; }
+.dc-welcome .p { margin: 0; font: 400 14px/1.3 var(--font-sans); color: #b5bac1; }
+.dc-msg { display: flex; gap: 12px; padding: 6px 16px 6px 14px; }
+.dc-av { width: 36px; height: 36px; border-radius: 50%; flex: none; object-fit: cover; display: block; background: #1e1f22; }
+.dc-main { min-width: 0; flex: 1; }
+.dc-name { font: 600 16px/1.25 var(--font-sans); color: #f2f3f5; }
+.dc-time { font: 500 12px/1 var(--font-sans); color: #949ba4; margin-left: 7px; }
+.dc-text { font: 400 16px/1.375 var(--font-sans); color: #dbdee1; margin-top: 1px; }
+.dc-sys { display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 14px; font: 400 15px/1.3 var(--font-sans); color: #949ba4; }
+.dc-sys .arrow { width: 36px; flex: none; text-align: center; color: #23a55a; font: 700 20px/1 var(--font-sans); }
+.dc-sys b { color: #f2f3f5; font-weight: 600; }
+.dc-app { display: inline-block; vertical-align: 2px; margin-left: 6px; padding: 0 5px; height: 16px; border-radius: 4px; background: #5865f2; color: #fff; font: 700 10.5px/16px var(--font-sans); letter-spacing: 0.02em; }
+.dc-bot { padding-top: 6px; }
+.dc-used { position: relative; display: flex; align-items: center; gap: 5px; padding: 0 16px 0 62px; font: 400 13px/18px var(--font-sans); color: #b5bac1; white-space: nowrap; }
+.dc-used img { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; }
+.dc-used b { color: #f2f3f5; font-weight: 600; }
+.dc-used .cmd { color: #00a8fc; }
+.dc-used::before { content: ""; position: absolute; left: 31px; top: 9px; width: 24px; height: 10px; border-left: 2px solid #4e5058; border-top: 2px solid #4e5058; border-top-left-radius: 6px; }
+.dc-bot .dc-msg { padding-top: 2px; }
+.dc-content { position: relative; }
+.dc-thinking { position: absolute; left: 0; top: 2px; font: italic 400 15px/1.3 var(--font-sans); color: #949ba4; white-space: nowrap; }
+.dc-embed { margin-top: 4px; background: #2b2d31; border-left: 4px solid var(--c); border-radius: 4px; padding: 9px 12px 12px 10px; }
+.dc-embed .t { font: 600 15px/1.3 var(--font-sans); color: #f2f3f5; }
+.dc-embed .d { margin-top: 6px; font: 400 13px/1.38 var(--font-sans); color: #dbdee1; }
+.dc-embed a { color: #00a8fc; }
+.dc-embed b { font-weight: 600; }
+.dc-embed .fields { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; }
+.dc-embed .f { flex: 1 0 100%; }
+.dc-embed .f.inline { flex: 0 0 auto; }
+.dc-embed .fn { margin-bottom: 2px; font: 600 13px/1.35 var(--font-sans); color: #f2f3f5; }
+.dc-embed .fv { font: 400 13px/1.38 var(--font-sans); color: #dbdee1; white-space: nowrap; }
+.dc-embed .foot { margin-top: 10px; font: 500 11.5px/1 var(--font-sans); color: #949ba4; }
+.dc-emoji { display: inline-block; width: 1.3em; height: 1.3em; vertical-align: -0.3em; margin-right: 3px; }
+.dc-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.dc-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 6px; font: 500 14px/1 var(--font-sans); color: #fff; background: #4e5058; white-space: nowrap; }
+.dc-btn.primary { background: #5865f2; }
+.dc-btn svg { opacity: 0.85; }
+.dc-compose { position: absolute; left: 14px; right: 14px; bottom: 22px; height: 44px; border-radius: 8px; background: #383a40; display: flex; align-items: center; padding: 0 12px; font: 400 15px/1 var(--font-sans); color: #6d6f78; overflow: hidden; }
+.dc-compose .ph, .dc-compose .cmdline { position: absolute; left: 14px; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.dc-chip { display: inline-flex; align-items: center; height: 26px; padding: 0 7px; border-radius: 4px; font: 600 14px/1 var(--font-sans); }
+.dc-chip.cmd { background: rgba(88, 101, 242, 0.32); color: #c9cdfb; }
+.dc-opt { display: inline-flex; align-items: center; height: 26px; border-radius: 4px; overflow: hidden; background: #2b2d31; font: 500 13.5px/1 var(--font-sans); color: #dbdee1; }
+.dc-opt i { font-style: normal; padding: 0 5px; height: 100%; display: flex; align-items: center; background: #1e1f22; color: #b5bac1; }
+.dc-opt .dc-mention { margin: 0 5px; }
+.dc-mention { color: #c9cdfb; background: rgba(88, 101, 242, 0.3); border-radius: 3px; padding: 0 2px; }
+.dc-typing { position: absolute; left: 16px; bottom: 3px; display: flex; align-items: center; gap: 6px; font: 400 12.5px/16px var(--font-sans); color: #b5bac1; }
+.dc-typing b { color: #f2f3f5; font-weight: 600; }
+.dc-typing .dots, .dc-thinking .dots { display: inline-flex; gap: 3px; }
+.dc-typing .dots i { width: 5px; height: 5px; border-radius: 9px; background: #dbdee1; display: block; }
+.dc-botav { display: grid; place-items: center; background: linear-gradient(140deg, #3b82f6, #1e40af); }
+.dc-botav img { width: 24px; height: auto; filter: brightness(0) invert(1); }
+.dc-thinking .dots i { font-style: normal; }
+.dc-shade { background: rgba(3, 4, 6, 0.55); }
+.dc-card { padding: 20px !important; }
+.dc-card header { max-width: none !important; }
+.dc-card h1 { font-size: 27px !important; line-height: 1.06 !important; margin-top: 8px !important; }
+.dc-card .mt-8 { margin-top: 18px !important; }

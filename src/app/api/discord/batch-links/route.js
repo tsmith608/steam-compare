@@ -1,36 +1,25 @@
+// Bot-only: map Discord user ids to linked Steam ids.
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { botAuthError, isSnowflake, jsonError, readJson } from "@/lib/http";
+import { logServerError } from "@/lib/ops";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
-    try {
-        const { discordIds } = await req.json();
+  const denied = botAuthError(req);
+  if (denied) return denied;
 
-        if (!discordIds || !Array.isArray(discordIds)) {
-            return NextResponse.json({ error: "Missing or invalid discordIds array" }, { status: 400 });
-        }
+  const { discordIds } = await readJson(req, 256 * 1024);
+  if (!Array.isArray(discordIds)) return jsonError("Missing or invalid discordIds array");
+  const ids = discordIds.filter(isSnowflake).slice(0, 1000);
+  if (!ids.length) return NextResponse.json({ links: [] });
 
-        if (discordIds.length === 0) {
-            return NextResponse.json({ links: [] });
-        }
-
-        // Fetch all linked users in the list
-        const res = await query(
-            `SELECT discord_id, steam_id 
-             FROM users 
-             WHERE discord_id = ANY($1)`,
-            [discordIds]
-        );
-
-        const links = res.rows.map(row => ({
-            discordId: row.discord_id,
-            steamId: row.steam_id
-        }));
-
-        return NextResponse.json({ links });
-    } catch (error) {
-        console.error("Error batch resolving links:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
+  try {
+    const res = await query("SELECT discord_id, steam_id FROM users WHERE discord_id = ANY($1)", [ids]);
+    return NextResponse.json({ links: res.rows.map((r) => ({ discordId: r.discord_id, steamId: r.steam_id })) });
+  } catch (err) {
+    await logServerError("api/discord/batch-links", err);
+    return jsonError("Internal Server Error", 500);
+  }
 }

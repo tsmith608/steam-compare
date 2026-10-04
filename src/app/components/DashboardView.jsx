@@ -1,6 +1,8 @@
 "use client";
+import "./dashboard.css";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from '@/components/SessionProvider';
 import Link from 'next/link';
 import CollectionModal from './CollectionModal';
 import BannerEditorModal from './BannerEditorModal';
@@ -309,22 +311,19 @@ export default function DashboardView({ overrideSteamId }) {
     // State for local auth fallback
     const [localAuth, setLocalAuth] = useState({ id: paramSteamId, name: userName, avatar: userAvatar });
 
+    // Who is viewing comes from the server session, never from browser storage.
+    const { user: sessionUser, loading: sessionLoading } = useSession();
     useEffect(() => {
         if (paramSteamId) {
             setLocalAuth({ id: paramSteamId, name: userName, avatar: userAvatar });
             return;
         }
-
-        const sId = sessionStorage.getItem("wb.steamid");
-        const sName = sessionStorage.getItem("wb.username");
-        const sAvatar = sessionStorage.getItem("wb.avatar");
-
-        if (sId) {
-            setLocalAuth({ id: sId, name: sName, avatar: sAvatar });
-        } else if (!overrideSteamId) {
+        if (sessionUser) {
+            setLocalAuth({ id: sessionUser.steamid, name: sessionUser.name, avatar: sessionUser.avatar });
+        } else if (!overrideSteamId && !sessionLoading) {
             setLoading(false);
         }
-    }, [paramSteamId, userName, userAvatar, overrideSteamId]);
+    }, [paramSteamId, userName, userAvatar, overrideSteamId, sessionUser, sessionLoading]);
 
     const isPublicView = !!overrideSteamId;
     const activeSteamId = String(fetchedUser?.steamid || overrideSteamId || paramSteamId || localAuth.id || "");
@@ -335,7 +334,7 @@ export default function DashboardView({ overrideSteamId }) {
     const activeUserAvatar = fetchedUser?.avatarfull || fetchedUser?.avatar || userAvatar || (!isPublicView ? localAuth.avatar : null);
 
     // isOwner logic: Check if the current ID matches logged-in ID, or if the resolved fetched ID matches
-    const loggedInId = typeof window !== 'undefined' ? sessionStorage.getItem("wb.steamid") : null;
+    const loggedInId = sessionUser?.steamid || null;
     const isOwner = (loggedInId && String(activeSteamId) === String(loggedInId)) ||
         (fetchedUser?.steamid && loggedInId && String(fetchedUser.steamid) === String(loggedInId));
 
@@ -371,11 +370,7 @@ export default function DashboardView({ overrideSteamId }) {
                     console.log("Vanity profile not found in initial fetch, waiting for resolution...");
                 }
 
-                const compareRes = await fetch('/api/compare', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ users: [activeSteamId, activeSteamId] })
-                });
+                const compareRes = await fetch(`/api/library?steamid=${encodeURIComponent(activeSteamId)}`);
 
                 if (!compareRes.ok) {
                     const errorData = await compareRes.json();
@@ -408,30 +403,6 @@ export default function DashboardView({ overrideSteamId }) {
                         }
                     }
 
-                    // Safe Vanity Sync: If owner, and DB lacks vanity, but Steam profile has it -> Update DB
-                    // Re-evaluate isOwner here since we now have p.steamid
-                    const currentLoggedInId = sessionStorage.getItem("wb.steamid");
-                    const ownerCheck = (activeSteamId === currentLoggedInId) || (p.steamid && String(p.steamid) === String(currentLoggedInId));
-
-                    // Use optional chaining for profData.profile just in case
-                    if (ownerCheck && !profData.profile?.vanity_id && p.profileurl && p.profileurl.includes('/id/')) {
-                        const m = p.profileurl.match(/\/id\/([^\/?#]+)/);
-                        if (m) {
-                            const newVanity = m[1];
-                            console.log("Syncing vanity ID to DB:", newVanity);
-                            fetch('/api/user/profile', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    steamId: p.steamid || activeSteamId,
-                                    vanityId: newVanity
-                                })
-                            }).then(() => {
-                                // optimistically update local state
-                                setProfile(prev => ({ ...prev, vanity_id: newVanity }));
-                            }).catch(e => console.error("Vanity sync failed:", e));
-                        }
-                    }
                 }
 
                 setFullLibrary(library);
@@ -698,6 +669,7 @@ export default function DashboardView({ overrideSteamId }) {
                                         <span className={`text-[10px] font-black w-4 flex-shrink-0 ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : 'text-amber-700'}`}>#{i + 1}</span>
                                         <img
                                             src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_sm_120.jpg`}
+                                            alt=""
                                             className="w-8 h-8 rounded-lg object-cover flex-shrink-0 shadow-lg border border-white/5"
                                             onError={(e) => { e.target.style.display = 'none'; }}
                                         />
@@ -742,6 +714,7 @@ export default function DashboardView({ overrideSteamId }) {
                                         <div key={id} className="relative aspect-[2/3] w-full group/item overflow-hidden rounded-xl border border-white/10 shadow-xl bg-zinc-900 mx-auto">
                                             <img
                                                 src={`https://cdn.akamai.steamstatic.com/steam/apps/${id}/library_600x900.jpg`}
+                                                alt={fullLibrary.find((g) => g.appid === id)?.name || "Pinned game"}
                                                 className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-700"
                                             />
                                         </div>
@@ -802,6 +775,7 @@ export default function DashboardView({ overrideSteamId }) {
                                                 >
                                                     <img
                                                         src={`https://cdn.akamai.steamstatic.com/steam/apps/${typeof gid === 'object' ? gid.appid : gid}/capsule_184x69.jpg`}
+                                                        alt={fullLibrary.find((g) => g.appid === (typeof gid === 'object' ? gid.appid : gid))?.name || "Game in collection"}
                                                         className="w-20 h-9 object-cover rounded-md border border-white/10 shadow-lg bg-zinc-900"
                                                     />
                                                 </motion.div>

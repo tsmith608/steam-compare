@@ -1,37 +1,26 @@
 
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StarRating from './StarRating';
 
-export default function CollectionModal({ collection, isOpen, onClose, fullLibrary, onSave, readOnly = false, onShare }) {
-    if (!isOpen) return null;
+// Items were stored as bare app ids before ratings/comments existed.
+const normalizeItems = (collection) =>
+    (collection?.game_ids || []).map(g => (typeof g === 'object' && g !== null ? g : { appid: g, rating: 0, comment: "" }));
 
+// The body mounts only while open (hooks must not run conditionally) and is
+// keyed by collection, so its form state always starts from that collection.
+export default function CollectionModal(props) {
+    if (!props.isOpen) return null;
+    return <CollectionModalBody key={props.collection?.id ?? "new"} {...props} />;
+}
+
+function CollectionModalBody({ collection, isOpen, onClose, fullLibrary, onSave, readOnly = false, onShare }) {
     const [title, setTitle] = useState(collection?.title || "");
     const [description, setDescription] = useState(collection?.description || "");
-    const [items, setItems] = useState([]);
+    const [items, setItems] = useState(() => normalizeItems(collection));
     const [searchTerm, setSearchTerm] = useState("");
     const [isPublic, setIsPublic] = useState(collection?.is_public ?? true);
-
-    useEffect(() => {
-        if (collection) {
-            setTitle(collection.title || "");
-            setDescription(collection.description || "");
-            setIsPublic(collection.is_public ?? true);
-
-            // Normalize items
-            const normalized = (collection.game_ids || []).map(g => {
-                if (typeof g === 'object' && g !== null) return g;
-                return { appid: g, rating: 0, comment: "" };
-            });
-            setItems(normalized);
-        } else {
-            setTitle("");
-            setDescription("");
-            setItems([]);
-            setIsPublic(true);
-        }
-    }, [collection]);
 
     const handleAddItem = (game) => {
         if (items.find(i => i.appid === game.appid)) return;

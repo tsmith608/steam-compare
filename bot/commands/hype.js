@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, resolveSteamIds } = require('../utils/api');
+const { API_BASE, resolveSteamIds, apiFetch } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,7 +35,7 @@ module.exports = {
             }
 
             // 2. Fetch Activity for these users
-            const activityRes = await fetch(`${API_BASE}/api/activity`, {
+            const activityRes = await apiFetch('/api/activity', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ users: steamIds })

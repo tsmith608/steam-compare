@@ -1,37 +1,37 @@
+// Bot (/flex): achievement progress for one or two players on one game.
 import { NextResponse } from "next/server";
+import { botAuthError, isSteamId64, jsonError, limitOrNull, readJson } from "@/lib/http";
+
+export const dynamic = "force-dynamic";
+
+async function fetchStats(steamid, appid) {
+  const url = new URL("https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/");
+  url.searchParams.set("key", process.env.STEAM_API_KEY || "");
+  url.searchParams.set("steamid", steamid);
+  url.searchParams.set("appid", String(appid));
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000), cache: "no-store" });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const list = j?.playerstats?.achievements;
+    if (!Array.isArray(list)) return null;
+    return { total: list.length, unlocked: list.filter((a) => a.achieved === 1).length };
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req) {
-    try {
-        const { user1, user2, appid, gameName } = await req.json();
-        const STEAM_API_KEY = process.env.STEAM_API_KEY;
+  const denied = botAuthError(req);
+  if (denied) return denied;
+  const limited = limitOrNull(req, "flex", { limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
 
-        if (!user1 || !appid) {
-            return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
-        }
+  const { user1, user2, appid, gameName } = await readJson(req);
+  const app = Number(appid);
+  if (!isSteamId64(String(user1 || "")) || !Number.isInteger(app) || app <= 0) return jsonError("Missing parameters");
+  const second = isSteamId64(String(user2 || "")) ? String(user2) : null;
 
-        const fetchStats = async (steamid) => {
-            const url = `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${STEAM_API_KEY}&steamid=${steamid}&appid=${appid}`;
-            const r = await fetch(url);
-            if (!r.ok) return null;
-            const j = await r.json();
-            if (!j.playerstats || !j.playerstats.achievements) return null;
-
-            const total = j.playerstats.achievements.length;
-            const unlocked = j.playerstats.achievements.filter(a => a.achieved === 1).length;
-            return { total, unlocked };
-        };
-
-        const stats1 = await fetchStats(user1);
-        const stats2 = user2 ? await fetchStats(user2) : null;
-
-        return NextResponse.json({
-            stats1,
-            stats2,
-            gameName
-        });
-
-    } catch (error) {
-        console.error("Flex API error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
+  const [stats1, stats2] = await Promise.all([fetchStats(String(user1), app), second ? fetchStats(second, app) : null]);
+  return NextResponse.json({ stats1, stats2, gameName: typeof gameName === "string" ? gameName.slice(0, 120) : null });
 }

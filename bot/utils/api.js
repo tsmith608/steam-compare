@@ -1,7 +1,40 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
+const crypto = require('crypto');
+
 const API_BASE = process.env.BOT_API_BASE || 'https://webothplay.com';
+
+/**
+ * fetch() against the website API. Sends BOT_API_KEY (when configured) so the
+ * website can keep bot-only endpoints private and exempt the bot from
+ * per-IP rate limits. Set the same BOT_API_KEY on the website and the bot.
+ */
+function apiFetch(path, options = {}) {
+    // The User-Agent lets the website report bot comparisons separately (it grants nothing by itself).
+    const headers = { 'User-Agent': 'WeBothPlayBot/1.0 (+https://webothplay.com/discord)', ...(options.headers || {}) };
+    if (process.env.BOT_API_KEY) headers.Authorization = `Bearer ${process.env.BOT_API_KEY}`;
+    return fetch(`${API_BASE}${path}`, { ...options, headers });
+}
+
+/** Link to the full comparison on the website, tagged so visits are attributable. */
+function compareUrl(steamIds, medium = 'bot') {
+    const ids = steamIds.map(String).filter(id => /^\d{17}$/.test(id));
+    return `${API_BASE}/compare?p=${ids.join(',')}&utm_source=discord&utm_medium=${medium}`;
+}
+
+/**
+ * Signed one-hour link for /link. The website verifies the signature with the
+ * shared DISCORD_LINK_SECRET so nobody can forge a link for another account.
+ */
+function linkUrl(discordId) {
+    const exp = Math.floor(Date.now() / 1000) + 3600;
+    const params = new URLSearchParams({ discord_id: discordId, exp: String(exp) });
+    if (process.env.DISCORD_LINK_SECRET) {
+        params.set('sig', crypto.createHmac('sha256', process.env.DISCORD_LINK_SECRET).update(`${discordId}.${exp}`).digest('hex'));
+    }
+    return `${API_BASE}/auth/discord?${params.toString()}`;
+}
 
 /**
  * Resolves Discord IDs to Steam IDs using the batch-links API.
@@ -11,7 +44,7 @@ const API_BASE = process.env.BOT_API_BASE || 'https://webothplay.com';
 async function resolveSteamIds(discordIds) {
     if (!discordIds || discordIds.length === 0) return [];
     try {
-        const res = await fetch(`${API_BASE}/api/discord/batch-links`, {
+        const res = await apiFetch('/api/discord/batch-links', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ discordIds })
@@ -32,7 +65,7 @@ async function resolveSteamIds(discordIds) {
  */
 async function getLink(discordId) {
     try {
-        const res = await fetch(`${API_BASE}/api/discord/link?discord_id=${discordId}`);
+        const res = await apiFetch(`/api/discord/link?discord_id=${discordId}`);
         if (res.ok) {
             const data = await res.json();
             return data.steamId || null;
@@ -51,7 +84,7 @@ async function getLink(discordId) {
 async function getRankings(steamIds) {
     if (!steamIds || steamIds.length === 0) return [];
     try {
-        const res = await fetch(`${API_BASE}/api/user/rankings`, {
+        const res = await apiFetch('/api/user/rankings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ steamIds })
@@ -67,6 +100,9 @@ async function getRankings(steamIds) {
 
 module.exports = {
     API_BASE,
+    apiFetch,
+    compareUrl,
+    linkUrl,
     resolveSteamIds,
     getLink,
     getRankings

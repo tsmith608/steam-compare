@@ -1,5 +1,5 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { API_BASE } = require('./api');
+const { API_BASE, apiFetch } = require('./api');
 
 /**
  * Checks if a user has access to a specific tier (Pro/Hacker) 
@@ -16,7 +16,7 @@ async function checkTierAccess(interaction, requiredTier = 'Pro') {
     // 1. Check User's Own Tier
     let userTier = 'Noob';
     try {
-        const res = await fetch(`${API_BASE}/api/discord/link?discord_id=${userId}`);
+        const res = await apiFetch(`/api/discord/link?discord_id=${userId}`);
         if (res.ok) {
             const data = await res.json();
             userTier = data.tier || 'Noob';
@@ -35,7 +35,7 @@ async function checkTierAccess(interaction, requiredTier = 'Pro') {
         try {
             const memberIds = guild.members.cache.map(m => m.id);
 
-            const hackerRes = await fetch(`${API_BASE}/api/discord/server-hacker-check`, {
+            const hackerRes = await apiFetch('/api/discord/server-hacker-check', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ discordIds: memberIds })
@@ -57,7 +57,7 @@ async function checkTierAccess(interaction, requiredTier = 'Pro') {
             new ButtonBuilder()
                 .setLabel('🚀 Upgrade Now')
                 .setStyle(ButtonStyle.Link)
-                .setURL(`${API_BASE}/upgrade`)
+                .setURL(`${API_BASE}/upgrade?utm_source=discord&utm_medium=bot`)
         );
 
     return {

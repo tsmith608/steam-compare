@@ -2,11 +2,22 @@
   "name": "steam-compare",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:sql": "node scripts/migrate.mjs --sql",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "dev:mock": "STEAM_MOCK=1 next dev",
+    "social:render": "node marketing/renderer/render.mjs",
+    "social:calendar": "node marketing/tiktok/build-calendar.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.26.2",
@@ -19,12 +30,21 @@
     "stripe": "^20.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@next/env": "16.1.6",
+    "@playwright/test": "1.56.1",
+    "@resvg/resvg-js": "^2.6.2",
+    "@twemoji/svg": "15.0.0",
     "@types/node": "24.9.1",
     "@types/react": "19.2.2",
     "autoprefixer": "^10.4.21",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.1.6",
     "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
+    "satori": "^0.35.0",
     "tailwindcss": "^3.4.18",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^3.2.7"
   }
 }

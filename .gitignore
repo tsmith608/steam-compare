@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Discord bot dependencies (install with `cd bot && npm ci`)
+/bot/node_modules
+/bot/.env
+
+# Playwright / test output
+/test-results/
+/playwright-report/
+
+# brag composition copy (served only while rendering)
+/public/brag/
+/brag-output/work/frames/
+/brag-output/work/stills/
+/brag-output/work/music.wav
+/brag-output/work/poster.png
+
+# npm run db:sql output (for Supabase's SQL Editor)
+/db-migrate.sql
