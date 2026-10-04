@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:sql": "node scripts/migrate.mjs --sql",
     "check:secrets": "node scripts/check-secrets.mjs",
     "dev:mock": "STEAM_MOCK=1 next dev",
     "social:render": "node marketing/renderer/render.mjs",

@@ -39,6 +39,7 @@ Open <http://localhost:3000> and try **See an example first**. In mock mode, the
 | `npm test` | Unit tests; DB integration tests also run when `TEST_DATABASE_URL` is set |
 | `npm run test:e2e` | Playwright end-to-end + accessibility tests (after `npm run build`; needs Postgres, see `playwright.config.mjs`) |
 | `npm run db:migrate` | Apply `db/migrations/*.sql` to the database in `.env.local` (rollback script in `db/rollback/`) |
+| `npm run db:sql` | Write the same migrations as one `db-migrate.sql` to paste into Supabase → SQL Editor (no connection string needed) |
 | `npm run social:calendar` | Rebuild the 90-day TikTok calendar and renderer data |
 | `npm run social:render` | Render TikTok posts locally. Normally GitHub Actions does it and commits them to `marketing/renders/posts/` |
 | `npm run check:secrets` | Fail if any tracked file contains a credential (also runs in CI) |

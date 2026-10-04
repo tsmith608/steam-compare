@@ -51,6 +51,8 @@ npm run db:migrate        # uses DATABASE_URL from .env.local and prints which d
 
 `pg_dump` comes with the PostgreSQL client tools. Each migration runs in a transaction, so a failure leaves the database as it was. If `npm run db:migrate` can't connect, it says why: usually the password (URL-encode special characters) or, on Supabase, the direct connection (host starting with `db.`), which needs IPv6. Use the **Session pooler** string from *Supabase → Connect* instead.
 
+**Can't connect from your machine at all?** Run `npm run db:sql`, open the `db-migrate.sql` it writes, copy everything into *Supabase → SQL Editor → New query* and click **Run**. Same migrations, one transaction, and it records what ran so `npm run db:migrate` skips them later. (Vercel still needs a working `DATABASE_URL` for the site itself.)
+
 - If you ever need to undo the schema (you shouldn't), use `db/rollback/002_retrofit.down.sql`. Read its header first.
 - To undo the **app**, use *Vercel → Deployments → previous → Promote*. The database can stay as it is.
 

@@ -55,3 +55,6 @@ next-env.d.ts
 /brag-output/work/stills/
 /brag-output/work/music.wav
 /brag-output/work/poster.png
+
+# npm run db:sql output (for Supabase's SQL Editor)
+/db-migrate.sql

@@ -2,6 +2,7 @@
 // Applies db/migrations/*.sql in filename order, once each.
 //   npm run db:migrate            (reads DATABASE_URL from .env.local / .env, like the app)
 //   DATABASE_URL=postgres://... node scripts/migrate.mjs
+//   npm run db:sql                (no connection: writes db-migrate.sql to paste into Supabase → SQL Editor)
 // Every migration is additive and idempotent, so re-running is safe.
 import fs from "node:fs";
 import path from "node:path";
@@ -10,6 +11,29 @@ import nextEnv from "@next/env";
 import pg from "pg";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const dir = path.join(root, "db", "migrations");
+const migrationFiles = () => fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
+
+// --sql: one script for Supabase's SQL Editor, for when connecting from this
+// machine isn't possible. Same migrations, one transaction, and it records
+// what ran so `npm run db:migrate` skips them later.
+if (process.argv.includes("--sql")) {
+  const parts = [
+    "-- WeBothPlay database migrations. Paste all of this into Supabase → SQL Editor and click Run.",
+    "-- Additive only and safe to re-run; one transaction, so an error leaves the database unchanged.",
+    "BEGIN;",
+    "CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());",
+  ];
+  for (const f of migrationFiles()) {
+    parts.push(`\n-- ---------------------------------------------------------------- ${f}`, fs.readFileSync(path.join(dir, f), "utf8").trim());
+    parts.push(`INSERT INTO schema_migrations (name) VALUES ('${f}') ON CONFLICT (name) DO NOTHING;`);
+  }
+  parts.push("\nCOMMIT;\n");
+  const out = path.join(root, "db-migrate.sql");
+  fs.writeFileSync(out, parts.join("\n"));
+  console.log(`Wrote ${path.relative(process.cwd(), out) || out}: open it, copy everything, paste into Supabase → SQL Editor, then Run.`);
+  process.exit(0);
+}
 // Same loader Next.js uses, so this sees exactly what `npm run dev` sees.
 // Variables already set in the shell win over the files.
 const fromShell = process.env.DATABASE_URL;
@@ -52,7 +76,6 @@ try {
 console.log(`Migrating ${target} (DATABASE_URL from ${source})`);
 
 const client = new pg.Client({ connectionString, ssl: local ? undefined : { rejectUnauthorized: false } });
-const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "db", "migrations");
 
 // Plain-language help for the usual connection problems (the password is never printed).
 function explain(err) {
@@ -99,8 +122,7 @@ try {
     "CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())"
   );
   const done = new Set((await client.query("SELECT name FROM schema_migrations")).rows.map((r) => r.name));
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
-  for (const file of files) {
+  for (const file of migrationFiles()) {
     if (done.has(file)) {
       console.log(`  skip  ${file}`);
       continue;
