@@ -72,8 +72,8 @@ Set in *Vercel → Settings → Environment Variables*; changes need a redeploy.
 | Alert: *Stripe webhook failed* | Code error or DB down while processing | Stripe retries for 3 days automatically. Fix the cause, then *Stripe → Webhooks → event → Resend* if needed. Processing is idempotent — resending is safe |
 | Customer says "I paid but I'm not Premium" | Webhook not delivered / wrong Steam account | Stripe → customer → subscription metadata `steam_id`. Check *Webhooks → recent deliveries*. Resend `customer.subscription.updated`. The user must be signed in with the same Steam account they bought with |
 | Customer wants a refund | — | Stripe dashboard → payment → Refund; cancel the subscription there. The webhook downgrades them at period end (or immediately if you cancel immediately) |
-| Bot offline | Server/pm2 crash, token reset | `pm2 logs`, `pm2 restart all`. If the token was reset, update `DISCORD_TOKEN` in `bot/.env` |
-| Bot commands error "unauthorized" | `BOT_API_KEY` differs between bot and site | Make them identical, restart bot / redeploy site |
+| Bot offline | Crash, failed deploy, token reset | Railway → bot service → *Deployments* → logs; *Restart* or redeploy. If the token was reset, update `DISCORD_TOKEN` in Railway's *Variables* |
+| Bot commands error "unauthorized" | `BOT_API_KEY` differs between bot and site | Make them identical (Railway and Vercel), then restart the bot / redeploy the site |
 | Someone reports a security issue | — | Rotate the affected secret first, then fix. Contact address: `/contact` |
 
 ## 6. Backups & data
@@ -90,8 +90,8 @@ Set in *Vercel → Settings → Environment Variables*; changes need a redeploy.
 
 ## 7. Discord bot operations
 
-- Runs from `bot/` on your own server with pm2 (`bot/.env` from `bot/.env.example`).
-- After pulling changes: `cd bot && npm ci && node deploy-commands.js && pm2 restart all`.
+- Runs on Railway from `bot/` on the `main` branch (`npm start`), with its variables in Railway (names in `bot/.env.example`). A merge to `main` redeploys it.
+- Re-register slash commands only when a command's name, description or options change: from `bot/` on your computer, `npm run deploy:global`. Don't set `GUILD_ID` for this unless you mean to: with it, the script registers the commands in that one server and removes them everywhere else.
 - Bot links to the site carry `utm_source=discord&utm_medium=bot`, so bot traffic shows up separately in the report.
 - **Verification threshold:** Discord reviews privileged intents once an app reaches 10,000 users (changed 2026-06-10, per the SEO research). The bot uses the GuildMembers intent for the Hacker server perk; the planned replacement is a `/perk activate` command (PRODUCT_OPPORTUNITIES #16).
 
@@ -124,4 +124,4 @@ npm run test:e2e      # Playwright: needs a build + STEAM_MOCK=1 (see playwright
 | Supabase | Free/Pro | DB size (events table grows ~1 row per user action; retention keeps it bounded) |
 | Stripe | ~2.9% + 30¢ per charge (US cards; check your dashboard) | Disputes |
 | Steam Web API | Free, 100k calls/day | Quota alerts |
-| Bot server | Your VPS/pm2 host | Uptime |
+| Railway (bot) | Usage-based (check Railway's current pricing) | Uptime, monthly usage |

@@ -33,11 +33,11 @@ These files are deleted on this branch, but **deleting files doesn't remove them
 | `CRON_SECRET` | `openssl rand -hex 24` | Lets Vercel Cron call the daily check / weekly report |
 | `ADMIN_STEAM_IDS` | your SteamID64 | Unlocks `/admin` |
 | `OWNER_ALERT_WEBHOOK_URL` | a Discord webhook (*Server Settings → Integrations → Webhooks → New*) in a private channel | Alerts + Monday report |
-| `BOT_API_KEY` | `openssl rand -hex 24` (same value in `bot/.env`) | Bot-only endpoints stop being public |
-| `DISCORD_LINK_SECRET` | `openssl rand -hex 24` (same value in `bot/.env`) | Signs "link your Discord" links |
+| `BOT_API_KEY` | `openssl rand -hex 24` (same value in the bot's Railway variables) | Bot-only endpoints stop being public |
+| `DISCORD_LINK_SECRET` | `openssl rand -hex 24` (same value in the bot's Railway variables) | Signs "link your Discord" links |
 | `KOFI_WEBHOOK_VERIFICATION_TOKEN` | from Ko-fi → *Settings → API → Webhooks*, **or** delete the webhook URL in Ko-fi if you no longer use Ko-fi | The Ko-fi webhook now refuses everything without it |
 
-Then redeploy, and open `https://webothplay.com/api/health`. It should return `"ok": true`, with `sessionSecretConfigured: true`.
+Then redeploy (*Deployments → latest → ⋯ → Redeploy*): Vercel only applies changed variables to new deployments. The live site still runs the old code from `main` until step 6, so the `/api/health` check (it should return `"ok": true`, with `sessionSecretConfigured: true`) comes after the merge.
 
 ## 🔴 3. Apply the database migration (10 min)
 
@@ -77,16 +77,20 @@ The code is ready; only you can change the Stripe settings.
 
 Step-by-step context is in [MONETIZATION_AUDIT.md §4](MONETIZATION_AUDIT.md).
 
-## 🔴 5. Update the Discord bot on its server (10 min)
+## 🔴 5. Set up the Discord bot on Railway (10 min)
 
-`bot/node_modules` used to be committed. It's now ignored, so **pulling this branch deletes those files on the bot's server**. Reinstall right after pulling:
+The bot is a long-running process, so it can't live on Vercel. In Railway, open the bot's service:
 
-```bash
-cd bot && git pull && npm ci
-cp .env.example .env   # first time only; fill DISCORD_TOKEN, DISCORD_CLIENT_ID, BOT_API_KEY, DISCORD_LINK_SECRET
-node deploy-commands.js
-pm2 restart all        # or however the bot is run
-```
+- **Settings → Source:** root directory `bot`, branch `main`, start command `npm start`. On `main`, the bot updates together with the site when you merge.
+- **Variables:**
+  - `DISCORD_TOKEN` and `DISCORD_CLIENT_ID` (Discord Developer Portal).
+  - `BOT_API_BASE` = `https://webothplay.com`.
+  - `BOT_API_KEY` and `DISCORD_LINK_SECRET`, with the **same values as in Vercel**.
+  - **Leave `GUILD_ID` out.** Only the command-registration script reads it, and with it set that script registers the commands in that one server and removes them from every other server.
+
+The slash commands are unchanged in this retrofit, so there's nothing to re-register. If `/compare` doesn't show up in Discord at all, register the commands once from your computer: `cd bot`, `npm ci`, put `DISCORD_TOKEN` and `DISCORD_CLIENT_ID` in `bot/.env`, then `npm run deploy:global`. They can take up to an hour to appear. If Railway's logs say *Used disallowed intents*, turn on **Server Members Intent** under *Developer Portal → Bot*.
+
+Hosting the bot on your own server instead? `bot/node_modules` is no longer committed, so run `npm ci` in `bot/` after pulling, then restart it.
 
 ## 🔴 6. Merge and deploy
 
