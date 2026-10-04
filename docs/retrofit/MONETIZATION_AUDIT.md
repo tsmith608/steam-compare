@@ -65,7 +65,7 @@ Upsells appear only when a limit is hit: a 9th player in the form, the plan-limi
 
 ## 4. Recommended Stripe dashboard settings *(owner, 15 minutes)*
 
-1. **Webhook endpoint** → `https://webothplay.com/api/webhooks/stripe`, API version = the SDK's (`2026-01-28.clover`), events listed above. Paste the new signing secret into `STRIPE_WEBHOOK_SECRET`.
+1. **Webhook endpoint** → keep the existing `https://webothplay.com/api/webhooks/stripe` endpoint and its API version (the handler re-reads subscriptions through the SDK and accepts both event formats); select the events listed above. Only a newly created endpoint needs its signing secret pasted into `STRIPE_WEBHOOK_SECRET`.
 2. **Billing → Revenue recovery**: Smart Retries (8 tries / 2 weeks) then cancel; turn on emails for failed payments, expiring cards and upcoming renewals (7 days before annual renewals); receipts on.
 3. **Customer Portal**: allow cancel (at period end, ask for a reason), switch between the Pro/Hacker (monthly + annual) prices, update payment method, invoice history.
 4. **Tax** *(owner decision)*: either Stripe Tax (`STRIPE_AUTOMATIC_TAX=1` after registering where required) or Stripe Managed Payments (Stripe as merchant of record, +3.5% per the research, unverified details).

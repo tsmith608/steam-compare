@@ -272,7 +272,7 @@ Things that could **not** be verified from this environment:
 
 | When | Priority | Measure |
 |---|---|---|
-| Days 1–2 | Owner actions 1–6 (rotate secrets, set environment variables, migrate, Stripe, bot, deploy). Run the post-deploy checklist; do one real purchase in test mode | `/api/health` ok; a test webhook shows 200; `/admin` shows events |
+| Days 1–2 | Owner actions 1–6 (rotate secrets, set environment variables, migrate, Stripe, bot, deploy). Run the post-deploy checklist; do one real purchase in test mode | `/api/health` ok; Stripe webhook deliveries show 200; `/admin` shows events |
 | Days 2–7 | Uptime monitor, Search Console + sitemap, permanent invite, support alias. Claim TikTok, set the UTM bio link, post weeks 1–2 of the baseline (4/week) | First Monday report arrives; `tiktok` appears in top sources |
 | Week 2 | First weekly optimisation pass (WEEKLY_OPTIMIZATION_PLAYBOOK): double down / iterate / retire | Watch ratio and profile visits per post; bio-link visitors → results |
 | Week 3 | Fix the biggest funnel drop that `/admin` shows (likely private profiles or invalid input). Consider annual Prices | Started → results ≥ 85% |

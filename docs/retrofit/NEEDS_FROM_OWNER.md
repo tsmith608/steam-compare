@@ -60,20 +60,25 @@ npm run db:migrate        # uses DATABASE_URL from .env.local and prints which d
 
 ## 🔴 4. Stripe (15 min)
 
-The code is ready; only you can change the Stripe settings.
+The code is ready; only you can change the Stripe settings. All of this is safe to do before the merge: the live site's webhook code answers "received" to event types it doesn't handle.
 
-1. *Developers → Webhooks* → your endpoint `https://webothplay.com/api/webhooks/stripe`:
-   - Set the **API version to `2026-01-28.clover`**.
-   - Subscribe to: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed`, `invoice.paid`, `invoice.payment_succeeded` and `invoice.payment_failed`.
-   - If the signing secret changes, update `STRIPE_WEBHOOK_SECRET`.
-2. *Settings → Billing → Customer portal*:
-   - Allow cancellation at period end.
-   - Allow switching between your Pro and Hacker prices.
-   - Allow payment-method updates and invoice history.
-3. *Settings → Billing → Subscriptions and emails*:
-   - Smart Retries on, then cancel after the last retry.
-   - Turn on emails for failed payments and expiring cards.
-4. Send a **test webhook** from the dashboard. The endpoint should answer 200, and a failure alert should *not* arrive in Discord.
+1. *Workbench → Webhooks* → your endpoint `https://webothplay.com/api/webhooks/stripe` → edit it so these events are selected: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed`, `invoice.paid`, `invoice.payment_succeeded` and `invoice.payment_failed`.
+   - **Leave its API version as it is**, and keep this endpoint rather than creating a new one. The new code re-reads every subscription from Stripe and accepts both event formats. A new endpoint would also come with a new signing secret.
+   - No endpoint at all? Create one with that URL and those events, put its signing secret (`whsec_…`) in Vercel as `STRIPE_WEBHOOK_SECRET`, and redeploy.
+   - If it shows as disabled, enable it again right after the merge. The live code fails on purchases and renewals (fixed on this branch), so Stripe may have switched it off.
+2. *Settings → Billing → Customer portal*, in live mode:
+   - Cancellation: at the end of the billing period.
+   - Switch plans: on, with your Pro and Hacker prices. The site sends existing subscribers here to change plan, so upgrading from Pro to Hacker only works with this on.
+   - Payment-method updates and invoice history: on.
+   - **Save.** Stripe won't open the portal until these settings have been saved once in live mode.
+3. *Billing → Revenue recovery → Retries*:
+   - Turn Smart Retries on.
+   - When all retries fail, **cancel the subscription** (or mark it unpaid). Don't leave it past due: the site keeps access during past due, so a card that never pays would keep Premium.
+   - In the same section, turn on the emails for failed payments and expiring cards.
+4. After the merge, open the endpoint's event deliveries:
+   - New events should show 200.
+   - Resend any failed ones listed there: they're purchases and renewals the old code didn't apply. Processing is idempotent, so resending is safe.
+   - Skip dashboard test events: they use made-up IDs the site can't look up in Stripe, so they fail and send you a Discord alert.
 
 Step-by-step context is in [MONETIZATION_AUDIT.md §4](MONETIZATION_AUDIT.md).
 
