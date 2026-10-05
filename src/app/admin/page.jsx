@@ -89,7 +89,8 @@ export default async function AdminPage() {
       <main id="main" className="container-page py-16">
         <h1 className="display-wide text-display-sm">Owner dashboard</h1>
         <p className="mt-3 text-ink-2">
-          {steamid ? "This Steam account isn't on the owner list (ADMIN_STEAM_IDS)." : "Sign in through Steam with an owner account to view this page."}
+          {/* Showing the signed-in account's own ID lets the owner copy the exact value into ADMIN_STEAM_IDS. */}
+          {steamid ? `Signed in as ${steamid}. This Steam account isn't on the owner list (ADMIN_STEAM_IDS).` : "Sign in through Steam with an owner account to view this page."}
         </p>
         {/* An API route that redirects to Steam, so a plain link (next/link would try to prefetch it). */}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
