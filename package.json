@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "smoke": "node scripts/smoke.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:sql": "node scripts/migrate.mjs --sql",
     "check:secrets": "node scripts/check-secrets.mjs",

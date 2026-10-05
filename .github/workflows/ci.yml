@@ -34,6 +34,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Install the Discord bot's dependencies (the bot tests run its commands)
+        run: npm ci --prefix bot
       - name: No credentials in the repository
         run: npm run check:secrets
       - run: npm run lint

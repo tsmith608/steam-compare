@@ -20,8 +20,10 @@ export default defineConfig({
     reducedMotion: "reduce",
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } } },
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    { name: "desktop", testIgnore: /bot\.spec/, use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } } },
+    { name: "mobile", testIgnore: /bot\.spec/, use: { ...devices["Pixel 7"] } },
+    // The Discord bot's commands against the same server; no browser needed.
+    { name: "bot", testMatch: /bot\.spec/ },
   ],
   webServer: {
     command: `node node_modules/next/dist/bin/next start -p ${PORT}`,
@@ -33,6 +35,8 @@ export default defineConfig({
       STEAM_API_KEY: "e2e-dummy",
       DATABASE_URL,
       SESSION_SECRET: "e2e-session-secret-e2e-session-secret-0000",
+      BOT_API_KEY: "e2e-bot-api-key-e2e-bot-api-key-0000",
+      DISCORD_LINK_SECRET: "e2e-discord-link-secret-e2e-discord-0000",
     },
   },
 });

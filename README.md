@@ -37,7 +37,8 @@ Open <http://localhost:3000> and try **See an example first**. In mock mode, the
 | `npm run build` / `start` | Production build / server |
 | `npm run lint` | ESLint (Next.js core-web-vitals config) |
 | `npm test` | Unit tests; DB integration tests also run when `TEST_DATABASE_URL` is set |
-| `npm run test:e2e` | Playwright end-to-end + accessibility tests (after `npm run build`; needs Postgres, see `playwright.config.mjs`) |
+| `npm run test:e2e` | Playwright end-to-end + accessibility tests, plus every Discord bot command run against the site (after `npm run build`; needs Postgres, see `playwright.config.mjs`) |
+| `npm run smoke` | Check the live site from outside: health, pages, APIs, security headers, the bot's key and Stripe's webhook. `npm run smoke -- <url>` for another deployment |
 | `npm run db:migrate` | Apply `db/migrations/*.sql` to the database in `.env.local` (rollback script in `db/rollback/`). On Supabase, if the pooler rejects the password, it checks the direct connection too |
 | `npm run db:sql` | Write the same migrations as one `db-migrate.sql` to paste into Supabase → SQL Editor (no connection string needed) |
 | `npm run social:calendar` | Rebuild the 90-day TikTok calendar and renderer data |

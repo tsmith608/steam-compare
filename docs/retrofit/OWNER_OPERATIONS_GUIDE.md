@@ -102,7 +102,8 @@ npm ci
 npm run lint          # ESLint (Next.js core-web-vitals rules)
 npm test              # unit tests; DB tests run when TEST_DATABASE_URL is set
 npm run build
-npm run test:e2e      # Playwright: needs a build + STEAM_MOCK=1 (see playwright.config.mjs)
+npm run test:e2e      # Playwright: needs a build + STEAM_MOCK=1 (see playwright.config.mjs); includes the Discord bot's commands (needs npm ci --prefix bot)
+npm run smoke         # after a deploy: checks the live site (health, pages, APIs, bot key, Stripe webhook)
 ```
 
 ## 9. Social workflow (TikTok)
