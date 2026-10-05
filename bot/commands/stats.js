@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, getLink, apiFetch } = require('../utils/api');
+const { API_BASE, getLink, getLibrary } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,19 +24,7 @@ module.exports = {
         }
 
         try {
-            const compareRes = await apiFetch('/api/compare', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ users: [steamId, steamId] })
-            });
-
-            if (!compareRes.ok) throw new Error("API Error");
-            const data = await compareRes.json();
-
-            let library = data.shared || [];
-            if (library.length === 0 && data.unique && data.unique[steamId]) {
-                library = data.unique[steamId];
-            }
+            const library = (await getLibrary(steamId)).shared || [];
 
             if (library.length === 0) {
                 return interaction.editReply({ content: '❌ No games found. Is your Steam profile private?' });

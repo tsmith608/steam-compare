@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, resolveSteamIds, apiFetch } = require('../utils/api');
+const { API_BASE, resolveSteamIds, apiFetch, apiError, steamStoreUrl } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -61,7 +61,7 @@ module.exports = {
                 body: JSON.stringify({ users: steamIds })
             });
 
-            if (!compareRes.ok) throw new Error("API Error");
+            if (!compareRes.ok) throw new Error(await apiError(compareRes));
             const data = await compareRes.json();
 
             let pool = data.shared || [];
@@ -94,9 +94,9 @@ module.exports = {
                         .setLabel('🔄 Spin Again')
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setLabel('🚀 Launch in Steam')
+                        .setLabel('🎮 View on Steam')
                         .setStyle(ButtonStyle.Link)
-                        .setURL(`steam://run/${randomGame.appid}`)
+                        .setURL(steamStoreUrl(randomGame.appid))
                 );
 
             if (isUpdate) {

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, getLink, apiFetch } = require('../utils/api');
+const { API_BASE, getLink, getLibrary, steamStoreUrl } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -28,19 +28,7 @@ module.exports = {
 
     async _pickAndReply(interaction, steamId, username, isUpdate) {
         try {
-            const compareRes = await apiFetch('/api/compare', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ users: [steamId, steamId] })
-            });
-
-            if (!compareRes.ok) throw new Error("API Error");
-            const data = await compareRes.json();
-
-            let library = data.shared || [];
-            if (library.length === 0 && data.unique && data.unique[steamId]) {
-                library = data.unique[steamId];
-            }
+            const library = (await getLibrary(steamId)).shared || [];
 
             // Filter for backlog: < 3 hours (180 mins)
             const backlog = library.filter(g => {
@@ -72,9 +60,9 @@ module.exports = {
                         .setLabel('🔄 Another One')
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setLabel('🚀 Launch in Steam')
+                        .setLabel('🎮 View on Steam')
                         .setStyle(ButtonStyle.Link)
-                        .setURL(`steam://run/${pick.appid}`)
+                        .setURL(steamStoreUrl(pick.appid))
                 );
 
             if (isUpdate) {
