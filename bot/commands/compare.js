@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, resolveSteamIds, apiFetch, compareUrl } = require('../utils/api');
+const { API_BASE, resolveSteamIds, apiFetch, apiError, compareUrl, steamStoreUrl } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -129,7 +129,7 @@ module.exports = {
                 body: JSON.stringify({ users: steamIds })
             });
 
-            if (!compareRes.ok) throw new Error("API Error");
+            if (!compareRes.ok) throw new Error(await apiError(compareRes));
             const data = await compareRes.json();
             const shared = data.shared || [];
 
@@ -212,7 +212,7 @@ module.exports = {
 
         } catch (err) {
             console.error("Compare error:", err);
-            await interaction.editReply({ content: '❌ Failed to compare libraries.' });
+            await interaction.editReply({ content: `❌ Failed to compare libraries: ${err.message}` });
         }
     },
 
@@ -231,7 +231,7 @@ module.exports = {
                     body: JSON.stringify({ users: steamIds })
                 });
 
-                if (!compareRes.ok) throw new Error("API Error");
+                if (!compareRes.ok) throw new Error(await apiError(compareRes));
                 const data = await compareRes.json();
                 const shared = data.shared || [];
 
@@ -256,16 +256,16 @@ module.exports = {
                             .setLabel('🔄 Pick Another')
                             .setStyle(ButtonStyle.Primary),
                         new ButtonBuilder()
-                            .setLabel('🚀 Launch in Steam')
+                            .setLabel('🎮 View on Steam')
                             .setStyle(ButtonStyle.Link)
-                            .setURL(`steam://run/${randomGame.appid}`)
+                            .setURL(steamStoreUrl(randomGame.appid))
                     );
 
                 await interaction.editReply({ embeds: [embed], components: [row] });
 
             } catch (err) {
                 console.error("Compare roulette error:", err);
-                await interaction.editReply({ content: '❌ Failed to pick a random game.' });
+                await interaction.editReply({ content: `❌ Failed to pick a random game: ${err.message}` });
             }
         }
     },

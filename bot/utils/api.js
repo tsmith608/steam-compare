@@ -17,6 +17,14 @@ function apiFetch(path, options = {}) {
     return fetch(`${API_BASE}${path}`, { ...options, headers });
 }
 
+/**
+ * The game's Steam store page, where owners get a Play button. Discord only allows
+ * web links on buttons, so a steam://run/ URL makes the whole reply fail.
+ */
+function steamStoreUrl(appid) {
+    return `https://store.steampowered.com/app/${appid}`;
+}
+
 /** Link to the full comparison on the website, tagged so visits are attributable. */
 function compareUrl(steamIds, medium = 'bot') {
     const ids = steamIds.map(String).filter(id => /^\d{17}$/.test(id));
@@ -34,6 +42,22 @@ function linkUrl(discordId) {
         params.set('sig', crypto.createHmac('sha256', process.env.DISCORD_LINK_SECRET).update(`${discordId}.${exp}`).digest('hex'));
     }
     return `${API_BASE}/auth/discord?${params.toString()}`;
+}
+
+/** The website's own error message for a failed response, or its HTTP status. */
+async function apiError(res) {
+    const body = await res.json().catch(() => null);
+    return body?.error || `the website answered ${res.status}`;
+}
+
+/**
+ * One player's public library: { shared: [{ appid, name, playtimes: { [steamId]: minutes } }], profiles, isPrivate }.
+ * Use this rather than comparing a player with themselves: /api/compare needs two different profiles.
+ */
+async function getLibrary(steamId) {
+    const res = await apiFetch(`/api/library?steamid=${encodeURIComponent(steamId)}`);
+    if (!res.ok) throw new Error(await apiError(res));
+    return res.json();
 }
 
 /**
@@ -101,6 +125,9 @@ async function getRankings(steamIds) {
 module.exports = {
     API_BASE,
     apiFetch,
+    apiError,
+    getLibrary,
+    steamStoreUrl,
     compareUrl,
     linkUrl,
     resolveSteamIds,

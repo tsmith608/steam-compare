@@ -4,14 +4,17 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { SteamError, getOwnedGames, getPlayerSummaries, resolveSteamId } from "@/lib/steam";
 import { effectiveTier } from "@/lib/plans";
-import { jsonError, limitOrNull } from "@/lib/http";
+import { isBotRequest, jsonError, limitOrNull } from "@/lib/http";
 import { logServerError } from "@/lib/ops";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
-  const limited = limitOrNull(req, "library", { limit: 30, windowMs: 60_000 });
-  if (limited) return limited;
+  // The Discord bot calls from one IP for many servers, so it is exempt (as in /api/compare).
+  if (!isBotRequest(req)) {
+    const limited = limitOrNull(req, "library", { limit: 30, windowMs: 60_000 });
+    if (limited) return limited;
+  }
   const input = new URL(req.url).searchParams.get("steamid");
   if (!input) return jsonError("Missing steamid");
 

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { checkTierAccess } = require('../utils/tierCheck');
-const { API_BASE, resolveSteamIds, getLink, apiFetch } = require('../utils/api');
+const { API_BASE, resolveSteamIds, getLink, getLibrary, apiFetch, apiError, steamStoreUrl } = require('../utils/api');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,15 +23,7 @@ module.exports = {
         }
 
         try {
-            const compareRes = await apiFetch('/api/compare', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ users: [steamId, steamId] })
-            });
-
-            if (!compareRes.ok) return interaction.respond([]);
-            const data = await compareRes.json();
-            const pool = data.shared || data.unique?.[steamId] || [];
+            const pool = (await getLibrary(steamId)).shared || [];
 
             const matches = pool
                 .filter(g => g.name.toLowerCase().includes(focusedValue))
@@ -75,16 +67,19 @@ module.exports = {
         }
 
         try {
-            // Find the game AppID via comparison
-            const compareRes = await apiFetch('/api/compare', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ users: targetSteamId ? [execSteamId, targetSteamId] : [execSteamId, execSteamId] })
-            });
-
-            if (!compareRes.ok) throw new Error("Compare API Error");
-            const compareData = await compareRes.json();
-            const pool = targetSteamId ? (compareData.shared || []) : (compareData.unique?.[execSteamId] || compareData.shared || []);
+            // Find the game's AppID: in the shared library with a friend, else in your own
+            let pool;
+            if (targetSteamId) {
+                const compareRes = await apiFetch('/api/compare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ users: [execSteamId, targetSteamId] })
+                });
+                if (!compareRes.ok) throw new Error(await apiError(compareRes));
+                pool = (await compareRes.json()).shared || [];
+            } else {
+                pool = (await getLibrary(execSteamId)).shared || [];
+            }
 
             const game = pool.find(g => g.name.toLowerCase().includes(gameSearch));
             if (!game) {
@@ -169,9 +164,9 @@ module.exports = {
             const row = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
-                        .setLabel('🚀 Launch in Steam')
+                        .setLabel('🎮 View on Steam')
                         .setStyle(ButtonStyle.Link)
-                        .setURL(`steam://run/${game.appid}`)
+                        .setURL(steamStoreUrl(game.appid))
                 );
 
             await interaction.editReply({ embeds: [embed], components: [row] });
